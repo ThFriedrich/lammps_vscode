@@ -1,0 +1,28 @@
+{
+    "name": "lammps",
+    "displayName": "Lammps_lang",
+    "description": "Script syntax highlighting extension for Molecular Dynamics Software LAMMPS",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.39.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "lmps",
+            "aliases": ["Lammps", "lmps"],
+            "extensions": [".lmp","lmps",".lammps"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "lmps",
+            "scopeName": "source.lammps",
+            "path": "./syntaxes/lmps.tmLanguage.json"
+        }],
+        "activationEvents": [
+            "onCommand:extension.lammps"]
+
+    }
+}
