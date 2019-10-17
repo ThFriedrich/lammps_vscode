@@ -1,6 +1,12 @@
 # lammps-lang README
 
-This is the README for your extension "lammps-lang". After writing up a brief description, we recommend including the following sections.
+This extension provieds some basic syntax highlighting functionality for LAMMPS (Molecular dynamics Software) Scripts. It is based on the extension of Alessandro L. Sellerio for the KDE-Kate editor from 2011:
+
+(Lammps Syntax Highlighting definitions for KDE-Kate editor
+ First version October 2011 by Alessandro L. Sellerio
+ Version 1.0 dated 09/01/2012 by Alessandro L. Sellerio
+ Contact the original author at alessandro.sellerio@ieni.cnr.it
+ Inspired by original KDE file: bash.xml ) 
 
 ## Features
 
@@ -8,46 +14,18 @@ Describe specific features of your extension including screenshots of your exten
 
 For example if there is an image subfolder under your extension project workspace:
 
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+\!\[feature X\]\(imgs\lammps-lng-anim.gif\)
 
 ## Requirements
 
 If you have any requirements or dependencies, add a section describing those and how to install and configure them.
 
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- The Keyword list is somewhat outdated.
+- No auto completion
 
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
------------------------------------------------------------------------------------------------------------
 
 ## Working with Markdown
 
