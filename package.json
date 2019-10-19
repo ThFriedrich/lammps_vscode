@@ -1,8 +1,10 @@
 {
     "name": "lammps",
-    "displayName": "Lammps_lang",
+    "displayName": "Lammps Syntax Highlighting",
     "description": "Script syntax highlighting extension for Molecular Dynamics Software LAMMPS",
     "version": "0.0.1",
+    "publisher": "ThFriedrich",
+    "repository": {"url": "https://github.com/ThFriedrich/lammps_vscode"},
     "engines": {
         "vscode": "^1.39.0"
     },
