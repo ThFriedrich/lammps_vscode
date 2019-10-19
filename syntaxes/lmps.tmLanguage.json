@@ -15,7 +15,10 @@
 			"include": "#numerics"
 		},
 		{
-			"include": "#vars"
+			"include": "#vars_single_char"
+		},
+		{
+			"include": "#vars_multi_char"
 		}
 	],
 	"repository": {
@@ -26,7 +29,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "variable.parameter.lmps",
-				"match": "\\b(write_data|angle_coeff|angle_style|atom_modify|atom_style|balance|bond_coeff|bond_style|boundary|box|change_box|clear|communicate|compute|compute_modify|create_atoms|create_box|delete_atoms|delete_bonds|dielectric|dihedral_coeff|dihedral_style|dimension|displace_atoms|dump|dump_image|dump_modify|echo|fix|fix_modify|group|if|improper_coeff|improper_style|include|jump|kspace_modify|kspace_style|label|lattice|log|mass|minimize|min_modify|min_style|neb|neigh_modify|neighbor|newton|next|package|pair_coeff|pair_modify|pair_style|pair_write|partition|prd|print|processors|quit|read_data|read_dump|read_restart|region|replicate|rerun|reset_timestep|restart|run|run_style|set|shell|special_bonds|suffix|tad|temper|thermo|thermo_modify|thermo_style|timestep|uncompute|undump|unfix|units|variable|velocity|write_restart)(\\b\\/\\w+\\b\\s?|\\b\\s?)"
+				"match": "\\b(angle_coeff|angle_style|atom_modify|atom_style|balance|bond_coeff|bond_style|boundary|box|change_box|clear|communicate|compute|compute_modify|create_atoms|create_box|delete_atoms|delete_bonds|dielectric|dihedral_coeff|dihedral_style|dimension|displace_atoms|dump|dump_image|dump_modify|echo|fix|fix_modify|group|if|improper_coeff|improper_style|include|jump|kspace_modify|kspace_style|label|lattice|log|mass|minimize|min_modify|min_style|neb|neigh_modify|neighbor|newton|next|package|pair_coeff|pair_modify|pair_style|pair_write|partition|prd|print|processors|quit|read_data|read_dump|read_restart|region|replicate|rerun|reset_timestep|restart|run|run_style|set|shell|special_bonds|suffix|tad|temper|thermo|thermo_modify|thermo_style|timestep|uncompute|undump|unfix|units|variable|velocity|write_data|write_restart)(\\b\\/\\w+\\b\\s?|\\b\\s?)"
 			},{
 				"name": "storage.modifier.lmps",
 				"match": "\\b(equal|add|sub|mult|div)(\\b\\/\\w+\\b\\s?|\\b\\s?)"
@@ -172,7 +175,7 @@
                 }
             ]
         },
-		"vars": {
+		"vars_multi_char": {
 			"name": "entity.name.type.lmps",
 			"begin": "\\${",
 			"end": "}",
@@ -182,7 +185,12 @@
 					"match": "\\\\."
 				}
 			]
-		}
+		},
+		"vars_single_char": {
+			"patterns": [{
+				"name": "variable.parameter.lmps",
+				"match": "\\$\\w"}]
+			}
 },
 	"scopeName": "source.lammps"
 }
