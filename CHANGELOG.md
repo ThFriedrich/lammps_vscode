@@ -2,8 +2,8 @@
 
 All notable changes to the "lammps-lang" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+## Initial release 20.10.2019
+- Synatx highlighting for keywords, Variables, Comments, Strings and numeric data types
+- Folding of sections possible between #[ and #] marks
+- Keyword list up to date with Lammps documentation
+- Recognizes .lmp, .lmps and .lammps file extensions
