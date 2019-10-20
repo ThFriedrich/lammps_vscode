@@ -1,30 +1,43 @@
 {
-    "name": "lammps",
-    "displayName": "Lammps Syntax Highlighting",
-    "description": "Script syntax highlighting extension for Molecular Dynamics Software LAMMPS",
-    "version": "0.0.1",
-    "publisher": "ThFriedrich",
-    "repository": {"url": "https://github.com/ThFriedrich/lammps_vscode"},
-    "engines": {
-        "vscode": "^1.39.0"
-    },
-    "categories": [
-        "Programming Languages"
+  "name": "lammps",
+  "displayName": "Lammps Syntax Highlighting",
+  "description": "Script syntax highlighting extension for Molecular Dynamics Software LAMMPS",
+  "version": "0.1.0",
+  "publisher": "ThFriedrich",
+  "repository": {
+    "url": "https://github.com/ThFriedrich/lammps_vscode"
+  },
+  "engines": {
+    "vscode": "^1.39.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "lmps",
+        "aliases": [
+          "Lammps",
+          "lmps"
+        ],
+        "extensions": [
+          ".lmp",
+          "lmps",
+          ".lammps"
+        ],
+        "configuration": "./language-configuration.json"
+      }
     ],
-    "contributes": {
-        "languages": [{
-            "id": "lmps",
-            "aliases": ["Lammps", "lmps"],
-            "extensions": [".lmp","lmps",".lammps"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "lmps",
-            "scopeName": "source.lammps",
-            "path": "./syntaxes/lmps.tmLanguage.json"
-        }],
-        "activationEvents": [
-            "onCommand:extension.lammps"]
-
-    }
+    "grammars": [
+      {
+        "language": "lmps",
+        "scopeName": "source.lammps",
+        "path": "./syntaxes/lmps.tmLanguage.json"
+      }
+    ],
+    "activationEvents": [
+      "onCommand:extension.lammps"
+    ]
+  }
 }
