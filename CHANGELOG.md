@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to the "lammps-lang" extension will be documented in this file.
+All notable changes to the "lammps_vscode" extension will be documented in this file.
 
 ## Initial release 20.10.2019
 - Synatx highlighting for keywords, Variables, Comments, Strings and numeric data types
