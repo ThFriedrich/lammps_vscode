@@ -56,13 +56,13 @@
 				"match": "\\b(adapt|adapt\\/fep|addforce|addtorque|append\\/atoms|atc|atom\\/swap|ave\\/atom|ave\\/chunk|ave\\/correlate|ave\\/correlate\\/long|ave\\/histo|ave\\/histo\\/weight|ave\\/time|aveforce|balance|bocs|bond\\/break|bond\\/create|bond\\/react|bond\\/swap|box\\/relax|client\\/md|cmap|colvars|controller|deform|deposit|dpd\\/energy|drag|drude|drude\\/transform\\/direct|drude\\/transform\\/inverse|dt\\/reset|edpd\\/source|efield|ehex|electron\\/stopping|enforce2d|eos\\/cv|eos\\/table|eos\\/table\\/rx|evaporate|external|ffl|filter\\/corotate|flow\\/gauss|freeze|gcmc|gld|gle|gravity|grem|halt|heat|hyper\\/global|hyper\\/local|imd|indent|ipi|langevin|langevin\\/drude|langevin\\/eff|langevin\\/spin|latte|lb\\/fluid|lb\\/momentum|lb\\/pc|lb\\/rigid\\/pc\\/sphere|lb\\/viscous|lineforce|manifoldforce|meso|meso\\/move|meso\\/stationary|momentum|move|mscg|msst|mvv\\/dpd|mvv\\/edpd|mvv\\/tdpd|neb|neb_spin|nph|nph\\/asphere|nph\\/body|nph\\/eff|nph\\/sphere|nphug|npt|npt\\/asphere|npt\\/body|npt\\/eff|npt\\/sphere|npt\\/uef|nve|nve\\/asphere|nve\\/asphere\\/noforce|nve\\/awpmd|nve\\/body|nve\\/dot|nve\\/dotc\\/langevin|nve\\/eff|nve\\/limit|nve\\/line|nve\\/manifold\\/rattle|nve\\/noforce|nve\\/sphere|nve\\/spin|nve\\/tri|nvk|nvt|nvt\\/asphere|nvt\\/body|nvt\\/eff|nvt\\/manifold\\/rattle|nvt\\/sllod|nvt\\/sllod\\/eff|nvt\\/sphere|nvt\\/uef|oneway|orient\\/bcc|orient\\/fcc|phonon|pimd|planeforce|plumed|poems|pour|precession\\/spin|press\\/berendsen|print|property\\/atom|python\\/invoke|python\\/move|qbmsst|qeq\\/comb|qeq\\/dynamic|qeq\\/fire|qeq\\/point|qeq\\/reax|qeq\\/shielded|qeq\\/slater|qmmm|qtb|rattle|reax\\/c\\/bonds|reax\\/c\\/species|recenter|restrain|rhok|rigid|rigid\\/meso|rigid\\/nph|rigid\\/nph\\/small|rigid\\/npt|rigid\\/npt\\/small|rigid\\/nve|rigid\\/nve\\/small|rigid\\/nvt|rigid\\/nvt\\/small|rigid\\/small|rx|saed\\/vtk|setforce|shake|shardlow|smd|smd\\/adjust_dt|smd\\/integrate_tlsph|smd\\/integrate_ulsph|smd\\/move_tri_surf|smd\\/setvel|smd\\/wall_surface|spring|spring\\/chunk|spring\\/rg|spring\\/self|srd|store\\/force|store\\/state|tdpd\\/source|temp\\/berendsen|temp\\/csld|temp\\/csvr|temp\\/rescale|temp\\/rescale\\/eff|tfmc|thermal\\/conductivity|ti\\/spring|tmd|ttm|ttm\\/mod|tune\\/kspace|vector|viscosity|viscous|wall\\/body\\/polygon|wall\\/body\\/polyhedron|wall\\/colloid|wall\\/ees|wall\\/gran|wall\\/gran\\/region|wall\\/harmonic|wall\\/lj1043|wall\\/lj126|wall\\/lj93|wall\\/morse|wall\\/piston|wall\\/reflect|wall\\/region|wall\\/region\\/ees|wall\\/srd)(\\b\\/\\w+\\b\\s?|\\b\\s?)"
 			},{
 				"name": "constant.numeric.other.lmps",
-				"match": "\\b(NULL|EDGE|INF|&amp;)\\b"
+				"match": "\\b(NULL|EDGE|INF)\\b"
 			},{
 				"name": "constant.language.operator.lmps",
 				"match": "\\b(equal|add|sub|mult|div)\\b"
 			},{
 				"name": "constant.language.operator.lmps",
-				"match": "\\b([ceil|floor]\\()"
+				"match": "\\b(ceil|floor|round)\\b\\("
 			},{
 				"name": "variable.conditional.lmps",
 				"match": "\\b(if|then|elif|else)\\b"
