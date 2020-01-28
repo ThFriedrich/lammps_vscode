@@ -7,3 +7,6 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
 - Folding of sections possible between #[ and #] marks
 - Keyword list up to date with Lammps documentation
 - Recognizes .lmp, .lmps and .lammps file extensions
+
+## Version 1.1.0 28.01.2020
+ - Keyword support for LIGGGHTS scripts added
