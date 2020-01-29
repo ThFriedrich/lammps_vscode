@@ -9,4 +9,5 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
 - Recognizes .lmp, .lmps and .lammps file extensions
 
 ## Version 1.1.0 28.01.2020
- - Keyword support for LIGGGHTS scripts added
+ - Keyword support for LIGGGHTS(R)-PUBLIC scripts added
+ - Fixed wrong name for multiple-character variable pattern

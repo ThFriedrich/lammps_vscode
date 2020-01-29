@@ -118,7 +118,7 @@
             ]
         },
 		"vars_multi_char": {
-			"name": "entity.name.type.lmps",
+			"name": "variable.parameter.lmps",
 			"begin": "\\${",
 			"end": "}",
 			"patterns": [
