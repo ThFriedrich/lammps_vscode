@@ -1,0 +1,423 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>3.1. Build LAMMPS with CMake &mdash; LAMMPS documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="LAMMPS documentation" href="index.html"/>
+        <link rel="up" title="3. Build LAMMPS" href="Build.html"/>
+        <link rel="next" title="3.2. Build LAMMPS with make" href="Build_make.html"/>
+        <link rel="prev" title="3. Build LAMMPS" href="Build.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="Manual.html">
+        
+
+        
+          
+          <img src="_static/lammps-logo.png" class="logo" />
+        
+        </a>
+
+        <div class="lammps_version">Version: <b>19 Mar 2020</b></div>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Intro.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Install.html">2. Install LAMMPS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="Build.html">3. Build LAMMPS</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.1. Build LAMMPS with CMake</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Build_make.html">3.2. Build LAMMPS with make</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Build_link.html">3.3. Link LAMMPS as a library to another code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Build_basics.html">3.4. Basic build options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Build_settings.html">3.5. Optional build settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Build_package.html">3.6. Include packages in build</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Build_extras.html">3.7. Packages with extra build options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Build_windows.html">3.8. Notes for building LAMMPS on Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Build_development.html">3.9. Development build options (CMake only)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Run_head.html">4. Run LAMMPS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Commands.html">5. Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Packages.html">6. Optional packages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Speed.html">7. Accelerate performance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Howto.html">8. Howto discussions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Examples.html">9. Example scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Tools.html">10. Auxiliary tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Modify.html">11. Modify &amp; extend LAMMPS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Python_head.html">12. Use Python with LAMMPS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Errors.html">13. Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Manual_build.html">14. Building the LAMMPS manual</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="commands_list.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fixes.html">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="computes.html">Computes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pairs.html">Pair Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bonds.html">Bond Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="angles.html">Angle Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dihedrals.html">Dihedral Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="impropers.html">Improper Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fix_modify_atc_commands.html">fix_modify AtC commands</a></li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="Manual.html">LAMMPS</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="Manual.html">Docs</a> &raquo;</li>
+      
+          <li><a href="Build.html"><span class="section-number">3. </span>Build LAMMPS</a> &raquo;</li>
+      
+    <li><span class="section-number">3.1. </span>Build LAMMPS with CMake</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="http://lammps.sandia.gov">Website</a>
+            <a href="Commands_all.html">Commands</a>
+        
+      </li>
+  </ul>
+  <hr style="margin-top: 6px; margin-bottom: 6px;" width="100%"/>
+  
+    <div class="rst-footer-buttons" style="margin-bottom: 1em" role="navigation" aria-label="footer navigation">
+      
+        <a href="Build_make.html" class="btn btn-neutral float-right" title="3.2. Build LAMMPS with make" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Build.html" class="btn btn-neutral" title="3. Build LAMMPS" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="build-lammps-with-cmake">
+<h1><span class="section-number">3.1. </span>Build LAMMPS with CMake</h1>
+<p>This page is a short summary of how to use CMake to build LAMMPS.
+Details on CMake variables that enable specific LAMMPS build options
+are given on the pages linked to from the <a class="reference internal" href="Build.html"><span class="doc">Build</span></a> doc page.</p>
+<p>Richard Berger (Temple U) has also written a <a class="reference external" href="https://github.com/lammps/lammps/blob/master/cmake/README.md">more comprehensive guide</a>
+for how to use CMake to build LAMMPS.  If you are new to CMake it is a
+good place to start.</p>
+<hr class="docutils" />
+<p>Building LAMMPS with CMake is a two-step process.  First you use CMake
+to create a build environment in a new directory.  On Linux systems,
+this will be by default based on Unix-style makefiles for use with make.
+Then you use the <em>make</em> command to build LAMMPS, which uses the created
+Makefile(s). Example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> lammps                        <span class="c1"># change to the LAMMPS distribution directory</span>
+mkdir build<span class="p">;</span> <span class="nb">cd</span> build            <span class="c1"># create a new directory (folder) for build</span>
+cmake <span class="o">[</span>options ...<span class="o">]</span> ../cmake     <span class="c1"># configuration with (command-line) cmake</span>
+cmake --build .                  <span class="c1"># compilation (or type &quot;make&quot;)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">cmake</span></code> command will detect available features, enable selected
+packages and options, and will generate the build environment.  By default
+this build environment will be created for “Unix Makefiles” on most
+platforms and particularly on Linux.  However, alternate build tools
+(e.g. Ninja) and project files for Integrated Development Environments
+(IDEs) like Eclipse, CodeBlocks, or Kate can be generated, too. This is
+selected via the <code class="docutils literal notranslate"><span class="pre">-G</span></code> command line flag. Further details about features
+and settings for CMake are in the <a class="reference external" href="https://cmake.org/documentation/">CMake online documentation</a></p>
+<p>For the rest of the documentation
+we will assume that the build environment is generated for “Unix Makefiles”
+and thus the <code class="docutils literal notranslate"><span class="pre">make</span></code> command will be used to compile and link LAMMPS as
+indicated above, producing (by default) an executable called <code class="docutils literal notranslate"><span class="pre">lmp</span></code> and
+a library called <code class="docutils literal notranslate"><span class="pre">liblammps.a</span></code> in the <code class="docutils literal notranslate"><span class="pre">build</span></code> folder.</p>
+<p>If your machine has multiple CPU cores (most do these days), you can
+compile sources in parallel with a command like <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">-j</span> <span class="pre">N</span></code> (with N
+being the maximum number of concurrently executed tasks).  Also
+installation of the <code class="docutils literal notranslate"><span class="pre">ccache</span></code> (= Compiler Cache) software may speed
+up repeated compilation, e.g. during code development, significantly.</p>
+<p>After compilation, you may optionally install the LAMMPS executable into
+your system with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make install    <span class="c1"># optional, copy LAMMPS executable &amp; library elsewhere</span>
+</pre></div>
+</div>
+<p>This will install the lammps executable and library (if requested), some
+tools (if configured) and additional files like library API headers,
+manpages, potential and force field files. The location of the installation
+tree is set by the CMake variable “CMAKE_INSTALL_PREFIX” which defaults
+to ${HOME}/.local</p>
+<hr class="docutils" />
+<p id="cmake-build">There are 3 variants of the CMake command itself: a command-line version
+(<code class="docutils literal notranslate"><span class="pre">cmake</span></code> or <code class="docutils literal notranslate"><span class="pre">cmake3</span></code>), a text mode UI version (<code class="docutils literal notranslate"><span class="pre">ccmake</span></code> or <code class="docutils literal notranslate"><span class="pre">ccmake3</span></code>),
+and a graphical GUI version (<code class="docutils literal notranslate"><span class="pre">cmake-gui</span></code>).  You can use any of them
+interchangeably to configure and create the LAMMPS build environment.
+On Linux all the versions produce a Makefile as their output by default.
+See more details on each below.</p>
+<p>You can specify a variety of options with any of the 3 versions, which
+affect how the build is performed and what is included in the LAMMPS
+executable.  Links to pages explaining all the options are listed on
+the <a class="reference internal" href="Build.html"><span class="doc">Build</span></a> doc page.</p>
+<p>You must perform the CMake build system generation and compilation in
+a new directory you create.  It can be anywhere on your local machine.
+In these Build pages we assume that you are building in a directory
+called <code class="docutils literal notranslate"><span class="pre">lammps/build</span></code>.  You can perform separate builds independently
+with different options, so long as you perform each of them in a
+separate directory you create.  All the auxiliary files created by one
+build process (executable, object files, log files, etc) are stored in
+this directory or sub-directories within it that CMake creates.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To perform a CMake build, no packages can be installed or a build
+been previously attempted in the LAMMPS src directory by using <code class="docutils literal notranslate"><span class="pre">make</span></code>
+commands to <a class="reference internal" href="Build_make.html"><span class="doc">perform a conventional LAMMPS build</span></a>.
+CMake detects if this is the case and generates an error, telling you
+to type <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">no-all</span> <span class="pre">purge</span></code> in the src directory to un-install all
+packages.  The purge removes all the *.h files auto-generated by
+make.</p>
+</div>
+<p>You must have CMake version 3.10 or later on your system to build
+LAMMPS.  Installation instructions for CMake are below.</p>
+<p>After the initial build, if you edit LAMMPS source files, or add your
+own new files to the source directory, you can just re-type make from
+your build directory and it will re-compile only the files that have
+changed.  If you want to change CMake options you can run cmake (or
+ccmake or cmake-gui) again from the same build directory and alter
+various options; see details below.  Or you can remove the entire build
+folder, recreate the directory and start over.</p>
+<hr class="docutils" />
+<p><strong>Command-line version of CMake</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake  <span class="o">[</span>options ...<span class="o">]</span> /path/to/lammps/cmake  <span class="c1"># build from any dir</span>
+cmake  <span class="o">[</span>options ...<span class="o">]</span> ../cmake               <span class="c1"># build from lammps/build</span>
+cmake3 <span class="o">[</span>options ...<span class="o">]</span> ../cmake               <span class="c1"># build from lammps/build</span>
+</pre></div>
+</div>
+<p>The cmake command takes one required argument, which is the LAMMPS
+cmake directory which contains the CMakeLists.txt file.</p>
+<p>The argument can be prefixed or followed by various CMake
+command-line options.  Several useful ones are:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>-D <span class="nv">CMAKE_INSTALL_PREFIX</span><span class="o">=</span>path  <span class="c1"># where to install LAMMPS executable/lib if desired</span>
+-D <span class="nv">CMAKE_BUILD_TYPE</span><span class="o">=</span><span class="nb">type</span>      <span class="c1"># type = RelWithDebInfo (default), Release, MinSizeRel, or Debug</span>
+-G output                     <span class="c1"># style of output CMake generates (e.g. &quot;Unix Makefiles&quot; or &quot;Ninja&quot;)</span>
+-D <span class="nv">CMAKE_MAKE_PROGRAM</span><span class="o">=</span>builder <span class="c1"># name of the builder executable (e.g. when using &quot;gmake&quot; instead of &quot;make&quot;)</span>
+-DVARIABLE<span class="o">=</span>value              <span class="c1"># setting for a LAMMPS feature to enable</span>
+-D <span class="nv">VARIABLE</span><span class="o">=</span>value             <span class="c1"># ditto, but cannot come after CMakeLists.txt dir</span>
+-C path/to/preset/file        <span class="c1"># load some CMake settings before configuring</span>
+</pre></div>
+</div>
+<p>All the LAMMPS-specific -D variables that a LAMMPS build supports are
+described on the pages linked to from the <a class="reference internal" href="Build.html"><span class="doc">Build</span></a> doc page.
+All of these variable names are upper-case and their values are
+lower-case, e.g. -D LAMMPS_SIZES=smallbig.  For boolean values, any of
+these forms can be used: yes/no, on/off, 1/0.</p>
+<p>On Unix/Linux machines, CMake generates a Makefile by default to
+perform the LAMMPS build.  Alternate forms of build info can be
+generated via the -G switch, e.g. Visual Studio on a Windows machine,
+Xcode on MacOS, or KDevelop on Linux.  Type <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--help</span></code> to see the
+“Generator” styles of output your system supports.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When CMake runs, it prints configuration info to the screen.
+You should review this to verify all the features you requested were
+enabled, including packages.  You can also see what compilers and
+compile options will be used for the build.  Any errors in CMake
+variable syntax will also be flagged, e.g. mis-typed variable names or
+variable values.</p>
+</div>
+<p>CMake creates a CMakeCache.txt file when it runs.  This stores all the
+settings, so that when running CMake again you can use the current
+folder ‘.’ instead of the path to the LAMMPS cmake folder as the
+required argument to the CMake command. Either way the existing
+settings will be inherited unless the CMakeCache.txt file is removed.</p>
+<p>If you later want to change a setting you can rerun cmake in the build
+directory with different setting. Please note that some automatically
+detected variables will not change their value when you rerun cmake.
+In these cases it is usually better to first remove all the
+files/directories in the build directory, or start with a fresh build
+directory.</p>
+<hr class="docutils" />
+<p><strong>Curses version (terminal-style menu) of CMake</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ccmake ../cmake
+</pre></div>
+</div>
+<p>You initiate the configuration and build environment generation steps
+separately. For the first you have to type <strong>c</strong>, for the second you
+have to type <strong>g</strong>. You may need to type <strong>c</strong> multiple times, and may be
+required to edit some of the entries of CMake configuration variables
+in between.  Please see the <a class="reference external" href="https://cmake.org/cmake/help/latest/manual/ccmake.1.html">ccmake manual</a> for
+more information.</p>
+<hr class="docutils" />
+<p><strong>GUI version of CMake</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake-gui ../cmake
+</pre></div>
+</div>
+<p>You initiate the configuration and build environment generation steps
+separately. For the first you have to click on the <strong>Configure</strong> button,
+for the second you have to click on the <strong>Generate</strong> button.  You may
+need to click on <strong>Configure</strong> multiple times, and may be required to
+edit some of the entries of CMake configuration variables in between.
+Please see the <a class="reference external" href="https://cmake.org/cmake/help/latest/manual/cmake-gui.1.html">cmake-gui manual</a>
+for more information.</p>
+<hr class="docutils" />
+<p><strong>Installing CMake</strong></p>
+<p>Check if your machine already has CMake installed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>which cmake             <span class="c1"># do you have it?</span>
+which cmake3            <span class="c1"># version 3 may have this name</span>
+cmake --version         <span class="c1"># what specific version you have</span>
+</pre></div>
+</div>
+<p>On clusters or supercomputers which use environment modules to manage
+software packages, do this:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>module list            <span class="c1"># is a module for cmake already loaded?</span>
+module avail           <span class="c1"># is a module for cmake available?</span>
+module load cmake3     <span class="c1"># load cmake module with appropriate name</span>
+</pre></div>
+</div>
+<p>Most Linux distributions offer pre-compiled cmake packages through
+their package management system. If you do not have CMake or a new
+enough version, you can download the latest version at
+<a class="reference external" href="https://cmake.org/download/">https://cmake.org/download/</a>.
+Instructions on how to install it on various platforms can be found
+<a class="reference external" href="https://cmake.org/install/">on this page</a>.</p>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Build_make.html" class="btn btn-neutral float-right" title="3.2. Build LAMMPS with make" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Build.html" class="btn btn-neutral" title="3. Build LAMMPS" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr style="margin-top: 6px; margin-bottom: 6px;" width="100%"/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2003-2020 Sandia Corporation.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/language_data.js"></script>
+      <script type="text/javascript" src="_static/mathjax/es5/tex-mml-chtml.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

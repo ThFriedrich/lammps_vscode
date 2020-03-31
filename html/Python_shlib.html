@@ -1,0 +1,313 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>12.3. Build LAMMPS as a shared library &mdash; LAMMPS documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="LAMMPS documentation" href="index.html"/>
+        <link rel="up" title="12. Use Python with LAMMPS" href="Python_head.html"/>
+        <link rel="next" title="12.4. Installing LAMMPS in Python" href="Python_install.html"/>
+        <link rel="prev" title="12.2. Run LAMMPS from Python" href="Python_run.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="Manual.html">
+        
+
+        
+          
+          <img src="_static/lammps-logo.png" class="logo" />
+        
+        </a>
+
+        <div class="lammps_version">Version: <b>19 Mar 2020</b></div>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Intro.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Install.html">2. Install LAMMPS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Build.html">3. Build LAMMPS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Run_head.html">4. Run LAMMPS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Commands.html">5. Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Packages.html">6. Optional packages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Speed.html">7. Accelerate performance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Howto.html">8. Howto discussions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Examples.html">9. Example scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Tools.html">10. Auxiliary tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Modify.html">11. Modify &amp; extend LAMMPS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="Python_head.html">12. Use Python with LAMMPS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Python_overview.html">12.1. Overview of Python and LAMMPS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Python_run.html">12.2. Run LAMMPS from Python</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">12.3. Build LAMMPS as a shared library</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#build-lammps-as-a-shared-library-using-make">12.3.1. Build LAMMPS as a shared library using make</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-lammps-as-a-shared-library-using-cmake">12.3.2. Build LAMMPS as a shared library using CMake</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Python_install.html">12.4. Installing LAMMPS in Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Python_mpi.html">12.5. Extending Python to run in parallel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Python_test.html">12.6. Test the Python/LAMMPS interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Python_library.html">12.7. Python library interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Python_pylammps.html">12.8. PyLammps interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Python_examples.html">12.9. Example Python scripts that use LAMMPS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Python_call.html">12.10. Call Python from a LAMMPS input script</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Errors.html">13. Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Manual_build.html">14. Building the LAMMPS manual</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="commands_list.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fixes.html">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="computes.html">Computes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pairs.html">Pair Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bonds.html">Bond Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="angles.html">Angle Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dihedrals.html">Dihedral Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="impropers.html">Improper Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fix_modify_atc_commands.html">fix_modify AtC commands</a></li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="Manual.html">LAMMPS</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="Manual.html">Docs</a> &raquo;</li>
+      
+          <li><a href="Python_head.html"><span class="section-number">12. </span>Use Python with LAMMPS</a> &raquo;</li>
+      
+    <li><span class="section-number">12.3. </span>Build LAMMPS as a shared library</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="http://lammps.sandia.gov">Website</a>
+            <a href="Commands_all.html">Commands</a>
+        
+      </li>
+  </ul>
+  <hr style="margin-top: 6px; margin-bottom: 6px;" width="100%"/>
+  
+    <div class="rst-footer-buttons" style="margin-bottom: 1em" role="navigation" aria-label="footer navigation">
+      
+        <a href="Python_install.html" class="btn btn-neutral float-right" title="12.4. Installing LAMMPS in Python" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Python_run.html" class="btn btn-neutral" title="12.2. Run LAMMPS from Python" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="build-lammps-as-a-shared-library">
+<h1><span class="section-number">12.3. </span>Build LAMMPS as a shared library</h1>
+<div class="section" id="build-lammps-as-a-shared-library-using-make">
+<h2><span class="section-number">12.3.1. </span>Build LAMMPS as a shared library using make</h2>
+<p>Instructions on how to build LAMMPS as a shared library are given on
+the <a class="reference internal" href="Build_basics.html"><span class="doc">Build_basics</span></a> doc page.  A shared library is
+one that is dynamically loadable, which is what Python requires to
+wrap LAMMPS.  On Linux this is a library file that ends in “.so”, not
+“.a”.</p>
+<p>From the src directory, type</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make foo <span class="nv">mode</span><span class="o">=</span>shlib
+</pre></div>
+</div>
+<p>where foo is the machine target name, such as mpi or serial.
+This should create the file liblammps_foo.so in the src directory, as
+well as a soft link liblammps.so, which is what the Python wrapper will
+load by default.  Note that if you are building multiple machine
+versions of the shared library, the soft link is always set to the
+most recently built version.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you are building LAMMPS with an MPI or FFT library or other
+auxiliary libraries (used by various packages), then all of these
+extra libraries must also be shared libraries.  If the LAMMPS
+shared-library build fails with an error complaining about this, see
+the <a class="reference internal" href="Build_basics.html"><span class="doc">Build_basics</span></a> doc page.</p>
+</div>
+</div>
+<div class="section" id="build-lammps-as-a-shared-library-using-cmake">
+<h2><span class="section-number">12.3.2. </span>Build LAMMPS as a shared library using CMake</h2>
+<p>When using CMake the following two options are necessary to generate the LAMMPS
+shared library:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>-D <span class="nv">BUILD_LIB</span><span class="o">=</span>on            <span class="c1"># enable building LAMMPS as a library</span>
+-D <span class="nv">BUILD_SHARED_LIBS</span><span class="o">=</span>on    <span class="c1"># enable building of LAMMPS shared library (both options are needed!)</span>
+</pre></div>
+</div>
+<p>What this does is create a liblammps.so which contains the majority of LAMMPS
+code. The generated lmp binary also dynamically links to this library. This
+means that either this liblammps.so file has to be in the same directory, a system
+library path (e.g. /usr/lib64/) or in the LD_LIBRARY_PATH.</p>
+<p>If you want to use the shared library with Python the recommended way is to create a virtualenv and use it as
+CMAKE_INSTALL_PREFIX.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># create virtualenv</span>
+virtualenv --python<span class="o">=</span><span class="k">$(</span>which python3<span class="k">)</span> myenv3
+<span class="nb">source</span> myenv3/bin/activate
+
+<span class="c1"># build library</span>
+mkdir build
+<span class="nb">cd</span> build
+cmake -D <span class="nv">PKG_PYTHON</span><span class="o">=</span>on -D <span class="nv">BUILD_LIB</span><span class="o">=</span>on -D <span class="nv">BUILD_SHARED_LIBS</span><span class="o">=</span>on -D <span class="nv">CMAKE_INSTALL_PREFIX</span><span class="o">=</span><span class="nv">$VIRTUAL_ENV</span> ../cmake
+make -j <span class="m">4</span>
+
+<span class="c1"># install into prefix</span>
+make install
+</pre></div>
+</div>
+<p>This will also install the Python module into your virtualenv. Since virtualenv
+does not change your LD_LIBRARY_PATH, you still need to add its lib64 folder to
+it, which contains the installed liblammps.so.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span><span class="nv">$VIRTUAL_ENV</span>/lib64:<span class="nv">$LD_LIBRARY_PATH</span>
+</pre></div>
+</div>
+<p>Starting Python outside (!) of your build directory, but with the virtualenv
+enabled and with the LD_LIBRARY_PATH set gives you access to LAMMPS via Python.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Python_install.html" class="btn btn-neutral float-right" title="12.4. Installing LAMMPS in Python" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Python_run.html" class="btn btn-neutral" title="12.2. Run LAMMPS from Python" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr style="margin-top: 6px; margin-bottom: 6px;" width="100%"/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2003-2020 Sandia Corporation.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/language_data.js"></script>
+      <script type="text/javascript" src="_static/mathjax/es5/tex-mml-chtml.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

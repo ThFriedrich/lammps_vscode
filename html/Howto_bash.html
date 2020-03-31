@@ -1,0 +1,446 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>8.1.3. Using LAMMPS with Bash on Windows &mdash; LAMMPS documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="LAMMPS documentation" href="index.html"/>
+        <link rel="up" title="8. Howto discussions" href="Howto.html"/>
+        <link rel="next" title="8.2.1. Restart a simulation" href="Howto_restart.html"/>
+        <link rel="prev" title="8.1.2. PyLammps Tutorial" href="Howto_pylammps.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+
+        
+          <a href="Manual.html">
+        
+
+        
+          
+          <img src="_static/lammps-logo.png" class="logo" />
+        
+        </a>
+
+        <div class="lammps_version">Version: <b>19 Mar 2020</b></div>
+
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Intro.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Install.html">2. Install LAMMPS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Build.html">3. Build LAMMPS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Run_head.html">4. Run LAMMPS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Commands.html">5. Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Packages.html">6. Optional packages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Speed.html">7. Accelerate performance</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="Howto.html">8. Howto discussions</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="Howto.html#tutorials-howto">8.1. Tutorials howto</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Howto_github.html">8.1.1. LAMMPS GitHub tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Howto_pylammps.html">8.1.2. PyLammps Tutorial</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">8.1.3. Using LAMMPS with Bash on Windows</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#installing-bash-on-windows">Installing Bash on Windows</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#compiling-lammps-in-bash-on-windows">Compiling LAMMPS in Bash on Windows</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Howto.html#general-howto">8.2. General howto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Howto.html#settings-howto">8.3. Settings howto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Howto.html#analysis-howto">8.4. Analysis howto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Howto.html#force-fields-howto">8.5. Force fields howto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Howto.html#packages-howto">8.6. Packages howto</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Examples.html">9. Example scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Tools.html">10. Auxiliary tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Modify.html">11. Modify &amp; extend LAMMPS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Python_head.html">12. Use Python with LAMMPS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Errors.html">13. Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Manual_build.html">14. Building the LAMMPS manual</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Index</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="commands_list.html">Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fixes.html">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="computes.html">Computes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pairs.html">Pair Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bonds.html">Bond Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="angles.html">Angle Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dihedrals.html">Dihedral Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="impropers.html">Improper Styles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fix_modify_atc_commands.html">fix_modify AtC commands</a></li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="Manual.html">LAMMPS</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="Manual.html">Docs</a> &raquo;</li>
+      
+          <li><a href="Howto.html"><span class="section-number">8. </span>Howto discussions</a> &raquo;</li>
+      
+    <li><span class="section-number">8.1.3. </span>Using LAMMPS with Bash on Windows</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="http://lammps.sandia.gov">Website</a>
+            <a href="Commands_all.html">Commands</a>
+        
+      </li>
+  </ul>
+  <hr style="margin-top: 6px; margin-bottom: 6px;" width="100%"/>
+  
+    <div class="rst-footer-buttons" style="margin-bottom: 1em" role="navigation" aria-label="footer navigation">
+      
+        <a href="Howto_restart.html" class="btn btn-neutral float-right" title="8.2.1. Restart a simulation" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Howto_pylammps.html" class="btn btn-neutral" title="8.1.2. PyLammps Tutorial" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="using-lammps-with-bash-on-windows">
+<h1><span class="section-number">8.1.3. </span>Using LAMMPS with Bash on Windows</h1>
+<p><strong>written by Richard Berger</strong></p>
+<hr class="docutils" />
+<p>Starting with Windows 10 you can install Linux tools directly in Windows. This
+allows you to compile LAMMPS following the same procedure as on a real Ubuntu
+Linux installation. Software can be easily installed using the package manager
+via apt-get and all files are accessible in both the Windows Explorer and your
+Linux shell (bash). This avoids switching to a different operating system or
+installing a virtual machine. Everything runs on Windows.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>You can find more detailed information at the <a class="reference external" href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">Windows Subsystem for Linux Installation Guide for Windows 10</a>.</p>
+</div>
+<div class="section" id="installing-bash-on-windows">
+<h2>Installing Bash on Windows</h2>
+<div class="section" id="prerequisites">
+<h3>Prerequisites</h3>
+<ul class="simple">
+<li><p>Windows 10 (64bit only)</p></li>
+<li><p>Latest updates installed</p></li>
+</ul>
+</div>
+<div class="section" id="enable-developer-mode">
+<h3>Enable developer mode</h3>
+<p>You enable this feature by first opening Windows Settings and enabling
+Developer mode. Go to the Windows settings and search for “developer”. This
+will allow you to install software which comes from outside of the Windows
+Store.  You might be prompted to reboot your compute. Please do so.</p>
+<a class="reference external image-reference" href="JPG/bow_tutorial_01.png"><img alt="_images/bow_tutorial_01_small.png" src="_images/bow_tutorial_01_small.png" /></a>
+<a class="reference external image-reference" href="JPG/bow_tutorial_02.png"><img alt="_images/bow_tutorial_02_small.png" src="_images/bow_tutorial_02_small.png" /></a>
+<a class="reference external image-reference" href="JPG/bow_tutorial_03.png"><img alt="_images/bow_tutorial_03_small.png" src="_images/bow_tutorial_03_small.png" /></a>
+</div>
+<div class="section" id="install-windows-subsystem-for-linux">
+<h3>Install Windows Subsystem for Linux</h3>
+<p>Next you must ensure that the Window Subsystem for Linux is installed. Again,
+search for “enable windows features” in the Settings dialog. This opens a
+dialog with a list of features you can install. Add a checkmark to Windows
+Subsystem for Linux (Beta) and press OK.</p>
+<a class="reference external image-reference" href="JPG/bow_tutorial_04.png"><img alt="_images/bow_tutorial_04_small.png" src="_images/bow_tutorial_04_small.png" /></a>
+<a class="reference external image-reference" href="JPG/bow_tutorial_05.png"><img alt="_images/bow_tutorial_05.png" src="_images/bow_tutorial_05.png" /></a>
+</div>
+<div class="section" id="install-bash-for-windows">
+<h3>Install Bash for Windows</h3>
+<p>After installation completes, type “bash” in the Windows Start menu search.
+Select the first found option. This will launch a command-line window which
+will prompt you about installing Ubuntu on Windows. Confirm with “y” and press
+enter. This will then download Ubuntu for Windows.</p>
+<img alt="_images/bow_tutorial_06.png" src="_images/bow_tutorial_06.png" />
+<img alt="_images/bow_tutorial_07.png" src="_images/bow_tutorial_07.png" />
+<p>During installation, you will be asked for a new password. This will be used
+for installing new software and running commands with sudo.</p>
+<img alt="_images/bow_tutorial_08.png" src="_images/bow_tutorial_08.png" />
+<p>Type exit to close the command-line window.</p>
+<p>Go to the Start menu and type “bash” again. This time you will see a “Bash on
+Ubuntu on Windows” Icon. Start this program.</p>
+<img alt="_images/bow_tutorial_09.png" src="_images/bow_tutorial_09.png" />
+<p>Congratulations, you have installed <strong>Bash on Ubuntu on Windows</strong>.</p>
+<img alt="_images/bow_tutorial_10.png" src="_images/bow_tutorial_10.png" />
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="compiling-lammps-in-bash-on-windows">
+<h2>Compiling LAMMPS in Bash on Windows</h2>
+<p>The installation of LAMMPS in this environment is identical to working inside
+of a real Ubuntu Linux installation. At the time writing, it uses Ubuntu 16.04.</p>
+<div class="section" id="installing-prerequisite-packages">
+<h3>Installing prerequisite packages</h3>
+<p>First upgrade all existing packages using</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt update
+sudo apt upgrade -y
+</pre></div>
+</div>
+<p>Next install the following packages, which include compilers and libraries
+needed for various LAMMPS features:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt install -y build-essential ccache gfortran openmpi-bin libopenmpi-dev libfftw3-dev libjpeg-dev libpng-dev python-dev python-virtualenv libblas-dev liblapack-dev libhdf5-serial-dev hdf5-tools
+</pre></div>
+</div>
+</div>
+<div class="section" id="files-in-ubuntu-on-windows">
+<h3>Files in Ubuntu on Windows</h3>
+<p>When you launch “Bash on Ubuntu on Windows” you will start out in your Linux
+user home directory /home/[username]. You can access your Windows user directory
+using the /mnt/c/Users/[username] folder.</p>
+</div>
+<div class="section" id="download-lammps">
+<h3>Download LAMMPS</h3>
+<p>Obtain a copy of the LAMMPS code and go into it using “cd”</p>
+<div class="section" id="option-1-downloading-lammps-tarball-using-wget">
+<h4>Option 1: Downloading LAMMPS tarball using wget</h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget https://lammps.sandia.gov/tars/lammps-stable.tar.gz
+tar xvzf lammps-stable.tar.gz
+<span class="nb">cd</span> lammps-31Mar17
+</pre></div>
+</div>
+</div>
+<div class="section" id="option-2-obtaining-lammps-code-from-github">
+<h4>Option 2: Obtaining LAMMPS code from GitHub</h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/lammps/lammps.git
+<span class="nb">cd</span> lammps
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="compiling-lammps">
+<h3>Compiling LAMMPS</h3>
+<p>At this point you can compile LAMMPS like on Ubuntu Linux.</p>
+<div class="section" id="compiling-serial-version">
+<h4>Compiling serial version</h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> src/
+make -j <span class="m">4</span> serial
+</pre></div>
+</div>
+<p>This will create an executable called lmp_serial in the src/ directory</p>
+</div>
+<div class="section" id="compiling-mpi-version">
+<h4>Compiling MPI version</h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> src/
+make -j <span class="m">4</span> mpi
+</pre></div>
+</div>
+<p>This will create an executable called lmp_mpi in the src/ directory</p>
+<hr class="docutils" />
+<p>Finally, please note the absolute path of your src folder. You can get this using</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">pwd</span>
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span> <span class="nv">$PWD</span>
+</pre></div>
+</div>
+<p>To run any examples you need the location of the executable. For now, let us
+save this location in a temporary variable</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">LAMMPS_DIR</span><span class="o">=</span><span class="nv">$PWD</span>
+</pre></div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="running-an-example-script">
+<h3>Running an example script</h3>
+<p>Once compiled you can execute some of the LAMMPS examples. Switch into the
+examples/melt folder</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> ../examples/melt
+</pre></div>
+</div>
+<p>The full path of the serial executable is $LAMMPS_DIR/lmp_serial, while the mpi
+version is $LAMMPS_DIR/lmp_mpi. You can run the melt example with either
+version as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">$LAMMPS_DIR</span>/lmp_serial -in in.melt
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun -np <span class="m">4</span> <span class="nv">$LAMMPS_DIR</span>/lmp_mpi -in in.melt
+</pre></div>
+</div>
+<p>Note the use of our variable $LAMMPS_DIR, which expands into the full path of
+the LAMMPS src folder we saved earlier.</p>
+<div class="section" id="adding-your-executable-directory-to-your-path">
+<h4>Adding your executable directory to your PATH</h4>
+<p>You can avoid having to type the full path of your LAMMPS binary by adding its
+parent folder to the PATH environment variable as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="nv">$LAMMPS_DIR</span>:<span class="nv">$PATH</span>
+</pre></div>
+</div>
+<p>Input scripts can then be run like this:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lmp_serial -in in.melt
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun -np <span class="m">4</span> lmp_mpi -in in.melt
+</pre></div>
+</div>
+<p>However, this PATH variable will not persist if you close your bash window.
+To persist this setting edit the $HOME/.bashrc file using your favorite editor
+and add this line</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span>/full/path/to/your/lammps/src:<span class="nv">$PATH</span>
+</pre></div>
+</div>
+<p><strong>Example:</strong></p>
+<p>For an executable lmp_serial with a full path</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/home/richard/lammps/src/lmp_serial
+</pre></div>
+</div>
+<p>the PATH variable should be</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span>/home/richard/lammps/src:<span class="nv">$PATH</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This should give you a jump start when trying to run LAMMPS on Windows.
+To become effective in this environment I encourage you to look into Linux
+tutorials explaining Bash and Basic Unix commands (e.g., <a class="reference external" href="https://linuxjourney.com">Linux Journey</a>)</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Howto_restart.html" class="btn btn-neutral float-right" title="8.2.1. Restart a simulation" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Howto_pylammps.html" class="btn btn-neutral" title="8.1.2. PyLammps Tutorial" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr style="margin-top: 6px; margin-bottom: 6px;" width="100%"/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2003-2020 Sandia Corporation.
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/language_data.js"></script>
+      <script type="text/javascript" src="_static/mathjax/es5/tex-mml-chtml.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
