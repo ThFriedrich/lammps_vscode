@@ -1,1 +1,10 @@
+out
 node_modules
+.vscode-test/
+*.vsix
+*.lmp
+*.lmps
+*.txt
+.vscode
+.vscodeignore
+.eslintrc.json

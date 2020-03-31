@@ -42,8 +42,8 @@
     ],
     "commands": [
       {
-        "command": "extension.msg",
-        "title": "Lammps_MSG"
+        "command": "extension.show_docs",
+        "title": "Open Lammps Documentation"
       }
     ]
   },
