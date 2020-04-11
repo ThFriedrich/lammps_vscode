@@ -5,7 +5,16 @@ from bs4 import BeautifulSoup
 
 def modify_string(string):
     subs = '\n'.join(string.split('\n')[2:])
-    return subs.replace("\n","\n  ") 
+    return subs.rstrip()
+
+def split_syntax(string):
+    syn_sp = string.split('\n')
+    syn = syn_sp[2]
+    syn_prms = list(filter(None, syn_sp[3:]))
+    syn_prms = '\n * '.join(syn_prms)
+    syn_prms = ' * ' + syn_prms.rstrip()
+    return syn, syn_prms
+
 
 def check_link(link):
     b1 = contains(str(link.contents[0]), "command")
@@ -37,7 +46,7 @@ def scrape_docs(html_path):
                             # Check all sections in the command documentation page
                             for sec in txt_c.findAll("div", {"class": "section"}):
                                 if sec.attrs['id'] == 'syntax':
-                                    syntax = modify_string(sec.text)
+                                    syntax, parameters = split_syntax(sec.text)
                                 elif sec.attrs['id'] == 'examples':
                                     examples = modify_string(sec.text)
                                 elif sec.attrs['id'] == 'description':
@@ -49,6 +58,7 @@ def scrape_docs(html_path):
                                     json.dump({ 'command': c, 
                                                 'description': description, 
                                                 'syntax': syntax, 
+                                                'parameters': parameters, 
                                                 'examples': examples, 
                                                 'restrictions': restrictions}, 
                                                 f, ensure_ascii=False, indent=4)
