@@ -5,11 +5,10 @@ import * as documentation from "./get_doc";
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { WSASERVICE_NOT_FOUND } from "constants";
 
 vscode.languages.registerHoverProvider("lmps", {
 	provideHover(document, position) {
-		const range = document.getWordRangeAtPosition(position,RegExp('\\w+( ?(\\w+)(\\/\\w+)*)?'))
+		const range = document.getWordRangeAtPosition(position, RegExp('\\w+( ?(\\w+)(\\/\\w+)*)?'))
 		const word = document.getText(range)
 		return createHover(word)
 	}
@@ -29,6 +28,7 @@ function createHover(snippet: string) {
 		docs = get_documentation(sub_com[0])
 	}
 	if (docs?.command) {
+		// Constructing the Markdown String to show in the Hover window
 		const content = new vscode.MarkdownString()
 		content.appendMarkdown("# "+docs?.command+" \n" + "--- " +" \n")
 
