@@ -8,7 +8,7 @@ const path = require("path");
 const fs = require("fs");
 vscode.languages.registerHoverProvider("lmps", {
     provideHover(document, position) {
-        const range = document.getWordRangeAtPosition(position);
+        const range = document.getWordRangeAtPosition(position, RegExp('\\w+( ?(\\w+)(\\/\\w+)*)?'));
         const word = document.getText(range);
         return createHover(word);
     }
@@ -17,13 +17,36 @@ function get_documentation(snippet) {
     return documentation.get_doc(snippet);
 }
 function createHover(snippet) {
-    const docs = get_documentation(snippet);
-    const content = new vscode.MarkdownString("# " + (docs === null || docs === void 0 ? void 0 : docs.command) + " \n\n" +
-        "--- " + " \n\n" +
-        "## Syntax: \n " + (docs === null || docs === void 0 ? void 0 : docs.syntax) + " \n\n" +
-        "## Description: \n" + (docs === null || docs === void 0 ? void 0 : docs.description) + "\n\n" +
-        "## Examples:  \n" + (docs === null || docs === void 0 ? void 0 : docs.examples), true);
-    return new vscode.Hover(content);
+    var docs = get_documentation(snippet);
+    // If command is not found, see if the first string is a command. 
+    // This is necessary, because the range selector returns multiple words. This can be a command like:
+    // "fix evaporate" or a keyword-value combination like "variable x" 
+    if (!(docs === null || docs === void 0 ? void 0 : docs.command)) {
+        const sub_com = snippet.split(" ");
+        docs = get_documentation(sub_com[0]);
+    }
+    if (docs === null || docs === void 0 ? void 0 : docs.command) {
+        const content = new vscode.MarkdownString();
+        content.appendMarkdown("# " + (docs === null || docs === void 0 ? void 0 : docs.command) + " \n" + "--- " + " \n");
+        if (docs === null || docs === void 0 ? void 0 : docs.syntax) {
+            content.appendMarkdown("## Syntax: \n");
+            content.appendCodeblock(docs === null || docs === void 0 ? void 0 : docs.syntax, "lmps");
+            content.appendMarkdown((docs === null || docs === void 0 ? void 0 : docs.parameters) + "\n\n");
+        }
+        if (docs === null || docs === void 0 ? void 0 : docs.examples) {
+            content.appendMarkdown("## Examples: \n");
+            content.appendCodeblock(docs === null || docs === void 0 ? void 0 : docs.examples, "lmps");
+        }
+        if (docs === null || docs === void 0 ? void 0 : docs.description) {
+            content.appendMarkdown("## Description: \n");
+            content.appendText((docs === null || docs === void 0 ? void 0 : docs.description) + "\n");
+        }
+        if (docs === null || docs === void 0 ? void 0 : docs.restrictions) {
+            content.appendMarkdown("## Restrictions: \n");
+            content.appendText(docs === null || docs === void 0 ? void 0 : docs.restrictions);
+        }
+        return new vscode.Hover(content);
+    }
 }
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed

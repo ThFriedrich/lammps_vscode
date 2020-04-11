@@ -5,28 +5,54 @@ import * as documentation from "./get_doc";
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { WSASERVICE_NOT_FOUND } from "constants";
 
 vscode.languages.registerHoverProvider("lmps", {
 	provideHover(document, position) {
-		const range = document.getWordRangeAtPosition(position)
+		const range = document.getWordRangeAtPosition(position,RegExp('\\w+( ?(\\w+)(\\/\\w+)*)?'))
 		const word = document.getText(range)
 		return createHover(word)
 	}
 })
-  
+
 function get_documentation(snippet: string){
 	return documentation.get_doc(snippet);
 }
 
 function createHover(snippet: string) {
-	const docs = get_documentation(snippet)
-	const content = new vscode.MarkdownString(
-		"# "+docs?.command+" \n\n" + 
-		"--- " +" \n\n" +
-		"## Syntax: \n " + docs?.syntax + " \n\n" + 
-		"## Description: \n" + docs?.description + "\n\n" + 
-		"## Examples:  \n" + docs?.examples, true)
-	return new vscode.Hover(content)
+	var docs = get_documentation(snippet)
+	// If command is not found, see if the first string is a command. 
+	// This is necessary, because the range selector returns multiple words. This can be a command like:
+	// "fix evaporate" or a keyword-value combination like "variable x" 
+	if (!docs?.command) {
+		const sub_com = snippet.split(" "); 
+		docs = get_documentation(sub_com[0])
+	}
+	if (docs?.command) {
+		const content = new vscode.MarkdownString()
+		content.appendMarkdown("# "+docs?.command+" \n" + "--- " +" \n")
+
+		if (docs?.syntax) {
+			content.appendMarkdown("## Syntax: \n")
+			content.appendCodeblock(docs?.syntax,"lmps")
+			content.appendMarkdown(docs?.parameters + "\n\n")
+		}
+		if (docs?.examples) {
+			content.appendMarkdown("## Examples: \n")
+			content.appendCodeblock(docs?.examples,"lmps")
+		}
+		if (docs?.description) {
+			content.appendMarkdown("## Description: \n")
+			content.appendText(docs?.description + "\n")
+		}
+		if (docs?.restrictions) {
+			content.appendMarkdown("## Restrictions: \n")
+			content.appendText(docs?.restrictions)
+		}
+		
+			return new vscode.Hover(content)
+	}
+	
 }
 
 // this method is called when your extension is activated
