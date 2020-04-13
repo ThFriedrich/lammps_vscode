@@ -4,13 +4,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const documentation = require("./get_doc");
 const vscode = require("vscode");
-const path = require("path");
-const fs = require("fs");
 vscode.languages.registerHoverProvider("lmps", {
     provideHover(document, position) {
         const range = document.getWordRangeAtPosition(position, RegExp('\\w+( ?(\\w+)(\\/\\w+)*)?'));
         const word = document.getText(range);
         return createHover(word);
+    }
+});
+vscode.languages.registerCompletionItemProvider("lmps", {
+    provideCompletionItems(document, position, token, context) {
+        return documentation.get_completion_list();
     }
 });
 function get_documentation(snippet) {
@@ -26,6 +29,7 @@ function createHover(snippet) {
         docs = get_documentation(sub_com[0]);
     }
     if (docs === null || docs === void 0 ? void 0 : docs.command) {
+        // Constructing the Markdown String to show in the Hover window
         const content = new vscode.MarkdownString();
         content.appendMarkdown("# " + (docs === null || docs === void 0 ? void 0 : docs.command) + " \n" + "--- " + " \n");
         if (docs === null || docs === void 0 ? void 0 : docs.syntax) {
@@ -52,11 +56,19 @@ function createHover(snippet) {
 // your extension is activated the very first time the command is executed
 function activate(context) {
     let disposable = vscode.commands.registerCommand('extension.show_docs', () => {
-        const panel = vscode.window.createWebviewPanel('docs', 'Lammps Documentation', vscode.ViewColumn.Two, {
-            localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'src', 'html'))],
-        });
-        const PathOnDisk = path.join(context.extensionPath, 'html', 'Manual.html');
-        panel.webview.html = fs.readFileSync(PathOnDisk).toString();
+        const web_uri = vscode.Uri.parse("https://lammps.sandia.gov/doc/Manual.html");
+        vscode.env.openExternal(web_uri);
+        // const doc_uri = vscode.Uri.parse(path.join(context.extensionPath, 'src','html','Manual.html'))
+        // 	const panel = vscode.window.createWebviewPanel(
+        // 		'docs',
+        // 		'Lammps Documentation',
+        // 		vscode.ViewColumn.Two,
+        // 		{
+        // 		  localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'src','html'))],
+        // 		}
+        // 	  );
+        // 	const PathOnDisk = path.join(context.extensionPath, 'html', 'Manual.html');
+        // 	panel.webview.html = fs.readFileSync(PathOnDisk).toString();
     });
     context.subscriptions.push(disposable);
 }

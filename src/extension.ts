@@ -12,7 +12,13 @@ vscode.languages.registerHoverProvider("lmps", {
 		const word = document.getText(range)
 		return createHover(word)
 	}
-})
+});
+
+vscode.languages.registerCompletionItemProvider("lmps", {
+	provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext) {
+		return documentation.get_completion_list()
+	}
+});
 
 function get_documentation(snippet: string){
 	return documentation.get_doc(snippet);
@@ -50,9 +56,8 @@ function createHover(snippet: string) {
 			content.appendText(docs?.restrictions)
 		}
 		
-			return new vscode.Hover(content)
+		return new vscode.Hover(content)
 	}
-	
 }
 
 // this method is called when your extension is activated
@@ -60,17 +65,22 @@ function createHover(snippet: string) {
 export function activate(context: vscode.ExtensionContext) {
 
 	let disposable = vscode.commands.registerCommand('extension.show_docs', () => {
-		const panel = vscode.window.createWebviewPanel(
-			'docs',
-			'Lammps Documentation',
-			vscode.ViewColumn.Two,
-			{
-			  localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'src','html'))],
-			}
-		  );
 		
-		const PathOnDisk = path.join(context.extensionPath, 'html', 'Manual.html');
-		panel.webview.html = fs.readFileSync(PathOnDisk).toString();
+		const web_uri = vscode.Uri.parse("https://lammps.sandia.gov/doc/Manual.html")
+		vscode.env.openExternal(web_uri)
+
+	// const doc_uri = vscode.Uri.parse(path.join(context.extensionPath, 'src','html','Manual.html'))
+	// 	const panel = vscode.window.createWebviewPanel(
+	// 		'docs',
+	// 		'Lammps Documentation',
+	// 		vscode.ViewColumn.Two,
+	// 		{
+	// 		  localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'src','html'))],
+	// 		}
+	// 	  );
+		
+	// 	const PathOnDisk = path.join(context.extensionPath, 'html', 'Manual.html');
+	// 	panel.webview.html = fs.readFileSync(PathOnDisk).toString();
 	});
 	context.subscriptions.push(disposable);
 }
