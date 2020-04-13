@@ -8,7 +8,7 @@ import * as fs from 'fs';
 
 vscode.languages.registerHoverProvider("lmps", {
 	provideHover(document, position) {
-		const range = document.getWordRangeAtPosition(position, RegExp('\\w+(?:[\\t\\s]+[^\#\\s\\t]+){1,}'))
+		const range = document.getWordRangeAtPosition(position, RegExp('\\w+(?:[\\t\\s]+[^\#\\s\\t]+)*'))
 		const words = document.getText(range).split(" ")
 		return createHover(words[0] + ' ' + words[words.length - 1])
 	}
