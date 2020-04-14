@@ -15,6 +15,9 @@ def split_syntax(string):
     syn_prms = ' * ' + syn_prms.rstrip()
     return syn, syn_prms
 
+def split_description(string):
+    des_sp = string.split('.')
+    return des_sp[0].replace('\n',' ')
 
 def check_link(link):
     b1 = contains(str(link.contents[0]), "command")
@@ -30,7 +33,7 @@ def fix_sub_urls(url):
 def scrape_docs(html_path):
     com_dumped = list() # List to check for duplicate links
     html_files = os.listdir(html_path)
-    with open('lmp_doc.ts', 'w', encoding='utf-8') as f:
+    with open('./src/lmp_doc.ts', 'w', encoding='utf-8') as f:
         f.write("export const command_docs = [\n")
         for fx in html_files:
             url = html_path+'/'+fx
@@ -51,11 +54,13 @@ def scrape_docs(html_path):
                                     examples = modify_string(sec.text)
                                 elif sec.attrs['id'] == 'description':
                                     description = modify_string(sec.text)
+                                    short_description = split_description(description)
                                 elif sec.attrs['id'] == 'restrictions':
                                     restrictions = modify_string(sec.text)
                                     c = ' '.join(link.contents[0].split()[:-1])
                                     print(c)
                                     json.dump({ 'command': c, 
+                                                'short_description': short_description, 
                                                 'description': description, 
                                                 'syntax': syntax, 
                                                 'parameters': parameters, 
@@ -65,7 +70,7 @@ def scrape_docs(html_path):
                                     f.write(",\n")
         f.write("];\n")
 
-html_path = '../html'
+html_path = './html'
 scrape_docs(html_path)
 
 
