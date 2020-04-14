@@ -15,7 +15,7 @@ vscode.languages.registerHoverProvider("lmps", {
 vscode.languages.registerCompletionItemProvider("lmps", {
 	provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext) {
 		const auto_conf = vscode.workspace.getConfiguration('lammps.AutoComplete')
-		return documentation.get_completion_list(auto_conf.CompletionString)
+		return documentation.get_completion_list(auto_conf.CompletionString, auto_conf.Hint)
 	}
 });
 

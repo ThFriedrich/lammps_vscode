@@ -14,7 +14,7 @@ vscode.languages.registerHoverProvider("lmps", {
 vscode.languages.registerCompletionItemProvider("lmps", {
     provideCompletionItems(document, position, token, context) {
         const auto_conf = vscode.workspace.getConfiguration('lammps.AutoComplete');
-        return documentation.get_completion_list(auto_conf.CompletionString);
+        return documentation.get_completion_list(auto_conf.CompletionString, auto_conf.Hint);
     }
 });
 function get_documentation(snippet) {
@@ -24,6 +24,7 @@ function get_documentation(snippet) {
         return docs;
     }
     else {
+        // Captures all the AtC commands, like "fix_modify AtC output"
         docs = documentation.get_doc(sub_com[0] + ' AtC ' + sub_com[2]);
         if (docs === null || docs === void 0 ? void 0 : docs.command) {
             return docs;

@@ -52,6 +52,7 @@
       "properties": {
         "lammps.Hover.Detail": {
           "type": "string",
+          "description": "Control the length of the displayed description in the hover popup.",
           "default": "Short",
           "enum": ["Short", "Complete"],
           "enumDescriptions": [
@@ -62,16 +63,22 @@
         "lammps.Hover.Examples": {
           "type": "boolean",
           "default": "true",
-          "description": "Display examples in the hover popup."
+          "description": "Display command examples in the hover popup."
         },
         "lammps.Hover.Restrictions": {
           "type": "boolean",
           "default": "false",
-          "description": "Display restrictions in the hover popup."
+          "description": "Display command restrictions in the hover popup."
+        },
+        "lammps.AutoComplete.Hint": {
+          "type": "boolean",
+          "default": "false",
+          "markdownDescription": "Display a little syntax reminder inline with the selected command in the autocompletion box. This may be useful if you prefer a minimalistic autocompletion popup. \n [See an example...](https://user-images.githubusercontent.com/45487966/79160252-c386fb80-7dd9-11ea-8c26-8daac5acae60.png)"
         },
         "lammps.AutoComplete.CompletionString": {
           "type": "string",
           "default": "Command",
+          "description": "Control the autocompletion behaviour",
           "enum": ["Command", "Syntax"],
           "enumDescriptions": [
             "Auto Complete inserts only the command words",
