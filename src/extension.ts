@@ -27,24 +27,30 @@ function get_documentation(snippet: string) {
 	if (docs?.command) {
 		return docs
 	} else {
-		// Captures all the AtC commands, like "fix_modify AtC output"
-		docs = documentation.get_doc(sub_com[0] + ' AtC ' + sub_com[2])
+		// Captures all the AtC commands, like "fix_modify AtC output" and "fix_modify AtC control localized_lambda"
+		docs = documentation.get_doc(sub_com[0] + ' AtC ' + sub_com[2] + ' ' + sub_com[3])
 		if (docs?.command) {
 			return docs
 		} else {
-			docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[2])
+			// Captures all the AtC commands, like "fix_modify AtC output"
+			docs = documentation.get_doc(sub_com[0] + ' AtC ' + sub_com[2])
 			if (docs?.command) {
 				return docs
 			} else {
-				docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[1])
+				docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[2])
 				if (docs?.command) {
 					return docs
 				} else {
-					docs = documentation.get_doc(sub_com[0])
+					docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[1])
 					if (docs?.command) {
 						return docs
+					} else {
+						docs = documentation.get_doc(sub_com[0])
+						if (docs?.command) {
+							return docs
+						}
+						else { return undefined }
 					}
-					else { return undefined }
 				}
 			}
 		}

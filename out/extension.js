@@ -25,27 +25,34 @@ function get_documentation(snippet) {
     }
     else {
         // Captures all the AtC commands, like "fix_modify AtC output"
-        docs = documentation.get_doc(sub_com[0] + ' AtC ' + sub_com[2]);
+        docs = documentation.get_doc(sub_com[0] + ' AtC ' + sub_com[2] + ' ' + sub_com[3]);
         if (docs === null || docs === void 0 ? void 0 : docs.command) {
             return docs;
         }
         else {
-            docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[2]);
+            // Captures all the AtC commands, like "fix_modify AtC output"
+            docs = documentation.get_doc(sub_com[0] + ' AtC ' + sub_com[2]);
             if (docs === null || docs === void 0 ? void 0 : docs.command) {
                 return docs;
             }
             else {
-                docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[1]);
+                docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[2]);
                 if (docs === null || docs === void 0 ? void 0 : docs.command) {
                     return docs;
                 }
                 else {
-                    docs = documentation.get_doc(sub_com[0]);
+                    docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[1]);
                     if (docs === null || docs === void 0 ? void 0 : docs.command) {
                         return docs;
                     }
                     else {
-                        return undefined;
+                        docs = documentation.get_doc(sub_com[0]);
+                        if (docs === null || docs === void 0 ? void 0 : docs.command) {
+                            return docs;
+                        }
+                        else {
+                            return undefined;
+                        }
                     }
                 }
             }
