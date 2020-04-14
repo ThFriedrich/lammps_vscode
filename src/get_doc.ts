@@ -5,7 +5,7 @@ export function get_doc(find_command: string) {
     return command_docs.find(e => e.command === find_command);
 }
 
-export function get_completion_list() {
+export function get_completion_list(CompletionString: string) {
 
     const completion_List = new CompletionList();
 
@@ -16,6 +16,10 @@ export function get_completion_list() {
         compl_it.documentation.appendMarkdown(c.parameters)
         compl_it.documentation.appendMarkdown(" \n" + "--- " +" \n")
         compl_it.documentation.appendText(c.description)
+        compl_it.detail = c.syntax
+        if (CompletionString == 'Syntax') {
+            compl_it.insertText = c.syntax
+        }
         completion_List.items.push(compl_it)
     }
     return completion_List
