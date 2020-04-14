@@ -1,4 +1,5 @@
 node_modules
+html
 .vscode-test/
 *.vsix
 *.lmp
