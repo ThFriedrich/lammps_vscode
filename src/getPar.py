@@ -60,6 +60,7 @@ def scrape_docs(html_path):
                                     c = ' '.join(link.contents[0].split()[:-1])
                                     print(c)
                                     json.dump({ 'command': c, 
+                                                'html_filename': url_c.split('/')[-1],
                                                 'short_description': short_description, 
                                                 'description': description, 
                                                 'syntax': syntax, 

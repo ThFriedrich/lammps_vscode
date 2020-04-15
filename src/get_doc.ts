@@ -18,6 +18,7 @@ export function get_completion_list(CompletionString: string, detail: boolean) {
         else {
             compl_it.documentation.appendCodeblock(c.syntax, 'lmps')
         }
+        compl_it.documentation.appendMarkdown("[Open documentation](https://lammps.sandia.gov/doc/" + c.html_filename+")\n")
         compl_it.documentation.appendMarkdown(c.parameters)
         compl_it.documentation.appendMarkdown(" \n" + "--- " +" \n")
         compl_it.documentation.appendText(c.short_description)

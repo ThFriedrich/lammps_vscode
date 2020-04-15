@@ -66,7 +66,7 @@ function createHover(snippet: string) {
 		// Constructing the Markdown String to show in the Hover window
 		const content = new vscode.MarkdownString()
 		if (docs?.short_description) {
-			content.appendText(docs?.short_description + "\n")
+			content.appendMarkdown(docs?.short_description + ". [Read more... ](https://lammps.sandia.gov/doc/" + docs?.html_filename +")\n")
 			content.appendMarkdown("\n --- \n")
 		}
 		if (docs?.syntax) {
