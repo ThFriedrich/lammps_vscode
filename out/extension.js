@@ -24,7 +24,7 @@ function get_documentation(snippet) {
         return docs;
     }
     else {
-        // Captures all the AtC commands, like "fix_modify AtC output"
+        // Captures all the AtC commands, like "fix_modify AtC output" and "fix_modify AtC control localized_lambda"
         docs = documentation.get_doc(sub_com[0] + ' AtC ' + sub_com[2] + ' ' + sub_com[3]);
         if (docs === null || docs === void 0 ? void 0 : docs.command) {
             return docs;
@@ -66,7 +66,7 @@ function createHover(snippet) {
         // Constructing the Markdown String to show in the Hover window
         const content = new vscode.MarkdownString();
         if (docs === null || docs === void 0 ? void 0 : docs.short_description) {
-            content.appendText((docs === null || docs === void 0 ? void 0 : docs.short_description) + "\n");
+            content.appendMarkdown((docs === null || docs === void 0 ? void 0 : docs.short_description) + ". [Read more... ](https://lammps.sandia.gov/doc/" + (docs === null || docs === void 0 ? void 0 : docs.html_filename) + ")\n");
             content.appendMarkdown("\n --- \n");
         }
         if (docs === null || docs === void 0 ? void 0 : docs.syntax) {

@@ -9,7 +9,7 @@
   },
   "bugs": "https://github.com/ThFriedrich/lammps_vscode/issues",
   "engines": {
-    "vscode": "^1.39.0"
+    "vscode": "^1.43.0"
   },
   "categories": [
     "Programming Languages"
