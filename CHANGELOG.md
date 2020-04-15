@@ -9,5 +9,14 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
 - Recognizes .lmp, .lmps and .lammps file extensions
 
 ## Version 1.1.0 28.01.2020
- - Keyword support for LIGGGHTS(R)-PUBLIC scripts added
+ - Keyword support for LIGGGHTS(R)-PUBLIC scripts added as suggested in [Issue #1](https://github.com/ThFriedrich/lammps_vscode/issues/1)
  - Fixed wrong name for multiple-character variable pattern
+
+## Version 1.2.0 15.04.2020
+ - Keyword group `fix_modify` added
+ - Simplified/fixed regex for keyword capturing
+ - Implemented Hover feature 
+ - Implemented Autocompletion feature
+ - Added Command "Open Lammps Documentation" and documentation links
+ - Added configurations in Settings
+ - Refer to [Issue #2](https://github.com/ThFriedrich/lammps_vscode/issues/2) for details
