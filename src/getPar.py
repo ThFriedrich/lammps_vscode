@@ -12,7 +12,8 @@ def split_syntax(string):
     syn = syn_sp[2]
     syn_prms = list(filter(None, syn_sp[3:]))
     syn_prms = '\n * '.join(syn_prms)
-    syn_prms = ' * ' + syn_prms.rstrip()
+    if syn_prms:
+        syn_prms = ' * ' + syn_prms.rstrip()
     return syn, syn_prms
 
 def split_description(string):
