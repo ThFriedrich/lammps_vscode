@@ -2,7 +2,7 @@
   "name": "lammps",
   "displayName": "Lammps Syntax Highlighting",
   "description": "Keyword/Syntax highlighting extension for Molecular Dynamics Software LAMMPS",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "publisher": "ThFriedrich",
   "repository": {
     "url": "https://github.com/ThFriedrich/lammps_vscode"
@@ -34,10 +34,16 @@
         "configuration": "./language-configuration.json"
       }
     ],
+    "snippets": [
+      {
+        "language": "lmps",
+        "path": "./snippets/lmps.json"
+      }
+    ],
     "grammars": [
       {
         "language": "lmps",
-        "scopeName": "source.lammps",
+        "scopeName": "source.lmps",
         "path": "./syntaxes/lmps.tmLanguage.json"
       }
     ],
