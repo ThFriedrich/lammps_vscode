@@ -20,3 +20,12 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
  - Added Command "Open Lammps Documentation" and documentation links
  - Added configurations in Settings
  - Refer to [Issue #2](https://github.com/ThFriedrich/lammps_vscode/issues/2) for details
+
+ ## Version 1.2.2 17.04.2020
+  - Grammar 
+    - support for arithmetic functions, immediate variables and operators
+    - recognition of line continuation
+    - strings escape paramters
+    - several bug fixes
+ - Snippets functionality with few examples added as shown in [Issue #9](https://github.com/ThFriedrich/lammps_vscode/issues/9)
+
