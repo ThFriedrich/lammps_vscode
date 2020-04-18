@@ -2,7 +2,7 @@
   "name": "lammps",
   "displayName": "Lammps Syntax Highlighting",
   "description": "Keyword/Syntax highlighting extension for Molecular Dynamics Software LAMMPS",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "publisher": "ThFriedrich",
   "repository": {
     "url": "https://github.com/ThFriedrich/lammps_vscode"
@@ -66,6 +66,11 @@
             "Hover shows the full description of the command"
           ]
         },
+        "lammps.Hover.Enabled": {
+          "type": "boolean",
+          "default": "true",
+          "description": "Display command information in a popup when hovering the mouse over a recognised command or syntax."
+        },
         "lammps.Hover.Examples": {
           "type": "boolean",
           "default": "true",
@@ -75,6 +80,11 @@
           "type": "boolean",
           "default": "false",
           "description": "Display command restrictions in the hover popup."
+        },
+        "lammps.AutoComplete.Enabled": {
+          "type": "boolean",
+          "default": "true",
+          "description": "Enable/Disable completion suggestions"
         },
         "lammps.AutoComplete.Hint": {
           "type": "boolean",

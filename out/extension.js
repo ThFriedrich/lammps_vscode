@@ -14,7 +14,7 @@ vscode.languages.registerHoverProvider("lmps", {
 vscode.languages.registerCompletionItemProvider("lmps", {
     provideCompletionItems(document, position, token, context) {
         const auto_conf = vscode.workspace.getConfiguration('lammps.AutoComplete');
-        return documentation.get_completion_list(auto_conf.CompletionString, auto_conf.Hint);
+        return documentation.get_completion_list(auto_conf.CompletionString, auto_conf.Hint, auto_conf.Enabled);
     }
 });
 function get_documentation(snippet) {
@@ -61,32 +61,34 @@ function get_documentation(snippet) {
 }
 function createHover(snippet) {
     const hover_conf = vscode.workspace.getConfiguration('lammps.Hover');
-    const docs = get_documentation(snippet);
-    if (docs === null || docs === void 0 ? void 0 : docs.command) {
-        // Constructing the Markdown String to show in the Hover window
-        const content = new vscode.MarkdownString();
-        if (docs === null || docs === void 0 ? void 0 : docs.short_description) {
-            content.appendMarkdown((docs === null || docs === void 0 ? void 0 : docs.short_description) + ". [Read more... ](https://lammps.sandia.gov/doc/" + (docs === null || docs === void 0 ? void 0 : docs.html_filename) + ")\n");
-            content.appendMarkdown("\n --- \n");
+    if (hover_conf.Enabled) {
+        const docs = get_documentation(snippet);
+        if (docs === null || docs === void 0 ? void 0 : docs.command) {
+            // Constructing the Markdown String to show in the Hover window
+            const content = new vscode.MarkdownString();
+            if (docs === null || docs === void 0 ? void 0 : docs.short_description) {
+                content.appendMarkdown((docs === null || docs === void 0 ? void 0 : docs.short_description) + ". [Read more... ](https://lammps.sandia.gov/doc/" + (docs === null || docs === void 0 ? void 0 : docs.html_filename) + ")\n");
+                content.appendMarkdown("\n --- \n");
+            }
+            if (docs === null || docs === void 0 ? void 0 : docs.syntax) {
+                content.appendMarkdown("### Syntax: \n");
+                content.appendCodeblock(docs === null || docs === void 0 ? void 0 : docs.syntax, "lmps");
+                content.appendMarkdown((docs === null || docs === void 0 ? void 0 : docs.parameters) + "\n\n");
+            }
+            if ((docs === null || docs === void 0 ? void 0 : docs.examples) && hover_conf.Examples) {
+                content.appendMarkdown("### Examples: \n");
+                content.appendCodeblock(docs === null || docs === void 0 ? void 0 : docs.examples, "lmps");
+            }
+            if ((docs === null || docs === void 0 ? void 0 : docs.description) && hover_conf.Detail == 'Complete') {
+                content.appendMarkdown("### Description: \n");
+                content.appendText((docs === null || docs === void 0 ? void 0 : docs.description) + "\n");
+            }
+            if ((docs === null || docs === void 0 ? void 0 : docs.restrictions) && hover_conf.Restrictions) {
+                content.appendMarkdown("### Restrictions: \n");
+                content.appendText(docs === null || docs === void 0 ? void 0 : docs.restrictions);
+            }
+            return new vscode.Hover(content);
         }
-        if (docs === null || docs === void 0 ? void 0 : docs.syntax) {
-            content.appendMarkdown("### Syntax: \n");
-            content.appendCodeblock(docs === null || docs === void 0 ? void 0 : docs.syntax, "lmps");
-            content.appendMarkdown((docs === null || docs === void 0 ? void 0 : docs.parameters) + "\n\n");
-        }
-        if ((docs === null || docs === void 0 ? void 0 : docs.examples) && hover_conf.Examples) {
-            content.appendMarkdown("### Examples: \n");
-            content.appendCodeblock(docs === null || docs === void 0 ? void 0 : docs.examples, "lmps");
-        }
-        if ((docs === null || docs === void 0 ? void 0 : docs.description) && hover_conf.Detail == 'Complete') {
-            content.appendMarkdown("### Description: \n");
-            content.appendText((docs === null || docs === void 0 ? void 0 : docs.description) + "\n");
-        }
-        if ((docs === null || docs === void 0 ? void 0 : docs.restrictions) && hover_conf.Restrictions) {
-            content.appendMarkdown("### Restrictions: \n");
-            content.appendText(docs === null || docs === void 0 ? void 0 : docs.restrictions);
-        }
-        return new vscode.Hover(content);
     }
 }
 // this method is called when your extension is activated
