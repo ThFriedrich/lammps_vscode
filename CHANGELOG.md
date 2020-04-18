@@ -33,3 +33,4 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
  - Updated keyword list
  - All commands sharing one documentation page captured by hover and autocomplete
  - Added options to disable hover and autocomplete
+ - Added double quaotes to auto-closing-surrounding-pairs
