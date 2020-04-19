@@ -212,7 +212,7 @@
 			"patterns": [
 				{
 					"name": "constant.numeric.lmps",
-					"match": "(?<![0-9])(-?[0-9]*(\\.[0-9]*)?([eE][-]?)?[0-9]+)\\b"
+					"match": "(?<![aA-zZ0-9])(-?[0-9]*(\\.[0-9]*)?([eE][-]?)?[0-9]+)\\b"
 				},
 				{
 					"name": "constant.numeric.other.lmps",
