@@ -4,6 +4,8 @@ html
 *.lmp
 *.lmps
 *.txt
+*.xcf
+*.svg
 .vscode
 .vscodeignore
 .eslintrc.json

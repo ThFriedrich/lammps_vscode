@@ -1,10 +1,13 @@
 {
   "name": "lammps",
   "displayName": "Lammps Syntax Highlighting",
+  "keywords": ["Lammps","Molecular Dynamics"],
+  "icon": "imgs/logo.png",
   "description": "Keyword/Syntax highlighting extension for Molecular Dynamics Software LAMMPS",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "publisher": "ThFriedrich",
   "repository": {
+    "type": "git",
     "url": "https://github.com/ThFriedrich/lammps_vscode"
   },
   "bugs": "https://github.com/ThFriedrich/lammps_vscode/issues",
