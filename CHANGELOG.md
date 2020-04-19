@@ -35,6 +35,6 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
  - Added options to disable hover and autocomplete
  - Added double quaotes to auto-closing-surrounding-pairs
 
- ## Version 1.2.4 19.04.2020
-  - Bugfixes
-  - Add Logo to package
+## Version 1.2.4 19.04.2020
+ - Bugfixes
+ - Add Logo to package
