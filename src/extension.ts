@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 
 import * as documentation from "./get_doc";
+import * as lint from './lmps_lint';
 import * as vscode from 'vscode';
 
 vscode.languages.registerHoverProvider("lmps", {
@@ -89,9 +90,23 @@ function createHover(snippet: string) {
 				content.appendMarkdown("### Restrictions: \n")
 				content.appendText(docs?.restrictions)
 			}
-
+			
 			return new vscode.Hover(content)
 		}
+	}
+}
+
+
+function updateDiagnostics(document: vscode.TextDocument, collection: vscode.DiagnosticCollection): void {
+	if (document) {
+		let errors: vscode.Diagnostic[] = []
+		for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
+			// check lines with a set of functions, which append Diagnostic entries to the errors array
+			errors = lint.check_read_paths(document, line_idx, errors)
+		}
+		collection.set(document.uri, errors)
+	} else {
+		collection.clear();
 	}
 }
 
@@ -99,6 +114,7 @@ function createHover(snippet: string) {
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
+	// Register Commands
 	let disposable = vscode.commands.registerCommand('extension.show_docs', () => {
 
 		const web_uri = vscode.Uri.parse("https://lammps.sandia.gov/doc/Manual.html")
@@ -106,6 +122,21 @@ export function activate(context: vscode.ExtensionContext) {
 
 	});
 	context.subscriptions.push(disposable);
+
+	// Provide Diagnostics on activation and Text-Changed-Event
+	const collection = vscode.languages.createDiagnosticCollection('lmps');
+	const editor = vscode.window.activeTextEditor?.document
+
+	if (editor) {
+		updateDiagnostics(editor, collection);
+	}
+
+	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(editor => {
+		if (editor) {
+			updateDiagnostics(editor.document, collection);
+		}
+	}));
+
 }
 // this method is called when your extension is deactivated
 export function deactivate() { }

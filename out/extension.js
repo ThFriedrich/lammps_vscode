@@ -4,6 +4,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const documentation = require("./get_doc");
 const vscode = require("vscode");
+const lint = require("./lmps_lint");
 vscode.languages.registerHoverProvider("lmps", {
     provideHover(document, position) {
         const range = document.getWordRangeAtPosition(position, RegExp('[\\w\\/]+(?:[\\t\\s]+[^\#\\s\\t]+)*'));
@@ -91,14 +92,40 @@ function createHover(snippet) {
         }
     }
 }
+function updateDiagnostics(document, collection) {
+    if (document) {
+        let errors = [];
+        for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
+            // check lines with a set of functions, which append Diagnostic entries to the errors array
+            errors = lint.check_read_paths(document, line_idx, errors);
+        }
+        collection.set(document.uri, errors);
+    }
+    else {
+        collection.clear();
+    }
+}
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 function activate(context) {
+    var _a;
+    // Register Commands
     let disposable = vscode.commands.registerCommand('extension.show_docs', () => {
         const web_uri = vscode.Uri.parse("https://lammps.sandia.gov/doc/Manual.html");
         vscode.env.openExternal(web_uri);
     });
     context.subscriptions.push(disposable);
+    // Provide Diagnostics on activation and Text-Changed-Event
+    const collection = vscode.languages.createDiagnosticCollection('lmps');
+    const editor = (_a = vscode.window.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document;
+    if (editor) {
+        updateDiagnostics(editor, collection);
+    }
+    context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(editor => {
+        if (editor) {
+            updateDiagnostics(editor.document, collection);
+        }
+    }));
 }
 exports.activate = activate;
 // this method is called when your extension is deactivated
