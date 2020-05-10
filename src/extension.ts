@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 
-import * as documentation from "./get_doc";
+import * as doc_fcns from "./doc_fcns";
 import * as lint from './lmps_lint';
 import * as vscode from 'vscode';
 
@@ -16,37 +16,37 @@ vscode.languages.registerHoverProvider("lmps", {
 vscode.languages.registerCompletionItemProvider("lmps", {
 	provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext) {
 		const auto_conf = vscode.workspace.getConfiguration('lammps.AutoComplete')
-		return documentation.get_completion_list(auto_conf.CompletionString, auto_conf.Hint, auto_conf.Enabled)
+		return doc_fcns.get_completion_list(auto_conf.CompletionString, auto_conf.Hint, auto_conf.Enabled)
 	}
 });
 
 function get_documentation(snippet: string) {
 
 	const sub_com = snippet.split(RegExp('[\\t\\s]+'));
-	var docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[3])
+	let docs = doc_fcns.getCommand(sub_com[0] + ' ' + sub_com[3])
 
 	if (docs?.command) {
 		return docs
 	} else {
 		// Captures all the AtC commands, like "fix_modify AtC output" and "fix_modify AtC control localized_lambda"
-		docs = documentation.get_doc(sub_com[0] + ' AtC ' + sub_com[2] + ' ' + sub_com[3])
+		docs = doc_fcns.getCommand(sub_com[0] + ' AtC ' + sub_com[2] + ' ' + sub_com[3])
 		if (docs?.command) {
 			return docs
 		} else {
 			// Captures all the AtC commands, like "fix_modify AtC output"
-			docs = documentation.get_doc(sub_com[0] + ' AtC ' + sub_com[2])
+			docs = doc_fcns.getCommand(sub_com[0] + ' AtC ' + sub_com[2])
 			if (docs?.command) {
 				return docs
 			} else {
-				docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[2])
+				docs = doc_fcns.getCommand(sub_com[0] + ' ' + sub_com[2])
 				if (docs?.command) {
 					return docs
 				} else {
-					docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[1])
+					docs = doc_fcns.getCommand(sub_com[0] + ' ' + sub_com[1])
 					if (docs?.command) {
 						return docs
 					} else {
-						docs = documentation.get_doc(sub_com[0])
+						docs = doc_fcns.getCommand(sub_com[0])
 						if (docs?.command) {
 							return docs
 						}
@@ -102,7 +102,7 @@ function updateDiagnostics(document: vscode.TextDocument, collection: vscode.Dia
 		let errors: vscode.Diagnostic[] = []
 		for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
 			// check lines with a set of functions, which append Diagnostic entries to the errors array
-			errors = lint.check_read_paths(document, line_idx, errors)
+			errors = lint.check_file_paths(document, line_idx, errors)
 		}
 		collection.set(document.uri, errors)
 	} else {

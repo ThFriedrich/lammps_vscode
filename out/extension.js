@@ -2,9 +2,9 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 Object.defineProperty(exports, "__esModule", { value: true });
-const documentation = require("./get_doc");
-const vscode = require("vscode");
+const doc_fcns = require("./doc_fcns");
 const lint = require("./lmps_lint");
+const vscode = require("vscode");
 vscode.languages.registerHoverProvider("lmps", {
     provideHover(document, position) {
         const range = document.getWordRangeAtPosition(position, RegExp('[\\w\\/]+(?:[\\t\\s]+[^\#\\s\\t]+)*'));
@@ -15,39 +15,39 @@ vscode.languages.registerHoverProvider("lmps", {
 vscode.languages.registerCompletionItemProvider("lmps", {
     provideCompletionItems(document, position, token, context) {
         const auto_conf = vscode.workspace.getConfiguration('lammps.AutoComplete');
-        return documentation.get_completion_list(auto_conf.CompletionString, auto_conf.Hint, auto_conf.Enabled);
+        return doc_fcns.get_completion_list(auto_conf.CompletionString, auto_conf.Hint, auto_conf.Enabled);
     }
 });
 function get_documentation(snippet) {
     const sub_com = snippet.split(RegExp('[\\t\\s]+'));
-    var docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[3]);
+    let docs = doc_fcns.getCommand(sub_com[0] + ' ' + sub_com[3]);
     if (docs === null || docs === void 0 ? void 0 : docs.command) {
         return docs;
     }
     else {
         // Captures all the AtC commands, like "fix_modify AtC output" and "fix_modify AtC control localized_lambda"
-        docs = documentation.get_doc(sub_com[0] + ' AtC ' + sub_com[2] + ' ' + sub_com[3]);
+        docs = doc_fcns.getCommand(sub_com[0] + ' AtC ' + sub_com[2] + ' ' + sub_com[3]);
         if (docs === null || docs === void 0 ? void 0 : docs.command) {
             return docs;
         }
         else {
             // Captures all the AtC commands, like "fix_modify AtC output"
-            docs = documentation.get_doc(sub_com[0] + ' AtC ' + sub_com[2]);
+            docs = doc_fcns.getCommand(sub_com[0] + ' AtC ' + sub_com[2]);
             if (docs === null || docs === void 0 ? void 0 : docs.command) {
                 return docs;
             }
             else {
-                docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[2]);
+                docs = doc_fcns.getCommand(sub_com[0] + ' ' + sub_com[2]);
                 if (docs === null || docs === void 0 ? void 0 : docs.command) {
                     return docs;
                 }
                 else {
-                    docs = documentation.get_doc(sub_com[0] + ' ' + sub_com[1]);
+                    docs = doc_fcns.getCommand(sub_com[0] + ' ' + sub_com[1]);
                     if (docs === null || docs === void 0 ? void 0 : docs.command) {
                         return docs;
                     }
                     else {
-                        docs = documentation.get_doc(sub_com[0]);
+                        docs = doc_fcns.getCommand(sub_com[0]);
                         if (docs === null || docs === void 0 ? void 0 : docs.command) {
                             return docs;
                         }
@@ -97,7 +97,8 @@ function updateDiagnostics(document, collection) {
         let errors = [];
         for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
             // check lines with a set of functions, which append Diagnostic entries to the errors array
-            errors = lint.check_read_paths(document, line_idx, errors);
+            errors = lint.check_file_paths(document, line_idx, errors);
+            // errors = lint.check_write_paths(document, line_idx, errors)
         }
         collection.set(document.uri, errors);
     }
