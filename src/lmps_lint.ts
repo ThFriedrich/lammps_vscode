@@ -1,6 +1,53 @@
-import { Diagnostic, DiagnosticSeverity, TextDocument, Range} from 'vscode'
+import { Diagnostic, DiagnosticSeverity, TextDocument, Range } from 'vscode'
 import { dirname, join, isAbsolute } from 'path'
+import * as doc_fcns from "./doc_fcns";
 import { existsSync } from 'fs'
+
+//////////////////////////////////////
+// document checks/Linter functions //
+//////////////////////////////////////
+
+/**
+* This function checks wheter a file given as input for 
+* a read-command actually exists.
+*/
+export function check_file_paths(document: TextDocument, line_index: number, errors: Diagnostic[]) {
+
+    const line_str = document.lineAt(line_index).text
+    let error: Diagnostic|undefined
+    const read_commands = doc_fcns.searchCommands(RegExp('(?<=^|\\s|_)(read)(?=$|\\s|_)'))
+    let com_struct = getCommandArgs(line_str, read_commands)
+
+    // Check for read and write commands
+    if (com_struct.command) {
+        const fileArg_idx = doc_fcns.getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'))
+        error = checkPath(document, line_str, line_index, com_struct, fileArg_idx, 'file')
+    } else {
+        const write_commands = doc_fcns.searchCommands(RegExp('(?<=^|\\s|_)(write)(?=$|\\s|_)'))
+        com_struct = getCommandArgs(line_str, write_commands)
+        if (com_struct.command) {
+            const fileArg_idx = doc_fcns.getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'))
+            error = checkPath(document, line_str, line_index, com_struct, fileArg_idx, 'dir')
+        }
+    }
+    if (error) {
+        errors.push(error);
+    }
+    return errors
+}
+
+//////////////////////////////////////
+// Bunch of little helper functions //
+//////////////////////////////////////
+
+/**
+* Type definition for command-arguments 
+* structure
+*/
+type commandStruct = {
+    command: string,
+    args: string[]
+}
 
 
 /**
@@ -15,7 +62,7 @@ function getCommandArgs(line: string, command: string[]) {
         line = line.substr(0, line.indexOf('#'))
     }
     //Split line into array of strings without whitespaces, filter empty elemets
-    let line_arr = line.split(RegExp('\\s+')).filter(function(e){return e})
+    let line_arr = line.split(RegExp('\\s+')).filter(function (e) { return e })
 
     // Initialize empty commandStruct variable
     const com_struct = <commandStruct>{}
@@ -38,74 +85,14 @@ function getCommandArgs(line: string, command: string[]) {
 }
 
 /**
-* This function checks wheter a file given as input for 
-* a read-command actually exists.
-*/
-export function check_read_paths(document: TextDocument, line_index: number, errors: Diagnostic[]) {
-
-    const read_commands = [
-        'read_data',
-        'read_dump',
-        'read_restart'
-    ]
-    
-    const line_str = document.lineAt(line_index).text
-    const com_struct = getCommandArgs(line_str, read_commands)
-
-    if (com_struct.command) { // was a read-command found at all?
-
-        // Initialize Diagnostic Variables
-        let position:Range|undefined = undefined 
-        let msg:string = ''
-
-        if (com_struct.args.length>0) { // path specified?
-            const file_path:string = com_struct.args[0]
-            // File doesn't exist
-            if (!fileExists(document, file_path)){
-                const arg_pos:number = line_str.search(file_path)
-                position = getRange(line_str, line_index, file_path)
-                msg = `The file ${file_path} does not exist` 
-            }    
-        } else { // no path given
-            position = getRange(line_str, line_index, com_struct.command)
-            msg = `The command ${com_struct.command} requires an argument speciying the file to read`   
-        }
-
-        // Add Error to Diagnostics Array
-        if (position) {
-            errors.push({
-                message: msg,
-                range: position,
-                severity: DiagnosticSeverity.Error
-            });
-        }
-    }
-    return errors
-}
-
-
-//////////////////////////////////////
-// Bunch of little helper functions //
-//////////////////////////////////////
-
-/**
-* Type definition for command-arguments 
-* structure
-*/
-type commandStruct = {
-    command: string,
-    args: string[]
-}
-
-/**
 * Returns the range of a given string 
 * within a given line of the document.
 * Similar to getWordRangeAtPosition 
 * from vscode api
 */
-function getRange(line_str:string, line_idx: number, argument: string){
-    const arg_pos:number = line_str.search(argument)
-    const rng = new Range(line_idx, arg_pos, line_idx, arg_pos+argument.length)
+function getRange(line_str: string, line_idx: number, argument: string) {
+    const arg_pos: number = line_str.search(argument)
+    const rng = new Range(line_idx, arg_pos, line_idx, arg_pos + argument.length)
     return rng
 }
 
@@ -126,14 +113,75 @@ function getDocDir(document: TextDocument) {
 * a given file exists. Path can be absolute or 
 * relative to the location of the TextDocument
 */
-function fileExists(document: TextDocument, file_path: string){
-    if (!isAbsolute(file_path)) { 
-        const docDir = getDocDir(document);   
-        file_path = join(docDir,file_path)
+function fileExists(document: TextDocument, file_path: string) {
+    if (!isAbsolute(file_path)) {
+        const docDir = getDocDir(document);
+        file_path = join(docDir, file_path)
     }
     if (existsSync(file_path)) {
         return true
     } else {
         return false
+    }
+}
+
+/**
+* Returns a boolean, indicating wether 
+* a given directory exists. Path can be absolute or 
+* relative to the location of the TextDocument
+*/
+function dirExists(document: TextDocument, file_path: string) {
+    if (!isAbsolute(file_path)) {
+        const docDir = getDocDir(document);
+        file_path = join(docDir, file_path)
+    }
+    if (existsSync(dirname(file_path))) {
+        return true
+    } else {
+        return false
+    }
+}
+
+/**
+* Checks for the existence of a given file or directory
+* and returns a Diagnostic entry if it doesn't exist
+*/
+function checkPath(document: TextDocument, line_str:string, line_index: number, com_struct: commandStruct, fileArg_idx: number, checkType: 'dir' | 'file') {
+
+    // Initialize Diagnostic Variables
+    let rng:Range|undefined = undefined
+    let msg:string|undefined = undefined
+
+    if (com_struct.args.length >= fileArg_idx) { // path specified/argument provided?
+        const file_path: string = com_struct.args[fileArg_idx - 1]
+        
+        switch (checkType) { // Check wether directory/file exists
+            case 'dir':
+                if (!dirExists(document, file_path)) { // Directory doesn't exist
+                    rng = getRange(line_str, line_index, file_path)
+                    msg = `The directory ${dirname(file_path)} does not exist`
+                }
+                break;
+            case 'file':
+                if (!fileExists(document, file_path)) { // File doesn't exist
+                    rng = getRange(line_str, line_index, file_path)
+                    msg = `The file ${file_path} does not exist`
+                }
+                break;
+            default:
+                break;
+        }
+
+    } else { // no path given!
+        rng = getRange(line_str, line_index, com_struct.command)
+        msg = `The command ${com_struct.command} requires an argument at position ${fileArg_idx} speciying the file to read from or write to`
+    }
+
+    if (msg && rng) { // Error detected, otherwise returns undefined
+        return {
+            message: msg,
+            range: rng,
+            severity: DiagnosticSeverity.Error
+        }
     }
 }
