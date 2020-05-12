@@ -1,6 +1,6 @@
 import { Diagnostic, DiagnosticSeverity, TextDocument, Range } from 'vscode'
 import { dirname, join, isAbsolute } from 'path'
-import * as doc_fcns from "./doc_fcns";
+import { searchCommands, getArgIndex } from "./doc_fcns";
 import { existsSync } from 'fs'
 
 //////////////////////////////////////
@@ -11,22 +11,22 @@ import { existsSync } from 'fs'
 * This function checks wheter a file given as input for 
 * a read-command actually exists.
 */
-export function check_file_paths(document: TextDocument, line_index: number, errors: Diagnostic[]) {
+export function checFilePaths(document: TextDocument, line_index: number, errors: Diagnostic[]):Diagnostic[] {
 
     const line_str = document.lineAt(line_index).text
     let error: Diagnostic|undefined
-    const read_commands = doc_fcns.searchCommands(RegExp('(?<=^|\\s|_)(read)(?=$|\\s|_)'))
+    const read_commands = searchCommands(RegExp('(?<=^|\\s|_)(read)(?=$|\\s|_)'))
     let com_struct = getCommandArgs(line_str, read_commands)
 
     // Check for read and write commands
     if (com_struct.command) {
-        const fileArg_idx = doc_fcns.getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'))
+        const fileArg_idx = getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'))
         error = checkPath(document, line_str, line_index, com_struct, fileArg_idx, 'file')
     } else {
-        const write_commands = doc_fcns.searchCommands(RegExp('(?<=^|\\s|_)(write)(?=$|\\s|_)'))
+        const write_commands = searchCommands(RegExp('(?<=^|\\s|_)(write)(?=$|\\s|_)'))
         com_struct = getCommandArgs(line_str, write_commands)
         if (com_struct.command) {
-            const fileArg_idx = doc_fcns.getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'))
+            const fileArg_idx = getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'))
             error = checkPath(document, line_str, line_index, com_struct, fileArg_idx, 'dir')
         }
     }
@@ -38,6 +38,8 @@ export function check_file_paths(document: TextDocument, line_index: number, err
 
 //////////////////////////////////////
 // Bunch of little helper functions //
+// that all operate in the TextDoc- //
+// ument context.                   //
 //////////////////////////////////////
 
 /**
@@ -49,14 +51,13 @@ type commandStruct = {
     args: string[]
 }
 
-
 /**
 * This function takes a line of the textfiles and checks 
 * if one of the given commands is contained in the line.
 * If the command is found a commandStruct object is returned, 
 * containing the command name and an array of arguments
 */
-function getCommandArgs(line: string, command: string[]) {
+function getCommandArgs(line: string, command: string[]):commandStruct {
     //Remove comments from the line
     if (line.includes('#')) {
         line = line.substr(0, line.indexOf('#'))
@@ -90,17 +91,16 @@ function getCommandArgs(line: string, command: string[]) {
 * Similar to getWordRangeAtPosition 
 * from vscode api
 */
-function getRange(line_str: string, line_idx: number, argument: string) {
+function getRange(line_str: string, line_idx: number, argument: string):Range {
     const arg_pos: number = line_str.search(argument)
-    const rng = new Range(line_idx, arg_pos, line_idx, arg_pos + argument.length)
-    return rng
+    return new Range(line_idx, arg_pos, line_idx, arg_pos + argument.length)
 }
 
 /**
 * Returns the absolute path of the 
 * directory a given TextDocument is in
 */
-function getDocDir(document: TextDocument) {
+function getDocDir(document: TextDocument):string {
     let cwd = document.uri.fsPath;
     if (cwd) {
         cwd = dirname(cwd);
@@ -113,7 +113,7 @@ function getDocDir(document: TextDocument) {
 * a given file exists. Path can be absolute or 
 * relative to the location of the TextDocument
 */
-function fileExists(document: TextDocument, file_path: string) {
+function fileExists(document: TextDocument, file_path: string):boolean {
     if (!isAbsolute(file_path)) {
         const docDir = getDocDir(document);
         file_path = join(docDir, file_path)
@@ -130,7 +130,7 @@ function fileExists(document: TextDocument, file_path: string) {
 * a given directory exists. Path can be absolute or 
 * relative to the location of the TextDocument
 */
-function dirExists(document: TextDocument, file_path: string) {
+function dirExists(document: TextDocument, file_path: string):boolean {
     if (!isAbsolute(file_path)) {
         const docDir = getDocDir(document);
         file_path = join(docDir, file_path)
@@ -146,7 +146,7 @@ function dirExists(document: TextDocument, file_path: string) {
 * Checks for the existence of a given file or directory
 * and returns a Diagnostic entry if it doesn't exist
 */
-function checkPath(document: TextDocument, line_str:string, line_index: number, com_struct: commandStruct, fileArg_idx: number, checkType: 'dir' | 'file') {
+function checkPath(document: TextDocument, line_str:string, line_index: number, com_struct: commandStruct, fileArg_idx: number, checkType: 'dir' | 'file'):Diagnostic|undefined {
 
     // Initialize Diagnostic Variables
     let rng:Range|undefined = undefined

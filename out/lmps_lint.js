@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const vscode_1 = require("vscode");
 const path_1 = require("path");
-const doc_fcns = require("./doc_fcns");
+const doc_fcns_1 = require("./doc_fcns");
 const fs_1 = require("fs");
 //////////////////////////////////////
 // document checks/Linter functions //
@@ -11,21 +11,21 @@ const fs_1 = require("fs");
 * This function checks wheter a file given as input for
 * a read-command actually exists.
 */
-function check_file_paths(document, line_index, errors) {
+function checFilePaths(document, line_index, errors) {
     const line_str = document.lineAt(line_index).text;
     let error;
-    const read_commands = doc_fcns.searchCommands(RegExp('(?<=^|\\s|_)(read)(?=$|\\s|_)'));
+    const read_commands = doc_fcns_1.searchCommands(RegExp('(?<=^|\\s|_)(read)(?=$|\\s|_)'));
     let com_struct = getCommandArgs(line_str, read_commands);
     // Check for read and write commands
     if (com_struct.command) {
-        const fileArg_idx = doc_fcns.getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'));
+        const fileArg_idx = doc_fcns_1.getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'));
         error = checkPath(document, line_str, line_index, com_struct, fileArg_idx, 'file');
     }
     else {
-        const write_commands = doc_fcns.searchCommands(RegExp('(?<=^|\\s|_)(write)(?=$|\\s|_)'));
+        const write_commands = doc_fcns_1.searchCommands(RegExp('(?<=^|\\s|_)(write)(?=$|\\s|_)'));
         com_struct = getCommandArgs(line_str, write_commands);
         if (com_struct.command) {
-            const fileArg_idx = doc_fcns.getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'));
+            const fileArg_idx = doc_fcns_1.getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'));
             error = checkPath(document, line_str, line_index, com_struct, fileArg_idx, 'dir');
         }
     }
@@ -34,7 +34,7 @@ function check_file_paths(document, line_index, errors) {
     }
     return errors;
 }
-exports.check_file_paths = check_file_paths;
+exports.checFilePaths = checFilePaths;
 /**
 * This function takes a line of the textfiles and checks
 * if one of the given commands is contained in the line.
@@ -75,8 +75,7 @@ function getCommandArgs(line, command) {
 */
 function getRange(line_str, line_idx, argument) {
     const arg_pos = line_str.search(argument);
-    const rng = new vscode_1.Range(line_idx, arg_pos, line_idx, arg_pos + argument.length);
-    return rng;
+    return new vscode_1.Range(line_idx, arg_pos, line_idx, arg_pos + argument.length);
 }
 /**
 * Returns the absolute path of the
