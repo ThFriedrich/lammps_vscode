@@ -1,46 +1,4 @@
 {
-    "variable": {
-        "prefix": "variable",
-        "body": [
-            "variable ${1:name} ${2|equal,delete,index,loop,world,universe,uloop,string,format,getenv,file,atomfile,python,internal,vector,atom|} ${3:args}"
-        ],
-        "description": "This command assigns one,more strings to a variable name for evaluation later in the input script,during a simulation."
-    },
-    "create_box": {
-        "prefix": "create_box",
-        "body": [
-            "create_box ${1:N} ${2:region-ID} ${3|bond/types,angle/types,dihedral/types,improper/types,extra/bond/per/atom,extra/angle/per/atom,extra/dihedral/per/atom,extra/improper/per/atom|}"
-        ],
-        "description": "This command creates a simulation box based on the specified region"
-    },
-    "lattice": {
-        "prefix": "lattice",
-        "body": [
-            "lattice ${1|none,sc,bcc,fcc,hcp,diamond,sq,sq2,hex,custom|} ${2:scale}"
-        ],
-        "description": "Define a lattice for use by other commands"
-    },
-    "region": {
-        "prefix": "region",
-        "body": [
-            "region ${1:ID} ${2|delete,block,cone,cylinder,plane,prism,sphere,union,intersect|} ${3:args}"
-        ],
-        "description":"This command defines a geometric region of space"
-    },
-    "create_atoms": {
-        "prefix": "create_atoms",
-        "body": [
-            "create_atoms ${1:type} ${2|box,region,single,random|} ${3:args}"
-        ],
-        "description":"This command creates atoms (or molecules) on a lattice, or a single atom (or molecule), or a random collection of atoms (or molecules), as an alternative to reading in their coordinates explicitly via a read_data or read_restart command"
-    },
-    "group": {
-        "prefix": "group",
-        "body": [
-            "group ${1:ID} ${2|delete,clear,empty,region,type,id,molecule,variable,include,subtract,union,intersect,dynamic,static|} ${3:args}"
-        ],
-        "description":"Identify a collection of atoms as belonging to a group"
-    },
     "if/then/else": {
         "prefix": "if/else",
         "body": [

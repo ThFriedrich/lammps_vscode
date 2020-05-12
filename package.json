@@ -4,7 +4,7 @@
   "keywords": ["Lammps","Molecular Dynamics"],
   "icon": "imgs/logo.png",
   "description": "Keyword/Syntax highlighting extension for Molecular Dynamics Software LAMMPS",
-  "version": "1.2.4",
+  "version": "1.2.5-alpha",
   "publisher": "ThFriedrich",
   "repository": {
     "type": "git",
@@ -93,16 +93,6 @@
           "type": "boolean",
           "default": "false",
           "markdownDescription": "Display a little syntax reminder inline with the selected command in the autocompletion box. This may be useful if you prefer a minimalistic autocompletion popup. \n [See an example...](https://user-images.githubusercontent.com/45487966/79160252-c386fb80-7dd9-11ea-8c26-8daac5acae60.png)"
-        },
-        "lammps.AutoComplete.CompletionString": {
-          "type": "string",
-          "default": "Command",
-          "description": "Control the autocompletion behaviour",
-          "enum": ["Command", "Syntax"],
-          "enumDescriptions": [
-            "Auto Complete inserts only the command words",
-            "Auto Complete inserts the command words and placeholders, corresponding to the syntax of the command."
-          ]
         }
       }
     }},
