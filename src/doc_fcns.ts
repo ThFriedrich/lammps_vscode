@@ -1,5 +1,7 @@
 import { WorkspaceConfiguration, CompletionItem, CompletionList, MarkdownString, SnippetString, CompletionItemKind } from 'vscode';
+import { getMathMarkdown } from './math_render'
 import { command_docs } from "./lmp_doc";
+import { getColor } from './theme'
 
 export type commandDoc = {
     command: string[];
@@ -13,12 +15,12 @@ export type commandDoc = {
 }
 
 /** Returns the entire documentation entry for a given command.*/
-export function getCommand(find_command: string):commandDoc|undefined {
+export function getCommand(find_command: string): commandDoc | undefined {
     return command_docs.find(e => e.command.includes(find_command));
 }
 
 /** Returns all commands that include a given substring or RegExp */
-export function searchCommands(searchString: string | RegExp):string[] {
+export function searchCommands(searchString: string | RegExp): string[] {
     const return_array: string[] = []
     command_docs.forEach(element => {
         element.command.forEach(com => {
@@ -37,7 +39,7 @@ export function searchCommands(searchString: string | RegExp):string[] {
  * with syntax ´bond_write btype N inner outer file keyword itype jtype´  
  * getArgDoc('bond_write',RegExp('\\b(file)\\b')) would return 5  
  * */
-export function getArgIndex(command: string, argument: RegExp | string):number {
+export function getArgIndex(command: string, argument: RegExp | string): number {
     const com = getCommand(command)
     let idx: number = -1
     if (com) {
@@ -57,14 +59,14 @@ export function getArgIndex(command: string, argument: RegExp | string):number {
  * descriptions and checks for patterns like 'style = fcc or bcc or ...' to
  * generate a list of options for that particular keyword. 
 */
-function getChoices(arg: string, prms: string[]):string[] {
+function getChoices(arg: string, prms: string[]): string[] {
 
-    function filterChoices(choice: string):boolean {
+    function filterChoices(choice: string): boolean {
         return !choice.includes('=')
     }
 
     // Allow only single words and erase whitespaces
-    function trimChoices(choice: string):string {
+    function trimChoices(choice: string): string {
         return choice.trim().split(' ')[0]
     }
 
@@ -92,9 +94,9 @@ function getChoices(arg: string, prms: string[]):string[] {
 }
 
 /** Generates Autocompletion SnippetString for CompletionList*/
-function generateSnippetString(command_str: string, command_doc: commandDoc):SnippetString {
+function generateSnippetString(command_str: string, command_doc: commandDoc): SnippetString {
 
-    function argString(snip: SnippetString, choices: string[]):SnippetString {
+    function argString(snip: SnippetString, choices: string[]): SnippetString {
         snip.appendText(' ')
         switch (true) {
             case choices.length == 1:
@@ -127,28 +129,47 @@ function generateSnippetString(command_str: string, command_doc: commandDoc):Sni
 }
 
 /** Generates CompletionList for all commands*/
-export function getCompletionList(autoConf: WorkspaceConfiguration):CompletionList {
+export async function getCompletionList(autoConf: WorkspaceConfiguration): Promise<CompletionList> {
+
+    function mediumBlock(c: commandDoc, compl_it_doc: MarkdownString): MarkdownString {
+        compl_it_doc = docLink(c.html_filename, compl_it_doc)
+        compl_it_doc.appendCodeblock(c.syntax, 'lmps')
+        compl_it_doc.appendMarkdown(c.parameters)
+        return compl_it_doc
+    }
+
+    function docLink(html_link:string,compl_it_doc: MarkdownString): MarkdownString {
+        return compl_it_doc.appendMarkdown("[Open documentation](https://lammps.sandia.gov/doc/" + html_link + ")\n")
+    }
 
     const completion_List = new CompletionList();
 
-    if (autoConf.Enabled) {
+    if (autoConf.Setting != "None") {
+
         for (let c of command_docs.values()) {
             for (let c_ix of c.command.values()) {
-                const compl_it = new CompletionItem(c_ix);
-                compl_it.documentation = new MarkdownString();
 
-                if (autoConf.Hint) {
-                    compl_it.detail = c.syntax
-                } else {
-                    compl_it.documentation.appendCodeblock(c.syntax, 'lmps')
+                const compl_it = new CompletionItem(c_ix);
+                compl_it.documentation = new MarkdownString("", true);
+                switch (autoConf.Setting) {
+                    case "Minimal":
+                        compl_it.detail = c.syntax
+                        compl_it.documentation = docLink(c.html_filename, compl_it.documentation)
+                        break;
+                    case "Medium":
+                        compl_it.documentation = mediumBlock(c, compl_it.documentation)
+                        break;
+                    case "Extensive":
+                        compl_it.documentation = mediumBlock(c, compl_it.documentation)
+                        compl_it.documentation.appendMarkdown(" \n" + "--- " + " \n")
+                        const color: string = getColor()
+                        compl_it.documentation.appendMarkdown(await getMathMarkdown(c.short_description, color))
+                        break;
+                    default:
+                        break;
                 }
-                compl_it.documentation.appendMarkdown("[Open documentation](https://lammps.sandia.gov/doc/" + c.html_filename + ")\n")
-                compl_it.documentation.appendMarkdown(c.parameters)
-                compl_it.documentation.appendMarkdown(" \n" + "--- " + " \n")
-                compl_it.documentation.appendText(c.short_description)
                 compl_it.insertText = generateSnippetString(c_ix, c)
                 compl_it.kind = CompletionItemKind.Function
-
                 completion_List.items.push(compl_it)
             }
         }
