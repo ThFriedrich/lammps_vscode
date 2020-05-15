@@ -1,9 +1,11 @@
-import {getCompletionList, getCommand, commandDoc} from "./doc_fcns";
-import {checFilePaths} from './lmps_lint';
+import { getCompletionList, getCommand, commandDoc } from "./doc_fcns";
+import { checFilePaths } from './lmps_lint';
+import { getMathMarkdown, mdBeautify } from './math_render'
+import { getColor } from './theme'
 import * as vscode from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
-
+	
 	// Register Commands
 	context.subscriptions.push(
 		vscode.commands.registerCommand('extension.show_docs', () => {
@@ -25,9 +27,13 @@ export function activate(context: vscode.ExtensionContext) {
 	// Register Completions Provider
 	context.subscriptions.push(
 		vscode.languages.registerCompletionItemProvider("lmps", {
-			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext) {
+			async provideCompletionItems(
+				document: vscode.TextDocument, 
+				position: vscode.Position, 
+				token: vscode.CancellationToken, 
+				context: vscode.CompletionContext) {
 				const autoConf = vscode.workspace.getConfiguration('lammps.AutoComplete')
-				const compl_str:vscode.CompletionList = getCompletionList(autoConf)
+				let compl_str:vscode.CompletionList = await getCompletionList(autoConf)
 				return compl_str
 			}
 		}));
@@ -59,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}));
 }
 
-function get_documentation(snippet: string) {
+function getDocumentation(snippet: string) {
 
 	const sub_com = snippet.split(RegExp('[\\t\\s]+'));
 
@@ -97,23 +103,24 @@ function get_documentation(snippet: string) {
 	}}}}}
 }
 
-function createHover(snippet: string) {
+async function createHover(snippet: string) {
 
 	const hover_conf = vscode.workspace.getConfiguration('lammps.Hover')
 
 	if (hover_conf.Enabled) {
-		const docs = get_documentation(snippet)
+		const color:string = getColor()
+		const docs = getDocumentation(snippet)
 		if (docs) {
 			// Constructing the Markdown String to show in the Hover window
-			const content = new vscode.MarkdownString()
+			const content = new vscode.MarkdownString("",true)
 			if (docs?.short_description) {
-				content.appendMarkdown(docs?.short_description + ". [Read more... ](https://lammps.sandia.gov/doc/" + docs?.html_filename + ")\n")
+				content.appendMarkdown(await getMathMarkdown(docs.short_description, color) + ". [Read more... ](https://lammps.sandia.gov/doc/" + docs?.html_filename + ")\n")
 				content.appendMarkdown("\n --- \n")
 			}
 			if (docs?.syntax) {
 				content.appendMarkdown("### Syntax: \n")
 				content.appendCodeblock(docs?.syntax, "lmps")
-				content.appendMarkdown(docs?.parameters + "\n\n")
+				content.appendMarkdown(await getMathMarkdown(docs?.parameters, color) + "\n\n")
 			}
 			if (docs?.examples && hover_conf.Examples) {
 				content.appendMarkdown("### Examples: \n")
@@ -121,11 +128,11 @@ function createHover(snippet: string) {
 			}
 			if (docs?.description && hover_conf.Detail == 'Complete') {
 				content.appendMarkdown("### Description: \n")
-				content.appendText(docs?.description + "\n")
+				content.appendMarkdown(mdBeautify(await getMathMarkdown(docs.description, color)) + "\n")
 			}
 			if (docs?.restrictions && hover_conf.Restrictions) {
 				content.appendMarkdown("### Restrictions: \n")
-				content.appendText(docs?.restrictions)
+				content.appendMarkdown(mdBeautify(docs?.restrictions))
 			}
 			return new vscode.Hover(content)
 		}
@@ -147,3 +154,4 @@ function updateDiagnostics(document: vscode.TextDocument, collection: vscode.Dia
 
 // this method is called when your extension is deactivated
 export function deactivate() { }
+
