@@ -1,8 +1,26 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const doc_fcns_1 = require("./doc_fcns");
 const lmps_lint_1 = require("./lmps_lint");
-const vscode = require("vscode");
+const math_render_1 = require("./math_render");
+const theme_1 = require("./theme");
+const vscode = __importStar(require("vscode"));
 function activate(context) {
     // Register Commands
     context.subscriptions.push(vscode.commands.registerCommand('extension.show_docs', () => {
@@ -20,9 +38,11 @@ function activate(context) {
     // Register Completions Provider
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider("lmps", {
         provideCompletionItems(document, position, token, context) {
-            const autoConf = vscode.workspace.getConfiguration('lammps.AutoComplete');
-            const compl_str = doc_fcns_1.getCompletionList(autoConf);
-            return compl_str;
+            return __awaiter(this, void 0, void 0, function* () {
+                const autoConf = vscode.workspace.getConfiguration('lammps.AutoComplete');
+                let compl_str = yield doc_fcns_1.getCompletionList(autoConf);
+                return compl_str;
+            });
         }
     }));
     // Provide Diagnostics on Open, Save and Text-Changed-Event
@@ -47,7 +67,7 @@ function activate(context) {
     }));
 }
 exports.activate = activate;
-function get_documentation(snippet) {
+function getDocumentation(snippet) {
     const sub_com = snippet.split(RegExp('[\\t\\s]+'));
     // Captures commands with 2 Arguments between 2 Keywords
     let docs = doc_fcns_1.getCommand(sub_com[0] + ' ' + sub_com[3]);
@@ -94,36 +114,39 @@ function get_documentation(snippet) {
     }
 }
 function createHover(snippet) {
-    const hover_conf = vscode.workspace.getConfiguration('lammps.Hover');
-    if (hover_conf.Enabled) {
-        const docs = get_documentation(snippet);
-        if (docs) {
-            // Constructing the Markdown String to show in the Hover window
-            const content = new vscode.MarkdownString();
-            if (docs === null || docs === void 0 ? void 0 : docs.short_description) {
-                content.appendMarkdown((docs === null || docs === void 0 ? void 0 : docs.short_description) + ". [Read more... ](https://lammps.sandia.gov/doc/" + (docs === null || docs === void 0 ? void 0 : docs.html_filename) + ")\n");
-                content.appendMarkdown("\n --- \n");
+    return __awaiter(this, void 0, void 0, function* () {
+        const hover_conf = vscode.workspace.getConfiguration('lammps.Hover');
+        if (hover_conf.Enabled) {
+            const color = theme_1.getColor();
+            const docs = getDocumentation(snippet);
+            if (docs) {
+                // Constructing the Markdown String to show in the Hover window
+                const content = new vscode.MarkdownString("", true);
+                if (docs === null || docs === void 0 ? void 0 : docs.short_description) {
+                    content.appendMarkdown((yield math_render_1.getMathMarkdown(docs.short_description, color)) + ". [Read more... ](https://lammps.sandia.gov/doc/" + (docs === null || docs === void 0 ? void 0 : docs.html_filename) + ")\n");
+                    content.appendMarkdown("\n --- \n");
+                }
+                if (docs === null || docs === void 0 ? void 0 : docs.syntax) {
+                    content.appendMarkdown("### Syntax: \n");
+                    content.appendCodeblock(docs === null || docs === void 0 ? void 0 : docs.syntax, "lmps");
+                    content.appendMarkdown((yield math_render_1.getMathMarkdown(docs === null || docs === void 0 ? void 0 : docs.parameters, color)) + "\n\n");
+                }
+                if ((docs === null || docs === void 0 ? void 0 : docs.examples) && hover_conf.Examples) {
+                    content.appendMarkdown("### Examples: \n");
+                    content.appendCodeblock(docs === null || docs === void 0 ? void 0 : docs.examples, "lmps");
+                }
+                if ((docs === null || docs === void 0 ? void 0 : docs.description) && hover_conf.Detail == 'Complete') {
+                    content.appendMarkdown("### Description: \n");
+                    content.appendMarkdown(math_render_1.mdBeautify(yield math_render_1.getMathMarkdown(docs.description, color)) + "\n");
+                }
+                if ((docs === null || docs === void 0 ? void 0 : docs.restrictions) && hover_conf.Restrictions) {
+                    content.appendMarkdown("### Restrictions: \n");
+                    content.appendMarkdown(math_render_1.mdBeautify(docs === null || docs === void 0 ? void 0 : docs.restrictions));
+                }
+                return new vscode.Hover(content);
             }
-            if (docs === null || docs === void 0 ? void 0 : docs.syntax) {
-                content.appendMarkdown("### Syntax: \n");
-                content.appendCodeblock(docs === null || docs === void 0 ? void 0 : docs.syntax, "lmps");
-                content.appendMarkdown((docs === null || docs === void 0 ? void 0 : docs.parameters) + "\n\n");
-            }
-            if ((docs === null || docs === void 0 ? void 0 : docs.examples) && hover_conf.Examples) {
-                content.appendMarkdown("### Examples: \n");
-                content.appendCodeblock(docs === null || docs === void 0 ? void 0 : docs.examples, "lmps");
-            }
-            if ((docs === null || docs === void 0 ? void 0 : docs.description) && hover_conf.Detail == 'Complete') {
-                content.appendMarkdown("### Description: \n");
-                content.appendText((docs === null || docs === void 0 ? void 0 : docs.description) + "\n");
-            }
-            if ((docs === null || docs === void 0 ? void 0 : docs.restrictions) && hover_conf.Restrictions) {
-                content.appendMarkdown("### Restrictions: \n");
-                content.appendText(docs === null || docs === void 0 ? void 0 : docs.restrictions);
-            }
-            return new vscode.Hover(content);
         }
-    }
+    });
 }
 function updateDiagnostics(document, collection) {
     if (document) {
