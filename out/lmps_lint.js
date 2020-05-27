@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.checkFilePaths = void 0;
 const vscode_1 = require("vscode");
 const path_1 = require("path");
 const doc_fcns_1 = require("./doc_fcns");
@@ -11,7 +12,7 @@ const fs_1 = require("fs");
 * This function checks wheter a file given as input for
 * a read-command actually exists.
 */
-function checFilePaths(document, line_index, errors) {
+function checkFilePaths(document, line_index, errors) {
     const line_str = document.lineAt(line_index).text;
     let error;
     const read_commands = doc_fcns_1.searchCommands(RegExp('(?<=^|\\s|_)(read)(?=$|\\s|_)'));
@@ -34,7 +35,7 @@ function checFilePaths(document, line_index, errors) {
     }
     return errors;
 }
-exports.checFilePaths = checFilePaths;
+exports.checkFilePaths = checkFilePaths;
 /**
 * This function takes a line of the textfiles and checks
 * if one of the given commands is contained in the line.

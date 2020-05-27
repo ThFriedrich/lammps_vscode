@@ -1,4 +1,23 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,14 +27,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.deactivate = exports.activate = void 0;
 const doc_fcns_1 = require("./doc_fcns");
 const lmps_lint_1 = require("./lmps_lint");
 const math_render_1 = require("./math_render");
@@ -26,6 +39,9 @@ function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('extension.show_docs', () => {
         const web_uri = vscode.Uri.parse("https://lammps.sandia.gov/doc/Manual.html");
         vscode.env.openExternal(web_uri);
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand('extension.get_ext_path', () => {
+        return context.extensionPath;
     }));
     // Register Hover Provider
     context.subscriptions.push(vscode.languages.registerHoverProvider("lmps", {
@@ -81,7 +97,7 @@ function getDocumentation(snippet) {
             return docs;
         }
         else {
-            // Captures AtC commands with 2 Keywords like like "fix_modify AtC output"
+            // // Captures AtC commands with 2 Keywords like like "fix_modify AtC output"
             docs = doc_fcns_1.getCommand(sub_com[0] + ' AtC ' + sub_com[2]);
             if (docs) {
                 return docs;
@@ -123,7 +139,9 @@ function createHover(snippet) {
                 // Constructing the Markdown String to show in the Hover window
                 const content = new vscode.MarkdownString("", true);
                 if (docs === null || docs === void 0 ? void 0 : docs.short_description) {
-                    content.appendMarkdown((yield math_render_1.getMathMarkdown(docs.short_description, color)) + ". [Read more... ](https://lammps.sandia.gov/doc/" + (docs === null || docs === void 0 ? void 0 : docs.html_filename) + ")\n");
+                    let short_desc = yield doc_fcns_1.fix_img_path(docs.short_description, true);
+                    short_desc = yield math_render_1.getMathMarkdown(short_desc, color);
+                    content.appendMarkdown(short_desc + ". [Read more... ](https://lammps.sandia.gov/doc/" + (docs === null || docs === void 0 ? void 0 : docs.html_filename) + ")\n");
                     content.appendMarkdown("\n --- \n");
                 }
                 if (docs === null || docs === void 0 ? void 0 : docs.syntax) {
@@ -133,11 +151,13 @@ function createHover(snippet) {
                 }
                 if ((docs === null || docs === void 0 ? void 0 : docs.examples) && hover_conf.Examples) {
                     content.appendMarkdown("### Examples: \n");
-                    content.appendCodeblock(docs === null || docs === void 0 ? void 0 : docs.examples, "lmps");
+                    content.appendMarkdown(docs === null || docs === void 0 ? void 0 : docs.examples);
                 }
                 if ((docs === null || docs === void 0 ? void 0 : docs.description) && hover_conf.Detail == 'Complete') {
+                    let full_desc = yield doc_fcns_1.fix_img_path(docs.description, false);
+                    full_desc = yield math_render_1.getMathMarkdown(full_desc, color);
                     content.appendMarkdown("### Description: \n");
-                    content.appendMarkdown(math_render_1.mdBeautify(yield math_render_1.getMathMarkdown(docs.description, color)) + "\n");
+                    content.appendMarkdown(math_render_1.mdBeautify(full_desc) + "\n");
                 }
                 if ((docs === null || docs === void 0 ? void 0 : docs.restrictions) && hover_conf.Restrictions) {
                     content.appendMarkdown("### Restrictions: \n");
@@ -153,7 +173,7 @@ function updateDiagnostics(document, collection) {
         let errors = [];
         for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
             // check lines with a set of functions, which append Diagnostic entries to the errors array
-            errors = lmps_lint_1.checFilePaths(document, line_idx, errors);
+            errors = lmps_lint_1.checkFilePaths(document, line_idx, errors);
         }
         collection.set(document.uri, errors);
     }

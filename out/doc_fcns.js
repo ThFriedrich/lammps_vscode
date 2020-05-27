@@ -9,10 +9,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getCompletionList = exports.getArgIndex = exports.searchCommands = exports.getCommand = exports.fix_img_path = void 0;
 const vscode_1 = require("vscode");
 const math_render_1 = require("./math_render");
 const lmp_doc_1 = require("./lmp_doc");
 const theme_1 = require("./theme");
+function fix_img_path(txt, b_img) {
+    if (b_img) {
+    }
+    else {
+    }
+    return txt;
+}
+exports.fix_img_path = fix_img_path;
 /** Returns the entire documentation entry for a given command.*/
 function getCommand(find_command) {
     return lmp_doc_1.command_docs.find(e => e.command.includes(find_command));
@@ -54,70 +63,23 @@ function getArgIndex(command, argument) {
     return idx;
 }
 exports.getArgIndex = getArgIndex;
-/** Function matches keywords(from the syntax) against parameter
- * descriptions and checks for patterns like 'style = fcc or bcc or ...' to
- * generate a list of options for that particular keyword.
-*/
-function getChoices(arg, prms) {
-    function filterChoices(choice) {
-        return !choice.includes('=');
-    }
-    // Allow only single words and erase whitespaces
-    function trimChoices(choice) {
-        return choice.trim().split(' ')[0];
-    }
-    let choices = [];
-    let b_optional = false;
-    if (arg.includes('|')) { //Takes care of AtC commands
-        choices = arg.split('|');
-    }
-    else { // All other commands
-        prms.forEach(p => {
-            const b_choices = p.search(RegExp(`\\s*${arg}\\s?\\=.*(?<!,)\\s(or)\\s(?!(more))`)) != -1;
-            b_optional = p.includes('optional');
-            if (b_choices && !b_optional) {
-                const prm_sub = p.slice(p.indexOf('=') + 1);
-                choices = prm_sub.replace('0/1', '0 or 1').split(' or ');
-                choices = choices.map(trimChoices);
-                choices = choices.filter(filterChoices);
-            }
-        });
-        if (choices.length == 0 && !b_optional) {
-            choices.push(arg);
-        }
-    }
-    return choices;
-}
 /** Generates Autocompletion SnippetString for CompletionList*/
-function generateSnippetString(command_str, command_doc) {
-    function argString(snip, choices) {
-        snip.appendText(' ');
-        switch (true) {
-            case choices.length == 1:
-                snip.appendPlaceholder(choices[0]);
+function generateSnippetString(command_doc) {
+    let snip = new vscode_1.SnippetString(command_doc.args[0].arg);
+    for (let index = 1; index < command_doc.args.length; index++) {
+        snip.appendText(" ");
+        switch (command_doc.args[index].type) {
+            case 1:
+                snip.appendText(command_doc.args[index].arg);
                 break;
-            case choices.length > 1:
-                snip.appendChoice(choices);
+            case 2:
+                snip.appendPlaceholder(command_doc.args[index].arg);
+                break;
+            case 3:
+                snip.appendChoice(command_doc.args[index].choices);
                 break;
             default:
                 break;
-        }
-        return snip;
-    }
-    const com_words = command_str.split(' ');
-    const args = command_doc.syntax.split(RegExp('(?<!AtC)\\s')).filter(function (e) { if (e != '...') {
-        return e;
-    } });
-    const prms = command_doc.parameters.split(RegExp('\\n?\\s\\*\\s'));
-    let snip = new vscode_1.SnippetString(args[0]);
-    for (let index = 1; index < args.length; index++) {
-        const element = args[index].replace(RegExp('[\\[\\]\\*\\<\\>]', 'g'), '');
-        if (com_words.includes(args[index])) { //Append Command-Keyword as plain string
-            snip.appendText(' ' + args[index]);
-        }
-        else { // No command word -> check for choices or Placeholders
-            const choices = getChoices(element, prms);
-            snip = argString(snip, choices);
         }
     }
     return snip;
@@ -134,6 +96,7 @@ function getCompletionList(autoConf) {
         function docLink(html_link, compl_it_doc) {
             return compl_it_doc.appendMarkdown("[Open documentation](https://lammps.sandia.gov/doc/" + html_link + ")\n");
         }
+        const color = theme_1.getColor();
         const completion_List = new vscode_1.CompletionList();
         if (autoConf.Setting != "None") {
             for (let c of lmp_doc_1.command_docs.values()) {
@@ -151,13 +114,12 @@ function getCompletionList(autoConf) {
                         case "Extensive":
                             compl_it.documentation = mediumBlock(c, compl_it.documentation);
                             compl_it.documentation.appendMarkdown(" \n" + "--- " + " \n");
-                            const color = theme_1.getColor();
                             compl_it.documentation.appendMarkdown(yield math_render_1.getMathMarkdown(c.short_description, color));
                             break;
                         default:
                             break;
                     }
-                    compl_it.insertText = generateSnippetString(c_ix, c);
+                    compl_it.insertText = generateSnippetString(c);
                     compl_it.kind = vscode_1.CompletionItemKind.Function;
                     completion_List.items.push(compl_it);
                 }

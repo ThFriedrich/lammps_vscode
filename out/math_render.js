@@ -33,6 +33,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getMathMarkdown = exports.mdBeautify = void 0;
 const mj = require('mathjax-node');
 const lf = "  \n  ";
 mj.config = ({
@@ -85,9 +86,9 @@ function typeset(arg, scale, color) {
     });
 }
 function mdBeautify(str) {
-    return str
-        .replace(RegExp('\\n(?=\\!\\[equation\\])', 'g'), lf) // Enforce Line Breaks placed before Inline Equations 
-        .replace(RegExp('\\n(?=[\\*\\+\\-]|\\d\\.)', 'g'), " "); // Remove Line Breaks with trailing md markup to avoid Lists, etc. being created 
+    return str;
+    // .replace(RegExp('\\n(?=\\!\\[equation\\])', 'g'), lf)      // Enforce Line Breaks placed before Inline Equations 
+    // // .replace(RegExp('\\n(?=[\\*\\+\\-]|\\d\\.)', 'g'), " ")    // Remove Line Breaks with trailing md markup to avoid Lists, etc. being created 
 }
 exports.mdBeautify = mdBeautify;
 function getMathMarkdown(txt, color) {
