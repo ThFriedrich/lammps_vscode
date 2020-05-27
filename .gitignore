@@ -6,6 +6,5 @@ html
 *.txt
 *.xcf
 *.svg
-.vscode
 .vscodeignore
 .eslintrc.json
