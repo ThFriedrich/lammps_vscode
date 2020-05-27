@@ -11,7 +11,7 @@ import { existsSync } from 'fs'
 * This function checks wheter a file given as input for 
 * a read-command actually exists.
 */
-export function checFilePaths(document: TextDocument, line_index: number, errors: Diagnostic[]):Diagnostic[] {
+export function checkFilePaths(document: TextDocument, line_index: number, errors: Diagnostic[]):Diagnostic[] {
 
     const line_str = document.lineAt(line_index).text
     let error: Diagnostic|undefined
