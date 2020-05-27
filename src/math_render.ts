@@ -79,12 +79,6 @@ async function typeset(arg: string, scale: number, color:string): Promise<string
     return `![equation](${md})`
 }
 
-export function mdBeautify(str: string): string {
-    
-    return str
-        .replace(RegExp('\\n(?=\\!\\[equation\\])', 'g'), lf)      // Enforce Line Breaks placed before Inline Equations 
-        .replace(RegExp('\\n(?=[\\*\\+\\-]|\\d\\.)', 'g'), " ")    // Remove Line Breaks with trailing md markup to avoid Lists, etc. being created 
-}
 
 export async function getMathMarkdown(txt: string, color:string): Promise<string> {
     
