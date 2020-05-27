@@ -1,6 +1,6 @@
-import { getCompletionList, getCommand, commandDoc } from "./doc_fcns";
-import { checFilePaths } from './lmps_lint';
-import { getMathMarkdown, mdBeautify } from './math_render'
+import { doc_entry, fix_img_path, getCommand, getCompletionList } from "./doc_fcns";
+import { checkFilePaths } from './lmps_lint';
+import { getMathMarkdown } from './math_render'
 import { getColor } from './theme'
 import * as vscode from 'vscode';
 
@@ -12,6 +12,11 @@ export function activate(context: vscode.ExtensionContext) {
 			const web_uri = vscode.Uri.parse("https://lammps.sandia.gov/doc/Manual.html")
 			vscode.env.openExternal(web_uri)
 
+		}));
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('extension.get_ext_path', () => {
+			return context.extensionPath
 		}));
 
 	// Register Hover Provider
@@ -65,12 +70,13 @@ export function activate(context: vscode.ExtensionContext) {
 		}));
 }
 
+
 function getDocumentation(snippet: string) {
 
 	const sub_com = snippet.split(RegExp('[\\t\\s]+'));
 
 	// Captures commands with 2 Arguments between 2 Keywords
-	let docs:commandDoc|undefined = getCommand(sub_com[0] + ' ' + sub_com[3])	
+	let docs:doc_entry|undefined = getCommand(sub_com[0] + ' ' + sub_com[3])	
 	if (docs) {
 		return docs
 	} else {
@@ -79,7 +85,7 @@ function getDocumentation(snippet: string) {
 	if (docs) {
 		return docs
 	} else {
-		// Captures AtC commands with 2 Keywords like like "fix_modify AtC output"
+		// // Captures AtC commands with 2 Keywords like like "fix_modify AtC output"
 		docs = getCommand(sub_com[0] + ' AtC ' + sub_com[2])
 	if (docs) {
 		return docs
@@ -104,17 +110,19 @@ function getDocumentation(snippet: string) {
 }
 
 async function createHover(snippet: string) {
-
-	const hover_conf = vscode.workspace.getConfiguration('lammps.Hover')
-
+	
+	const hover_conf:vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('lammps.Hover')
+	
 	if (hover_conf.Enabled) {
 		const color:string = getColor()
-		const docs = getDocumentation(snippet)
+		const docs:doc_entry|undefined = getDocumentation(snippet)
 		if (docs) {
 			// Constructing the Markdown String to show in the Hover window
 			const content = new vscode.MarkdownString("",true)
 			if (docs?.short_description) {
-				content.appendMarkdown(await getMathMarkdown(docs.short_description, color) + ". [Read more... ](https://lammps.sandia.gov/doc/" + docs?.html_filename + ")\n")
+				let short_desc:string = await fix_img_path(docs.short_description, true) 
+				short_desc =  await getMathMarkdown(short_desc, color) 
+				content.appendMarkdown(short_desc + ". [Read more... ](https://lammps.sandia.gov/doc/" + docs?.html_filename + ")\n")
 				content.appendMarkdown("\n --- \n")
 			}
 			if (docs?.syntax) {
@@ -124,15 +132,17 @@ async function createHover(snippet: string) {
 			}
 			if (docs?.examples && hover_conf.Examples) {
 				content.appendMarkdown("### Examples: \n")
-				content.appendCodeblock(docs?.examples, "lmps")
+				content.appendMarkdown(docs?.examples)
 			}
 			if (docs?.description && hover_conf.Detail == 'Complete') {
+				let full_desc:string = await fix_img_path(docs.description, false) 
+				full_desc =  await getMathMarkdown(full_desc, color) 
 				content.appendMarkdown("### Description: \n")
-				content.appendMarkdown(mdBeautify(await getMathMarkdown(docs.description, color)) + "\n")
+				content.appendMarkdown(full_desc + "\n")
 			}
 			if (docs?.restrictions && hover_conf.Restrictions) {
 				content.appendMarkdown("### Restrictions: \n")
-				content.appendMarkdown(mdBeautify(docs?.restrictions))
+				content.appendMarkdown(docs?.restrictions)
 			}
 			return new vscode.Hover(content)
 		}
@@ -144,7 +154,7 @@ function updateDiagnostics(document: vscode.TextDocument, collection: vscode.Dia
 		let errors: vscode.Diagnostic[] = []
 		for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
 			// check lines with a set of functions, which append Diagnostic entries to the errors array
-			errors = checFilePaths(document, line_idx, errors)
+			errors = checkFilePaths(document, line_idx, errors)
 		}
 		collection.set(document.uri, errors)
 	} else {
