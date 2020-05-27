@@ -1,0 +1,43 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "compile",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: compile",
+			"detail": "tsc -p ./",
+		},
+		{
+			"label": "CreateDocArray",
+			"type": "shell",
+			"group": "build",
+			"command": "python3 ./src/rst2JSON.py; npm run compile",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": false
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "UpdateRST",
+			"type": "shell",
+			"group": "build",
+			"command": "svn export https://github.com/lammps/lammps/trunk/doc/src rst --force; python3 ./src/rst2JSON.py; rm rst/*.rst; rm -r rst/PDF; rm -r rst/Developer; rm -r rst/99; rm -r rst/2001; rm -r rst/_ext; ",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": false
+			},
+			"problemMatcher": []
+		}
+	]
+}
