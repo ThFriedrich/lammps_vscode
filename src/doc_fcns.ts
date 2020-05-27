@@ -3,19 +3,34 @@ import { getMathMarkdown } from './math_render'
 import { command_docs } from "./lmp_doc";
 import { getColor } from './theme'
 
-export type commandDoc = {
+export interface doc_entry {
     command: string[];
+    syntax: string;
+    args: {
+        arg: string;
+        type: number;
+        choices: string[];
+    }[];
+    parameters: string;
+    examples: string;
     html_filename: string;
     short_description: string;
     description: string;
-    syntax: string;
-    parameters: string;
-    examples: string;
     restrictions: string;
+    related: string;
+}
+
+export function fix_img_path(txt: string, b_img: boolean): string {
+    if (b_img) {
+
+    } else {
+
+    }
+    return txt
 }
 
 /** Returns the entire documentation entry for a given command.*/
-export function getCommand(find_command: string): commandDoc | undefined {
+export function getCommand(find_command: string): doc_entry | undefined {
     return command_docs.find(e => e.command.includes(find_command));
 }
 
@@ -55,74 +70,26 @@ export function getArgIndex(command: string, argument: RegExp | string): number 
     return idx
 }
 
-/** Function matches keywords(from the syntax) against parameter 
- * descriptions and checks for patterns like 'style = fcc or bcc or ...' to
- * generate a list of options for that particular keyword. 
-*/
-function getChoices(arg: string, prms: string[]): string[] {
-
-    function filterChoices(choice: string): boolean {
-        return !choice.includes('=')
-    }
-
-    // Allow only single words and erase whitespaces
-    function trimChoices(choice: string): string {
-        return choice.trim().split(' ')[0]
-    }
-
-    let choices: string[] = []
-    let b_optional: boolean = false
-    if (arg.includes('|')) { //Takes care of AtC commands
-        choices = arg.split('|')
-    } else { // All other commands
-        prms.forEach(p => {
-            const b_choices = p.search(RegExp(`\\s*${arg}\\s?\\=.*(?<!,)\\s(or)\\s(?!(more))`)) != -1
-            b_optional = p.includes('optional')
-            if (b_choices && !b_optional) {
-                const prm_sub = p.slice(p.indexOf('=') + 1)
-                choices = prm_sub.replace('0/1', '0 or 1').split(' or ')
-                choices = choices.map(trimChoices)
-                choices = choices.filter(filterChoices)
-            }
-        }
-        )
-        if (choices.length == 0 && !b_optional) {
-            choices.push(arg)
-        }
-    }
-    return choices
-}
 
 /** Generates Autocompletion SnippetString for CompletionList*/
-function generateSnippetString(command_str: string, command_doc: commandDoc): SnippetString {
+function generateSnippetString(command_doc: doc_entry): SnippetString {
 
-    function argString(snip: SnippetString, choices: string[]): SnippetString {
-        snip.appendText(' ')
-        switch (true) {
-            case choices.length == 1:
-                snip.appendPlaceholder(choices[0])
+    let snip = new SnippetString(command_doc.args[0].arg);
+
+    for (let index = 1; index < command_doc.args.length; index++) {
+        snip.appendText(" ")
+        switch (command_doc.args[index].type) {
+            case 1:
+                snip.appendText(command_doc.args[index].arg)
                 break;
-            case choices.length > 1:
-                snip.appendChoice(choices)
+            case 2:
+                snip.appendPlaceholder(command_doc.args[index].arg)
+                break;
+            case 3:
+                snip.appendChoice(command_doc.args[index].choices)
                 break;
             default:
                 break;
-        }
-        return snip
-    }
-
-    const com_words: string[] = command_str.split(' ')
-    const args: string[] = command_doc.syntax.split(RegExp('(?<!AtC)\\s')).filter(function (e) { if (e != '...') { return e } })
-    const prms: string[] = command_doc.parameters.split(RegExp('\\n?\\s\\*\\s'))
-    let snip = new SnippetString(args[0]);
-
-    for (let index = 1; index < args.length; index++) {
-        const element = args[index].replace(RegExp('[\\[\\]\\*\\<\\>]', 'g'), '');
-        if (com_words.includes(args[index])) { //Append Command-Keyword as plain string
-            snip.appendText(' ' + args[index])
-        } else { // No command word -> check for choices or Placeholders
-            const choices = getChoices(element, prms)
-            snip = argString(snip, choices)
         }
     }
     return snip
@@ -131,17 +98,18 @@ function generateSnippetString(command_str: string, command_doc: commandDoc): Sn
 /** Generates CompletionList for all commands*/
 export async function getCompletionList(autoConf: WorkspaceConfiguration): Promise<CompletionList> {
 
-    function mediumBlock(c: commandDoc, compl_it_doc: MarkdownString): MarkdownString {
+    function mediumBlock(c: doc_entry, compl_it_doc: MarkdownString): MarkdownString {
         compl_it_doc = docLink(c.html_filename, compl_it_doc)
         compl_it_doc.appendCodeblock(c.syntax, 'lmps')
         compl_it_doc.appendMarkdown(c.parameters)
         return compl_it_doc
     }
 
-    function docLink(html_link:string,compl_it_doc: MarkdownString): MarkdownString {
+    function docLink(html_link: string, compl_it_doc: MarkdownString): MarkdownString {
         return compl_it_doc.appendMarkdown("[Open documentation](https://lammps.sandia.gov/doc/" + html_link + ")\n")
     }
 
+    const color: string = getColor()
     const completion_List = new CompletionList();
 
     if (autoConf.Setting != "None") {
@@ -162,13 +130,12 @@ export async function getCompletionList(autoConf: WorkspaceConfiguration): Promi
                     case "Extensive":
                         compl_it.documentation = mediumBlock(c, compl_it.documentation)
                         compl_it.documentation.appendMarkdown(" \n" + "--- " + " \n")
-                        const color: string = getColor()
                         compl_it.documentation.appendMarkdown(await getMathMarkdown(c.short_description, color))
                         break;
                     default:
                         break;
                 }
-                compl_it.insertText = generateSnippetString(c_ix, c)
+                compl_it.insertText = generateSnippetString(c)
                 compl_it.kind = CompletionItemKind.Function
                 completion_List.items.push(compl_it)
             }
