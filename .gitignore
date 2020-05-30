@@ -6,5 +6,11 @@ html
 *.txt
 *.xcf
 *.svg
+*.rst
+*.html
+*.pdf
+*.fig
+!rst/JPG
+rst
 .vscodeignore
 .eslintrc.json
