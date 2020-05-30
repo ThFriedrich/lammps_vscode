@@ -1,7 +1,8 @@
-import { WorkspaceConfiguration, CompletionItem, CompletionList, MarkdownString, SnippetString, CompletionItemKind } from 'vscode';
+import { WorkspaceConfiguration, CompletionItem, CompletionList, MarkdownString, SnippetString, CompletionItemKind, extensions } from 'vscode';
 import { getMathMarkdown } from './math_render'
 import { command_docs } from "./lmp_doc";
 import { getColor } from './theme'
+import { join } from 'path'
 
 export interface doc_entry {
     command: string[];
@@ -20,11 +21,20 @@ export interface doc_entry {
     related: string;
 }
 
+/** Searches a string for Markdown-Image links and adds the extension path to
+ * the image url if argument b_img is true, otherwise it deletes the link to remove 
+ * the image from the text.*/
 export function fix_img_path(txt: string, b_img: boolean): string {
-    if (b_img) {
-
-    } else {
-
+    const img: (RegExpMatchArray | null)[] = [txt.match(RegExp('\\!\\[Image\\]\\((.*?)\\)'))]
+    if (img[0]) {
+        let ex_dir = extensions.getExtension('ThFriedrich.lammps')?.extensionPath;
+        img.forEach(im => {
+            if (b_img && ex_dir) {
+                txt = txt.replace(im![1], join(ex_dir, 'rst', im![1]))
+            } else {
+                txt = txt.replace(im![0], "")
+            }
+        });
     }
     return txt
 }

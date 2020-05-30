@@ -14,11 +14,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 		}));
 
-	context.subscriptions.push(
-		vscode.commands.registerCommand('extension.get_ext_path', () => {
-			return context.extensionPath
-		}));
-
 	// Register Hover Provider
 	context.subscriptions.push(
 		vscode.languages.registerHoverProvider("lmps", {
@@ -120,7 +115,7 @@ async function createHover(snippet: string) {
 			// Constructing the Markdown String to show in the Hover window
 			const content = new vscode.MarkdownString("",true)
 			if (docs?.short_description) {
-				let short_desc:string = await fix_img_path(docs.short_description, true) 
+				let short_desc:string = fix_img_path(docs.short_description, false)
 				short_desc =  await getMathMarkdown(short_desc, color) 
 				content.appendMarkdown(short_desc + ". [Read more... ](https://lammps.sandia.gov/doc/" + docs?.html_filename + ")\n")
 				content.appendMarkdown("\n --- \n")
@@ -135,7 +130,7 @@ async function createHover(snippet: string) {
 				content.appendMarkdown(docs?.examples)
 			}
 			if (docs?.description && hover_conf.Detail == 'Complete') {
-				let full_desc:string = await fix_img_path(docs.description, false) 
+				let full_desc:string = fix_img_path(docs.description, true) 
 				full_desc =  await getMathMarkdown(full_desc, color) 
 				content.appendMarkdown("### Description: \n")
 				content.appendMarkdown(full_desc + "\n")
