@@ -67,7 +67,6 @@ function svgToDataUrl(xml: string): string {
 }
 
 async function typeset(arg: string, scale: number, color:string): Promise<string> {
-    // const test_str:string = '\\begin{split}F_i^u & = \\sum_t^{N_t}\\alpha_t \\cdot \\exp\\left[-\\frac{\\left(d_{i,t}^u\\right)^2}{2l^2}\\right] \\\\ d_{i,t}^u & = \\left|\\left| V_i^u(\\eta) - V_t^u(\\eta) \\right|\\right| \\\\ V_i^u(\\eta) & = \\sum_{j \\neq i}\\frac{r^u_{ij}}{r_{ij}} \\cdot e^{-\\left(\\frac{r_{ij}}{\\eta} \\right)^2} \\cdot f_d\\left(r_{ij}\\right) \\\\ f_d\\left(r_{ij}\\right) & = \\frac{1}{2} \\left[\\cos\\left(\\frac{\\pi r_{ij}}{R_c}\\right) + 1 \\right]\\end{split}'
     const data = await mj.typeset({
         math: arg,
         format: "TeX",
