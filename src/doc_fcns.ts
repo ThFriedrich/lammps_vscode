@@ -1,4 +1,4 @@
-import { WorkspaceConfiguration, CompletionItem, CompletionList, MarkdownString, SnippetString, CompletionItemKind, extensions } from 'vscode';
+import { WorkspaceConfiguration, CompletionItem, WebviewPanel, CompletionList, MarkdownString, SnippetString, CompletionItemKind, extensions, commands, window, ViewColumn } from 'vscode';
 import { getMathMarkdown } from './math_render'
 import { command_docs } from "./lmp_doc";
 import { getColor } from './theme'
@@ -24,19 +24,114 @@ export interface doc_entry {
 /** Searches a string for Markdown-Image links and adds the extension path to
  * the image url if argument b_img is true, otherwise it deletes the link to remove 
  * the image from the text.*/
-export function fix_img_path(txt: string, b_img: boolean): string {
+export function fix_img_path(txt: string, b_img: boolean, b_web:boolean): string {
     const img: (RegExpMatchArray | null)[] = [txt.match(RegExp('\\!\\[Image\\]\\((.*?)\\)'))]
     if (img[0]) {
         let ex_dir = extensions.getExtension('ThFriedrich.lammps')?.extensionPath;
         img.forEach(im => {
             if (b_img && ex_dir) {
-                txt = txt.replace(im![1], join(ex_dir, 'rst', im![1]))
+                if (b_web) {
+                    txt = txt.replace(im![1], join(ex_dir, 'rst', im![1]))
+                } else {
+                    txt = txt.replace(im![1], join(ex_dir, 'rst', im![1]))
+                } 
             } else {
                 txt = txt.replace(im![0], "")
             }
         });
     }
     return txt
+}
+
+export async function create_doc_page(snippet: string): Promise<MarkdownString | undefined> {
+
+    const color: string = getColor()
+    const docs: doc_entry | undefined = getDocumentation(snippet)
+    if (docs) {
+        // Constructing the Markdown String to show in the Hover window
+        const content = new MarkdownString("", true)
+        if (docs?.command) {
+            content.appendMarkdown(`## ${docs?.command[0]} \n`)
+            content.appendMarkdown("\n --- \n")
+            if (docs.command.length > 1) {
+                for (let cx = 1; cx < docs.command.length; cx++) {
+                    const c = docs.command[cx];
+                    content.appendMarkdown(`### ${c} \n`)
+                }
+                content.appendMarkdown("\n --- \n")
+            } 
+        }
+        if (docs?.syntax) {
+            content.appendMarkdown("## Syntax: \n")
+            content.appendCodeblock(docs?.syntax, "lmps")
+            content.appendMarkdown(await getMathMarkdown(docs?.parameters, color) + "\n\n")
+        }
+        if (docs?.examples) {
+            content.appendMarkdown("## Examples: \n")
+            content.appendMarkdown(docs?.examples)
+        }
+        if (docs?.description) {
+            let full_desc: string = fix_img_path(docs.description, true, true)
+            full_desc = await getMathMarkdown(full_desc, color)
+            content.appendMarkdown("## Description: \n")
+            content.appendMarkdown(full_desc + "\n")
+        }
+        if (docs?.restrictions) {
+            content.appendMarkdown("## Restrictions: \n")
+            content.appendMarkdown(docs?.restrictions)
+        }
+        // if (docs?.related) {
+        //     content.appendMarkdown("### Related commands: \n")
+        //     content.appendMarkdown(docs?.related)
+        // }
+        return content
+    } else {
+        return undefined
+    }
+}
+
+
+export function getDocumentation(snippet: string): doc_entry | undefined {
+
+    const sub_com = snippet.split(RegExp('[\\t\\s]+'));
+
+    // Captures commands with 2 Arguments between 2 Keywords
+    let docs: doc_entry | undefined = getCommand(sub_com[0] + ' ' + sub_com[3])
+    if (docs) {
+        return docs
+    } else {
+        // Captures AtC commands with 3 Keywords like "fix_modify AtC control localized_lambda"
+        docs = getCommand(sub_com[0] + ' AtC ' + sub_com[2] + ' ' + sub_com[3])
+        if (docs) {
+            return docs
+        } else {
+            // // Captures AtC commands with 2 Keywords like like "fix_modify AtC output"
+            docs = getCommand(sub_com[0] + ' AtC ' + sub_com[2])
+            if (docs) {
+                return docs
+            } else {
+                // Captures commands with 1 Arguments between 2 Keywords
+                docs = getCommand(sub_com[0] + ' ' + sub_com[2])
+                if (docs) {
+                    return docs
+                } else {
+                    // Captures commands with 2 Arguments
+                    docs = getCommand(sub_com[0] + ' ' + sub_com[1])
+                    if (docs) {
+                        return docs
+                    } else {
+                        // Captures commands with 1 Argument
+                        docs = getCommand(sub_com[0])
+                        if (docs) {
+                            return docs
+                        } else {
+                            return undefined
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 /** Returns the entire documentation entry for a given command.*/

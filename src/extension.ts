@@ -1,39 +1,86 @@
-import { doc_entry, fix_img_path, getCommand, getCompletionList } from "./doc_fcns";
+import { doc_entry, fix_img_path, getCompletionList, getDocumentation, create_doc_page } from "./doc_fcns";
 import { checkFilePaths } from './lmps_lint';
 import { getMathMarkdown } from './math_render'
 import { getColor } from './theme'
 import * as vscode from 'vscode';
 
-export function activate(context: vscode.ExtensionContext) {
-	
+export async function activate(context: vscode.ExtensionContext) {
+
+	let panel: vscode.WebviewPanel | undefined = undefined;
+
+	async function show_doc_panel(md_content: vscode.MarkdownString) {
+		if (panel) {
+			// If we already have a panel, show it in the target column
+			panel.reveal(2);
+		} else {
+			// Otherwise, create a new panel
+			panel = vscode.window.createWebviewPanel(
+				'markdown.preview',
+				'Lammps Documentation', 2,
+			);
+		}
+
+		const html: string = await vscode.commands.executeCommand('markdown.api.render', md_content.value) as string;
+		panel.webview.html = html;
+		// Reset when the current panel is closed
+		panel.onDidDispose(
+			() => {
+				panel = undefined;
+			},
+			null,
+			context.subscriptions
+		);
+	}
+
 	// Register Commands
 	context.subscriptions.push(
-		vscode.commands.registerCommand('extension.show_docs', () => {
-			const web_uri = vscode.Uri.parse("https://lammps.sandia.gov/doc/Manual.html")
-			vscode.env.openExternal(web_uri)
+		vscode.commands.registerCommand('extension.show_docs', async () => {
+			const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
+			const document: vscode.TextDocument = vscode.window.activeTextEditor!.document
+			const position: vscode.Position = editor!.selection.active;
+			const command: string = getRangeFromPosition(document, position)
+			const md_content: vscode.MarkdownString | undefined = await create_doc_page(command)
+			if (md_content) {
+				show_doc_panel(md_content)
+			}
+			vscode.commands.executeCommand('setContext', 'commandOnCursor', false);
 
 		}));
 
+	// Redraw active Webview Panel in new Color (for math)
+	// context.subscriptions.push(
+	// 	vscode.window.onDidChangeActiveColorTheme(e => {
+
+	// 	}))
+
+	
 	// Register Hover Provider
 	context.subscriptions.push(
 		vscode.languages.registerHoverProvider("lmps", {
 			provideHover(document, position) {
-				const range = document.getWordRangeAtPosition(position, RegExp('[\\w\\/]+(?:[\\t\\s]+[^\#\\s\\t]+)*'))
-				const words = document.getText(range)
-				return createHover(words)
+				const command: string = getRangeFromPosition(document, position)
+				const docs: doc_entry | undefined = getDocumentation(command)
+				// Sets a context variable to control visibility of context menu item "Show documentation for Command"
+				if (docs) {
+					vscode.commands.executeCommand('setContext', 'commandOnCursor', true);
+					return createHover(docs)
+				} else {
+					vscode.commands.executeCommand('setContext', 'commandOnCursor', false);
+				}
 			}
 		}));
+
 
 	// Register Completions Provider
 	context.subscriptions.push(
 		vscode.languages.registerCompletionItemProvider("lmps", {
 			async provideCompletionItems(
-				document: vscode.TextDocument, 
-				position: vscode.Position, 
-				token: vscode.CancellationToken, 
+				document: vscode.TextDocument,
+				position: vscode.Position,
+				token: vscode.CancellationToken,
 				context: vscode.CompletionContext) {
 				const autoConf = vscode.workspace.getConfiguration('lammps.AutoComplete')
-				let compl_str:vscode.CompletionList = await getCompletionList(autoConf)
+				let compl_str: vscode.CompletionList = await getCompletionList(autoConf)
 				return compl_str
 			}
 		}));
@@ -65,58 +112,24 @@ export function activate(context: vscode.ExtensionContext) {
 		}));
 }
 
-
-function getDocumentation(snippet: string) {
-
-	const sub_com = snippet.split(RegExp('[\\t\\s]+'));
-
-	// Captures commands with 2 Arguments between 2 Keywords
-	let docs:doc_entry|undefined = getCommand(sub_com[0] + ' ' + sub_com[3])	
-	if (docs) {
-		return docs
-	} else {
-		// Captures AtC commands with 3 Keywords like "fix_modify AtC control localized_lambda"
-		docs = getCommand(sub_com[0] + ' AtC ' + sub_com[2] + ' ' + sub_com[3])
-	if (docs) {
-		return docs
-	} else {
-		// // Captures AtC commands with 2 Keywords like like "fix_modify AtC output"
-		docs = getCommand(sub_com[0] + ' AtC ' + sub_com[2])
-	if (docs) {
-		return docs
-	} else {
-		// Captures commands with 1 Arguments between 2 Keywords
-		docs = getCommand(sub_com[0] + ' ' + sub_com[2])
-	if (docs) {
-		return docs
-	} else {
-		// Captures commands with 2 Arguments
-		docs = getCommand(sub_com[0] + ' ' + sub_com[1])
-	if (docs) {
-		return docs
-	} else {
-		// Captures commands with 1 Argument
-		docs = getCommand(sub_com[0])
-	if (docs) {
-		return docs
-	} else { 
-		return undefined }
-	}}}}}
+function getRangeFromPosition(document: vscode.TextDocument, position: vscode.Position): string {
+	const range = document.getWordRangeAtPosition(position, RegExp('[\\w\\/]+(?:[\\t\\s]+[^\#\\s\\t]+)*'))
+	return document.getText(range)
 }
 
-async function createHover(snippet: string) {
-	
-	const hover_conf:vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('lammps.Hover')
-	
+
+async function createHover(docs: doc_entry): Promise<vscode.Hover | undefined> {
+
+	const hover_conf: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('lammps.Hover')
 	if (hover_conf.Enabled) {
-		const color:string = getColor()
-		const docs:doc_entry|undefined = getDocumentation(snippet)
+		const color: string = getColor()
+
 		if (docs) {
 			// Constructing the Markdown String to show in the Hover window
-			const content = new vscode.MarkdownString("",true)
+			const content = new vscode.MarkdownString("", true)
 			if (docs?.short_description) {
-				let short_desc:string = fix_img_path(docs.short_description, false)
-				short_desc =  await getMathMarkdown(short_desc, color) 
+				let short_desc: string = fix_img_path(docs.short_description, false, false)
+				short_desc = await getMathMarkdown(short_desc, color)
 				content.appendMarkdown(short_desc + ". [Read more... ](https://lammps.sandia.gov/doc/" + docs?.html_filename + ")\n")
 				content.appendMarkdown("\n --- \n")
 			}
@@ -130,8 +143,8 @@ async function createHover(snippet: string) {
 				content.appendMarkdown(docs?.examples)
 			}
 			if (docs?.description && hover_conf.Detail == 'Complete') {
-				let full_desc:string = fix_img_path(docs.description, true) 
-				full_desc =  await getMathMarkdown(full_desc, color) 
+				let full_desc: string = fix_img_path(docs.description, true, false)
+				full_desc = await getMathMarkdown(full_desc, color)
 				content.appendMarkdown("### Description: \n")
 				content.appendMarkdown(full_desc + "\n")
 			}

@@ -23,7 +23,7 @@
   "activationEvents": [
     "onLanguage:lmps"
   ],
-  "main": "./dist/extension.js",
+  "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
@@ -51,14 +51,31 @@
         "language": "lmps",
         "scopeName": "source.lmps",
         "path": "./syntaxes/lmps.tmLanguage.json"
+      },
+      {
+        "scopeName": "markdown.lmps.codeblock",
+        "path": "./syntaxes/codeblock.json",
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.lmps": "lmps"
+        }
       }
     ],
     "commands": [
       {
         "command": "extension.show_docs",
-        "title": "Open Lammps Documentation"
+        "title": "Show Documentation for this Command"
       }
     ],
+    "menus": {
+      "editor/context": [ {
+        "command": "extension.show_docs",
+        "when": "editorLangId == lmps&&commandOnCursor",
+        "group": "Navigation"
+      }]
+    },
     "configuration": {
       "title": "Lammps Syntax Highlighting",
       "properties": {
