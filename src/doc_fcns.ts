@@ -1,4 +1,4 @@
-import { WorkspaceConfiguration, CompletionItem, WebviewPanel, CompletionList, MarkdownString, SnippetString, CompletionItemKind, extensions, commands, window, ViewColumn } from 'vscode';
+import { Uri, WorkspaceConfiguration, CompletionItem, WebviewPanel, CompletionList, MarkdownString, SnippetString, CompletionItemKind, extensions, commands, window, ViewColumn } from 'vscode';
 import { getMathMarkdown } from './math_render'
 import { command_docs } from "./lmp_doc";
 import { getColor } from './theme'
@@ -24,26 +24,28 @@ export interface doc_entry {
 /** Searches a string for Markdown-Image links and adds the extension path to
  * the image url if argument b_img is true, otherwise it deletes the link to remove 
  * the image from the text.*/
-export function fix_img_path(txt: string, b_img: boolean, b_web:boolean): string {
+export function fix_img_path(txt: string, b_img: boolean, web_panel:WebviewPanel|undefined): string {
     const img: (RegExpMatchArray | null)[] = [txt.match(RegExp('\\!\\[Image\\]\\((.*?)\\)'))]
     if (img[0]) {
         let ex_dir = extensions.getExtension('ThFriedrich.lammps')?.extensionPath;
         img.forEach(im => {
             if (b_img && ex_dir) {
-                if (b_web) {
-                    txt = txt.replace(im![1], join(ex_dir, 'rst', im![1]))
+                const md_str:string = join(ex_dir, 'rst', im![1])
+                if (web_panel) {
+                    const web_uri:string = web_panel.webview.asWebviewUri(Uri.file(md_str)).toString()
+                    txt = txt.replace(im![1], web_uri)
                 } else {
-                    txt = txt.replace(im![1], join(ex_dir, 'rst', im![1]))
+                    txt = txt.replace(im![1], md_str)
                 } 
             } else {
-                txt = txt.replace(im![0], "")
+               txt = txt.replace(im![0], "")
             }
         });
     }
     return txt
 }
 
-export async function create_doc_page(snippet: string): Promise<MarkdownString | undefined> {
+export async function create_doc_page(snippet: string, panel:WebviewPanel|undefined): Promise<MarkdownString | undefined> {
 
     const color: string = getColor()
     const docs: doc_entry | undefined = getDocumentation(snippet)
@@ -71,7 +73,7 @@ export async function create_doc_page(snippet: string): Promise<MarkdownString |
             content.appendMarkdown(docs?.examples)
         }
         if (docs?.description) {
-            let full_desc: string = fix_img_path(docs.description, true, true)
+            let full_desc: string = fix_img_path(docs.description, true, panel)
             full_desc = await getMathMarkdown(full_desc, color)
             content.appendMarkdown("## Description: \n")
             content.appendMarkdown(full_desc + "\n")
