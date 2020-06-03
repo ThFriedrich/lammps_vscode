@@ -8,40 +8,40 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	let panel: vscode.WebviewPanel | undefined = undefined;
 
-	async function show_doc_panel(md_content: vscode.MarkdownString) {
-		if (panel) {
-			// If we already have a panel, show it in the target column
-			panel.reveal(2);
-		} else {
-			// Otherwise, create a new panel
-			panel = vscode.window.createWebviewPanel(
-				'markdown.preview',
-				'Lammps Documentation', 2,
-			);
-		}
+	async function set_doc_panel_content(md_content: vscode.MarkdownString, panel: vscode.WebviewPanel | undefined) {
 
 		const html: string = await vscode.commands.executeCommand('markdown.api.render', md_content.value) as string;
-		panel.webview.html = html;
-		// Reset when the current panel is closed
-		panel.onDidDispose(
-			() => {
-				panel = undefined;
-			},
-			null,
-			context.subscriptions
-		);
+		panel!.webview.html = html;
 	}
 
 	// Register Commands
 	context.subscriptions.push(
 		vscode.commands.registerCommand('extension.show_docs', async () => {
+			// Reset when the current panel is closed	
+			panel?.onDidDispose(
+				() => {
+					panel = undefined;
+				},
+				null,
+				context.subscriptions
+			);
+			if (panel) {
+				// If we already have a panel, show it in the target column
+				panel.reveal(2);
+			} else {
+				// Otherwise, create a new panel
+				panel = vscode.window.createWebviewPanel(
+					'markdown.preview',
+					'Lammps Documentation', 2, { retainContextWhenHidden: true }
+				);
+			}
 			const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
 			const document: vscode.TextDocument = vscode.window.activeTextEditor!.document
 			const position: vscode.Position = editor!.selection.active;
 			const command: string = getRangeFromPosition(document, position)
-			const md_content: vscode.MarkdownString | undefined = await create_doc_page(command)
+			const md_content: vscode.MarkdownString | undefined = await create_doc_page(command, panel)
 			if (md_content) {
-				show_doc_panel(md_content)
+				set_doc_panel_content(md_content, panel)
 			}
 			vscode.commands.executeCommand('setContext', 'commandOnCursor', false);
 
@@ -53,7 +53,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// 	}))
 
-	
+
 	// Register Hover Provider
 	context.subscriptions.push(
 		vscode.languages.registerHoverProvider("lmps", {
@@ -128,7 +128,7 @@ async function createHover(docs: doc_entry): Promise<vscode.Hover | undefined> {
 			// Constructing the Markdown String to show in the Hover window
 			const content = new vscode.MarkdownString("", true)
 			if (docs?.short_description) {
-				let short_desc: string = fix_img_path(docs.short_description, false, false)
+				let short_desc: string = fix_img_path(docs.short_description, false, undefined)
 				short_desc = await getMathMarkdown(short_desc, color)
 				content.appendMarkdown(short_desc + ". [Read more... ](https://lammps.sandia.gov/doc/" + docs?.html_filename + ")\n")
 				content.appendMarkdown("\n --- \n")
@@ -143,7 +143,7 @@ async function createHover(docs: doc_entry): Promise<vscode.Hover | undefined> {
 				content.appendMarkdown(docs?.examples)
 			}
 			if (docs?.description && hover_conf.Detail == 'Complete') {
-				let full_desc: string = fix_img_path(docs.description, true, false)
+				let full_desc: string = fix_img_path(docs.description, true, undefined)
 				full_desc = await getMathMarkdown(full_desc, color)
 				content.appendMarkdown("### Description: \n")
 				content.appendMarkdown(full_desc + "\n")
