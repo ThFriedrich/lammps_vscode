@@ -4,6 +4,7 @@ import re
 def tr_section(section_rst: str, references: dict) -> str:
     section_md = tr_inline_math(section_rst)
     section_md = tr_inline_doc(section_md)
+    section_md = tr_inline_pdf(section_md)
     section_md = tr_table(section_md)
     section_md = tr_references(section_md, references)
     section_md = fix_tr_markup_bugs(section_md)
@@ -20,10 +21,12 @@ def tr_inline_math(txt: str) -> str:
 
 def tr_references(section: str, references: dict) -> str:
     for r in references:
-        b_tag = section.find(r['tag_rst']) != -1 
-        b_fn = section.find(r['fn_rst']) != -1 and section.find(r['fn_md']) != -1
+        b_tag = section.find(r['tag_rst']) != -1
+        b_fn = section.find(r['fn_rst']) != -1 \
+            and section.find(r['fn_md']) != -1
         if b_tag:
-            section = section.replace(r['tag_rst'], r['tag_md'].replace("\n"," "))
+            section = section.replace(
+                r['tag_rst'], r['tag_md'].replace("\n", " "))
             if b_fn:
                 section = section.replace(r['fn_rst'], r['fn_md'])
             else:
@@ -46,19 +49,30 @@ def tr_table(txt: str) -> str:
 
 
 def tr_inline_doc(txt: str) -> str:
-    doc_lnk = re.findall(r"(\:doc\:\`?([\s\S\r]*?)\<([\s\S\r]*?)\>\`?)", txt, 8)
+    doc_lnk = re.findall(
+        r"(\:doc\:\`?([\s\S\r]*?)\<([\s\S\r]*?)\>\`?)", txt, 8)
     for d in doc_lnk:
         txt = txt.replace(
-            d[0], "[" + d[1].replace("\n","") + "](https://lammps.sandia.gov/doc/" + d[2].replace("\n","") + ".html)")
+            d[0], "[" + d[1].replace("\n", "") + "](https://lammps.sandia.gov/doc/" + d[2].replace("\n", "") + ".html)")
+    return txt
+
+def tr_inline_pdf(txt: str) -> str:
+    # `this PDF guide <PDF/SMD_LAMMPS_userguide.pdf>`_
+    doc_lnk = re.findall(
+        r"(`([\s\S\r]*?)\<([\s\S\r]*?)(\.pdf)\>\`_)", txt, 8)
+    for d in doc_lnk:
+        txt = txt.replace(
+            d[0], "[" + d[1].replace("\n", "") + "](https://lammps.sandia.gov/doc/" + d[2].replace("\n", "") + ".pdf)")
     return txt
 
 
-def remove_markup(txt: str) -> str:
+def rm_markup(txt: str) -> str:
     mrk = re.findall(r"\s([\*\_]+)(\S+?)([\*\_]+)\s", txt, 8)
     for m in mrk:
         txt = txt.replace("".join(m), m[1])
 
     return txt
+
 
 def fix_tr_markup_bugs(txt: str) -> str:
     # Fixes particular patterns like '\n1. \n', e.g number at end of sentence, falsly initiating a numbered list
@@ -67,7 +81,7 @@ def fix_tr_markup_bugs(txt: str) -> str:
         txt = txt.replace("".join(m), " " + m[1])
 
     return txt
-    
+
 
 def tr_code(code_id: str, code_block: str) -> str:
     lang = re.findall(r"(?<=\:\:)\s*(\w*$)", code_id)
@@ -87,7 +101,7 @@ def tr_math(math_block: str) -> str:
 
 
 def tr_note(note_block: str) -> str:
-    return "\n  > **_Note:_**" + "\n" + note_block.replace("\n", "\n  >")
+    return "\n  > **_Note:_**" + "  \n  " + note_block.lstrip().replace("\n", "\n  >")
 
 
 def tr_plain(plain_block: str) -> str:

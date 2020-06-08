@@ -45,18 +45,22 @@ class CMD:
             if len(self.__sections__) > 5:
                 self.related = self.__section2md__(self.__sections__[5])
             else:
-                related = "none"
+                self.related = "none"
 
     def __read_file2sections__(self):
         with open(self.__rst_path__, 'r') as f:
             self.__rst_txt__ = f.read()
             self.__sections__ = re.split(
-                '(?:Syntax|Examples|Description|Restrictions|Related.*?commands)\n+\"+\n+', self.__rst_txt__)
+                '(?:Syntax|Examples|Description|Restrictions|Related.*?commands|Default)\n+\"+\n+', self.__rst_txt__)
 
     def __validate__(self) -> bool:
         txt_block = re.sub(r"(:doc:`)|(`)|(\s+\<.*\>)|(\n\=+)",
                            "", self.__sections__[0])
         self.cmd_list = re.findall(r"(?<=\n)(.*)(?=\s+command)", txt_block)
+        for ic, c in enumerate(self.cmd_list):
+            ref = re.search(r"(\:ref\:\`?\(?(.*?)\)?\s*\<(.*?)\>\`?)", c)
+            if ref:
+                self.cmd_list[ic] = ref[3]
         b_commands = len(self.cmd_list) > 0
         b_complete = len(self.__sections__) >= 5
         self.valid = b_commands and b_complete
@@ -89,10 +93,10 @@ class CMD:
                             out += "    " + l_str
                 else:
                     out += b + "   \n"
-            return rst2md.remove_markup(out)
+            return rst2md.rm_markup(out)
 
         blocks = self.__section2blocks__(self.__sections__[1])
-        self.syntax = rst2md.tr_plain(blocks[0]).strip().replace("*", "")
+        self.syntax = rst2md.tr_plain(blocks[0]).replace("*", "")
         prms_block = tweak_prms_block(blocks[1:])
         self.parameters = rst2md.tr_inline_doc(prms_block)
 
@@ -122,32 +126,32 @@ class CMD:
 
             choices: string = []
             a_type = 1
-            b_optional: bool = False
-            arg_clean = re.sub(r"[\[\]\*\<\>]", "", arg, 8)
+            arg_clean = re.sub(r"[\[\]\*\<\>]", "", arg)
             if arg.__contains__("|"):  # Takes care of AtC commands
                 choices = arg_clean.split("|")
                 a_type = 3
             else:  # All other commands
                 for p in prms:
+                    p = p.replace("0/1","0 or 1")
                     b_choices = re.findall(
-                        r"\s*"+arg_clean+"\s?\=.*(?<!,)\s(or)\s(?!(more))", p)
-                    b_optional = p.__contains__("optional")
-                    if b_choices and not b_optional:
-                        prm_sub = p[p.find("=")+1:]
-                        choices = prm_sub.replace(
-                            '0/1', '0 or 1').split(' or ')
-                        choices = [x.strip().split(' ')[0]  # Allow only single words and erase whitespaces
-                                   for x in choices
-                                   if not x.__contains__("=") and not x.__contains__(" ")]
+                        r"\s*"+arg_clean+"\s*?((?:\(optional\))\s*)?\=.*(?<!,)\s(or)\s(?!(more))", p)
+                    if b_choices:
+                        prm_sub = p[p.find("=")+1:].strip()
+                        if prm_sub.__contains__("0 or 1"): # catch flag Arguments
+                            choices = ["0","1"]
+                        else:
+                            choices = prm_sub.split(' or ')
+                            choices = [x.strip().split(' ')[0]  # Allow only single words and erase whitespaces
+                                    for x in choices
+                                    if not x.__contains__("=") and not x.__contains__(" ")]
                         a_type = 3
-                if len(choices) == 0 and not b_optional:
-                    choices.append(arg)
-                    a_type = 2
+                    if len(choices) == 0:
+                        a_type = 2
             return a_type, choices
 
         arg_ar = []
         com_words = self.cmd_list[0].split(' ')
-        args = re.split(r"(?<!AtC)\s", self.syntax.splitlines()[0])
+        args = re.split(r"(?<!AtC)\s", self.syntax.strip().splitlines()[0])
         args = [x for x in args if x != "..."]
         prms = re.sub(r"\*", "", self.parameters).splitlines()
 
@@ -155,7 +159,7 @@ class CMD:
             a_clean = re.sub(r"'[\[\]\*\<\>]", "", a, 8)
             # Append Command-Keyword as plain string
             if com_words.__contains__(a):
-                arg_ar.append({"arg": a, "type": 1, "choices": [a]})
+                arg_ar.append({"arg": a, "type": 1, "choices": []})
             else:  # No command word -> check for choices or Placeholders
                 a_type, choices = getChoices(a, prms)
                 arg_ar.append({"arg": a, "type": a_type, "choices": choices})
@@ -187,8 +191,8 @@ with open('./src/lmp_doc.ts', 'w', encoding='utf-8') as f:
     f.write("export const command_docs = [\n")
     for rst in rst_files:
         Doc = CMD(os.path.join(rst_path, rst))
-        groups = rst2JSON_groups.cmds_by_group(Doc.cmd_list, groups)
         if Doc.valid:
+            groups = rst2JSON_groups.cmds_by_group(Doc.cmd_list, groups)
             json.dump({'command': Doc.cmd_list,
                        'syntax': Doc.syntax,
                        'args': Doc.args,
@@ -203,6 +207,8 @@ with open('./src/lmp_doc.ts', 'w', encoding='utf-8') as f:
             f.write(",\n")
             print("passed: " + rst)
         else:
-            print("failed: " + rst)
+            pass
+            # print("failed: " + rst)
     f.write("];\n")
-    rst2JSON_groups.write_groups_to_json(groups)
+   
+    rst2JSON_groups.update_syntax('./syntaxes/lmps.tmLanguage.json', groups)
