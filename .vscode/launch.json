@@ -16,7 +16,7 @@
             "name": "Extension",
             "type": "extensionHost",
             "request": "launch",
-            "preLaunchTask": "CreateDocArray",
+            "preLaunchTask": "npm: compile",
             "runtimeExecutable": "${execPath}",
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}"
