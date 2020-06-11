@@ -93,7 +93,7 @@ class CMD:
                             out += "    " + l_str
                 else:
                     out += b + "   \n"
-            return rst2md.rm_markup(out)
+            return rst2md.tr_inline_math(rst2md.rm_markup(out))
 
         blocks = self.__section2blocks__(self.__sections__[1])
         self.syntax = rst2md.tr_plain(blocks[0]).replace("*", "")
