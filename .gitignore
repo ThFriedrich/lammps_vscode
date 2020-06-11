@@ -1,6 +1,7 @@
 node_modules
 html
 out
+src/__pycache__
 .vscode-test/
 *.lmp
 *.lmps

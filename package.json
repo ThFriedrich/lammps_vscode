@@ -60,7 +60,7 @@
           "text.html.markdown"
         ],
         "embeddedLanguages": {
-          "meta.embedded.block.lmps": "lmps"
+          "meta.embedded.block.lammps": "lmps"
         }
       }
     ],
