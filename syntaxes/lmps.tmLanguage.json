@@ -256,6 +256,9 @@
                 },
                 {
                     "include": "#variables"
+                },
+                {
+                    "include": "#function_brackets"
                 }
             ]
         },
