@@ -4,6 +4,7 @@ import os
 import re
 import rst2md
 import rst2JSON_groups
+from copy import copy
 
 
 class CMD:
@@ -54,13 +55,20 @@ class CMD:
                 '(?:Syntax|Examples|Description|Restrictions|Related.*?commands|Default)\n+\"+\n+', self.__rst_txt__)
 
     def __validate__(self) -> bool:
-        txt_block = re.sub(r"(:doc:`)|(`)|(\s+\<.*\>)|(\n\=+)",
+        txt_block = re.sub(r"(`)|(\s+\<.*\>)|(\n\=+)",
                            "", self.__sections__[0])
-        self.cmd_list = re.findall(r"(?<=\n)(.*)(?=\s+command)", txt_block)
-        for ic, c in enumerate(self.cmd_list):
+        self.cmd_list = re.findall(r"(?<=\n\n)([\s\S]*?)(?=\s+command\n\n+)", txt_block)
+        temp_list = copy(self.cmd_list)
+        for ic, c in enumerate(temp_list):
             ref = re.search(r"(\:ref\:\`?\(?(.*?)\)?\s*\<(.*?)\>\`?)", c)
             if ref:
-                self.cmd_list[ic] = ref[3]
+                self.cmd_list.remove(c)
+                self.cmd_list.append(ref[2])
+            lnk = re.search(r":doc:", c)
+            if lnk:
+                self.cmd_list.remove(c)
+
+            # :doc:`dump vtk <dump_vtk>` command
         b_commands = len(self.cmd_list) > 0
         b_complete = len(self.__sections__) >= 5
         self.valid = b_commands and b_complete
@@ -187,28 +195,30 @@ class CMD:
 rst_path = "rst"
 rst_files = [f for f in os.listdir(rst_path) if (f.endswith('.rst'))]
 groups = rst2JSON_groups.init_group_dict()
+cmd_count = 0
 with open('./src/lmp_doc.ts', 'w', encoding='utf-8') as f:
     f.write("export const command_docs = [\n")
     for rst in rst_files:
         Doc = CMD(os.path.join(rst_path, rst))
         if Doc.valid:
             groups = rst2JSON_groups.cmds_by_group(Doc.cmd_list, groups)
+            cmd_count += len(Doc.cmd_list)
             json.dump({'command': Doc.cmd_list,
-                       'syntax': Doc.syntax,
-                       'args': Doc.args,
-                       'parameters': Doc.parameters,
-                       'examples': Doc.examples,
-                       'html_filename': Doc.html_filename,
-                       'short_description': Doc.short_description,
-                       'description': Doc.description,
-                       'restrictions': Doc.restrictions,
-                       'related': Doc.related},
-                      f, ensure_ascii=False, indent=4)
+                    'syntax': Doc.syntax,
+                    'args': Doc.args,
+                    'parameters': Doc.parameters,
+                    'examples': Doc.examples,
+                    'html_filename': Doc.html_filename,
+                    'short_description': Doc.short_description,
+                    'description': Doc.description,
+                    'restrictions': Doc.restrictions,
+                    'related': Doc.related},
+                    f, ensure_ascii=False, indent=4)
             f.write(",\n")
             print("passed: " + rst)
         else:
             pass
             # print("failed: " + rst)
     f.write("];\n")
-   
+    print('\n' + str(cmd_count) + ' commands processed\n')
     rst2JSON_groups.update_syntax('./syntaxes/lmps.tmLanguage.json', groups)

@@ -80,6 +80,11 @@ def fix_tr_markup_bugs(txt: str) -> str:
     for m in mrk:
         txt = txt.replace("".join(m), " " + m[1])
 
+    # Removes trailing Backslashes from marked up text like *gpu*\ -> *gpu* 
+    mrk = re.findall(r"(((?:\*\*?)(?:\S*?)(?:\*\*?))(?:\\))", txt, 8)
+    for m in mrk:
+        txt = txt.replace(m[0],m[1])
+
     return txt
 
 
