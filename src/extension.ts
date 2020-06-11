@@ -1,15 +1,19 @@
-import { doc_entry, fix_img_path, getCompletionList, getDocumentation, create_doc_page } from "./doc_fcns";
+import { doc_entry, fix_img_path, getCompletionList, getDocumentation, create_doc_page, getColor, doc_completion_item } from "./doc_fcns";
 import { checkFilePaths } from './lmps_lint';
 import { getMathMarkdown } from './math_render'
-import { getColor } from './theme'
 import * as vscode from 'vscode';
+
+interface DocPanel extends vscode.WebviewPanel {
+	command?: string
+}
 
 export async function activate(context: vscode.ExtensionContext) {
 
-	let panel: vscode.WebviewPanel | undefined = undefined;
-
-	async function set_doc_panel_content(md_content: vscode.MarkdownString, panel: vscode.WebviewPanel | undefined) {
-
+	let panel: DocPanel | undefined = undefined;
+	let actCol: number = 2;
+	const img_path_light = vscode.Uri.joinPath(vscode.Uri.parse(context.extensionPath),'imgs','logo_sq_l.gif')
+	const img_path_dark = vscode.Uri.joinPath(vscode.Uri.parse(context.extensionPath),'imgs','logo_sq_d.gif')
+	async function set_doc_panel_content(panel: DocPanel | undefined, md_content: vscode.MarkdownString) {
 		const html: string = await vscode.commands.executeCommand('markdown.api.render', md_content.value) as string;
 		panel!.webview.html = html;
 	}
@@ -18,6 +22,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('extension.show_docs', async () => {
 			// Reset when the current panel is closed	
+
 			panel?.onDidDispose(
 				() => {
 					panel = undefined;
@@ -25,15 +30,26 @@ export async function activate(context: vscode.ExtensionContext) {
 				null,
 				context.subscriptions
 			);
+
+			panel?.onDidChangeViewState(
+				e => {
+					actCol = e.webviewPanel.viewColumn!
+				},
+				null,
+				context.subscriptions
+			);
+
 			if (panel) {
 				// If we already have a panel, show it in the target column
-				panel.reveal(2);
+				panel.reveal(actCol);
 			} else {
 				// Otherwise, create a new panel
 				panel = vscode.window.createWebviewPanel(
-					'markdown.preview',
-					'Lammps Documentation', 2, { retainContextWhenHidden: true }
+					'lmpsDoc',
+					'Lammps Documentation', actCol!, { retainContextWhenHidden: false }
 				);
+				panel.iconPath = { light: img_path_light, dark: img_path_dark }
+				context.subscriptions.push(panel)
 			}
 			const editor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
 			const document: vscode.TextDocument = vscode.window.activeTextEditor!.document
@@ -41,18 +57,24 @@ export async function activate(context: vscode.ExtensionContext) {
 			const command: string = getRangeFromPosition(document, position)
 			const md_content: vscode.MarkdownString | undefined = await create_doc_page(command, panel)
 			if (md_content) {
-				set_doc_panel_content(md_content, panel)
+				panel.command = command
+				set_doc_panel_content(panel, md_content)
 			}
 			vscode.commands.executeCommand('setContext', 'commandOnCursor', false);
 
 		}));
 
 	// Redraw active Webview Panel in new Color (for math)
-	// context.subscriptions.push(
-	// 	vscode.window.onDidChangeActiveColorTheme(e => {
+	context.subscriptions.push(
+		vscode.window.onDidChangeActiveColorTheme(async e => {
+			if (panel && panel.command) {
+				const md_content: vscode.MarkdownString | undefined = await create_doc_page(panel.command, panel)
+				if (md_content) {
+					set_doc_panel_content(panel, md_content)
+				}
+			}
 
-	// 	}))
-
+		}))
 
 	// Register Hover Provider
 	context.subscriptions.push(
@@ -73,17 +95,27 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Register Completions Provider
 	context.subscriptions.push(
-		vscode.languages.registerCompletionItemProvider("lmps", {
-			async provideCompletionItems(
-				document: vscode.TextDocument,
-				position: vscode.Position,
-				token: vscode.CancellationToken,
-				context: vscode.CompletionContext) {
-				const autoConf = vscode.workspace.getConfiguration('lammps.AutoComplete')
-				let compl_str: vscode.CompletionList = await getCompletionList(autoConf)
-				return compl_str
-			}
-		}));
+		vscode.languages.registerCompletionItemProvider("lmps",
+			{
+				async resolveCompletionItem(item: vscode.CompletionItem, token: vscode.CancellationToken): Promise<vscode.CompletionItem> {
+					const autoConf = vscode.workspace.getConfiguration('lammps.AutoComplete')
+					const item_doc = await doc_completion_item(autoConf, item);
+					if (item_doc) {
+						return item_doc
+					} else {
+						return item
+					}
+				},
+				provideCompletionItems(
+					document: vscode.TextDocument,
+					position: vscode.Position,
+					token: vscode.CancellationToken,
+					context: vscode.CompletionContext) {
+					const autoConf = vscode.workspace.getConfiguration('lammps.AutoComplete')
+					let compl_str: vscode.CompletionList = getCompletionList(autoConf)
+					return compl_str
+				}
+			}));
 
 	// Provide Diagnostics on Open, Save and Text-Changed-Event
 	const collection = vscode.languages.createDiagnosticCollection('lmps');
@@ -171,5 +203,6 @@ function updateDiagnostics(document: vscode.TextDocument, collection: vscode.Dia
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() { }
+export function deactivate(context:vscode.ExtensionContext) {
+}
 

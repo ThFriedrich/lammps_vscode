@@ -1,9 +1,16 @@
-import { Uri, WorkspaceConfiguration, CompletionItem, WebviewPanel, CompletionList, 
-    MarkdownString, SnippetString, CompletionItemKind, extensions } from 'vscode';
+import {
+    Uri, WorkspaceConfiguration, CompletionItem, WebviewPanel, CompletionList,
+    MarkdownString, SnippetString, CompletionItemKind, extensions, window
+} from 'vscode';
 import { getMathMarkdown } from './math_render'
 import { command_docs } from "./lmp_doc";
-import { getColor } from './theme'
 import { join } from 'path'
+
+export function getColor() {
+    const math_colors: string[] = ["#000000", "#ffffff", "#ffffff"]
+    const color: string = math_colors[window.activeColorTheme.kind - 1]
+    return color
+}
 
 export interface doc_entry {
     command: string[];
@@ -204,7 +211,28 @@ function generateSnippetString(command_doc: doc_entry): SnippetString {
 }
 
 /** Generates CompletionList for all commands*/
-export async function getCompletionList(autoConf: WorkspaceConfiguration): Promise<CompletionList> {
+export function getCompletionList(autoConf: WorkspaceConfiguration): CompletionList {
+
+    const completion_List = new CompletionList();
+
+    if (autoConf.Setting != "None") {
+
+        for (let c of command_docs.values()) {
+            for (let c_ix of c.command.values()) {
+                const compl_it = new CompletionItem(c_ix);
+                if (autoConf.Setting == 'Minimal') {
+                    compl_it.detail = c.syntax
+                }
+                compl_it.insertText = generateSnippetString(c)
+                compl_it.kind = CompletionItemKind.Function
+                completion_List.items.push(compl_it)
+            }
+        }
+    }
+    return completion_List
+}
+
+export async function doc_completion_item(autoConf: WorkspaceConfiguration, compl_it: CompletionItem): Promise<CompletionItem | undefined> {
 
     function mediumBlock(c: doc_entry, compl_it_doc: MarkdownString): MarkdownString {
         compl_it_doc = docLink(c.html_filename, compl_it_doc)
@@ -217,19 +245,14 @@ export async function getCompletionList(autoConf: WorkspaceConfiguration): Promi
         return compl_it_doc.appendMarkdown("[Open documentation](https://lammps.sandia.gov/doc/" + html_link + ")\n")
     }
 
-    const color: string = getColor()
-    const completion_List = new CompletionList();
-
     if (autoConf.Setting != "None") {
-
-        for (let c of command_docs.values()) {
-            for (let c_ix of c.command.values()) {
-
-                const compl_it = new CompletionItem(c_ix);
+        const color: string = getColor()
+        if (compl_it.label) {
+            const c: doc_entry | undefined = getDocumentation(compl_it.label)
+            if (c) {
                 compl_it.documentation = new MarkdownString("", true);
                 switch (autoConf.Setting) {
                     case "Minimal":
-                        compl_it.detail = c.syntax
                         compl_it.documentation = docLink(c.html_filename, compl_it.documentation)
                         break;
                     case "Medium":
@@ -243,11 +266,8 @@ export async function getCompletionList(autoConf: WorkspaceConfiguration): Promi
                     default:
                         break;
                 }
-                compl_it.insertText = generateSnippetString(c)
-                compl_it.kind = CompletionItemKind.Function
-                completion_List.items.push(compl_it)
             }
         }
     }
-    return completion_List
+    return compl_it
 }
