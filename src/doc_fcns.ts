@@ -53,53 +53,6 @@ export function fix_img_path(txt: string, b_img: boolean, web_panel: WebviewPane
     return txt
 }
 
-export async function create_doc_page(snippet: string, panel: WebviewPanel | undefined): Promise<MarkdownString | undefined> {
-
-    const color: string = getColor()
-    const docs: doc_entry | undefined = getDocumentation(snippet)
-    if (docs) {
-        // Constructing the Markdown String to show in the Hover window
-        const content = new MarkdownString("", true)
-        if (docs?.command) {
-            content.appendMarkdown(`## ${docs?.command[0]} \n`)
-            content.appendMarkdown("\n --- \n")
-            if (docs.command.length > 1) {
-                for (let cx = 1; cx < docs.command.length; cx++) {
-                    const c = docs.command[cx];
-                    content.appendMarkdown(`### ${c} \n`)
-                }
-                content.appendMarkdown("\n --- \n")
-            }
-        }
-        if (docs?.syntax) {
-            content.appendMarkdown("## Syntax: \n")
-            content.appendCodeblock(docs?.syntax, "lmps")
-            content.appendMarkdown(await getMathMarkdown(docs?.parameters, color) + "\n\n")
-        }
-        if (docs?.examples) {
-            content.appendMarkdown("## Examples: \n")
-            content.appendMarkdown(docs?.examples)
-        }
-        if (docs?.description) {
-            let full_desc: string = fix_img_path(docs.description, true, panel)
-            full_desc = await getMathMarkdown(full_desc, color)
-            content.appendMarkdown("## Description: \n")
-            content.appendMarkdown(full_desc + "\n")
-        }
-        if (docs?.restrictions) {
-            content.appendMarkdown("## Restrictions: \n")
-            content.appendMarkdown(docs?.restrictions)
-        }
-        // if (docs?.related) {
-        //     content.appendMarkdown("### Related commands: \n")
-        //     content.appendMarkdown(docs?.related)
-        // }
-        return content
-    } else {
-        return undefined
-    }
-}
-
 
 export function getDocumentation(snippet: string): doc_entry | undefined {
 
@@ -173,7 +126,7 @@ export function getArgIndex(command: string, argument: RegExp | string): number 
     const com = getCommand(command)
     let idx: number = -1
     if (com) {
-        const args = com.syntax.split(RegExp('\\s'))
+        const args = com.syntax.trim().split(RegExp('\\s+'))
         for (let index = 0; index < args.length; index++) {
             const find_idx = args[index].search(argument)
             if (find_idx != -1) {
@@ -184,7 +137,6 @@ export function getArgIndex(command: string, argument: RegExp | string): number 
     }
     return idx
 }
-
 
 /** Generates Autocompletion SnippetString for CompletionList*/
 function generateSnippetString(command_doc: doc_entry): SnippetString {
@@ -240,7 +192,7 @@ export async function doc_completion_item(autoConf: WorkspaceConfiguration, comp
         compl_it_doc.appendMarkdown(c.parameters)
         return compl_it_doc
     }
-
+    
     function docLink(html_link: string, compl_it_doc: MarkdownString): MarkdownString {
         return compl_it_doc.appendMarkdown("[Open documentation](https://lammps.sandia.gov/doc/" + html_link + ")\n")
     }

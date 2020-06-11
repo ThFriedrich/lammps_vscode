@@ -1,4 +1,4 @@
-import { Diagnostic, DiagnosticSeverity, TextDocument, Range } from 'vscode'
+import { Diagnostic, DiagnosticSeverity, TextDocument, Range, DiagnosticCollection } from 'vscode'
 import { dirname, join, isAbsolute } from 'path'
 import { searchCommands, getArgIndex } from "./doc_fcns";
 import { existsSync } from 'fs'
@@ -6,6 +6,20 @@ import { existsSync } from 'fs'
 //////////////////////////////////////
 // document checks/Linter functions //
 //////////////////////////////////////
+
+
+export function updateDiagnostics(document: TextDocument, collection: DiagnosticCollection): void {
+	if (document) {
+		let errors: Diagnostic[] = []
+		for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
+			// check lines with a set of functions, which append Diagnostic entries to the errors array
+			errors = checkFilePaths(document, line_idx, errors)
+		}
+		collection.set(document.uri, errors)
+	} else {
+		collection.clear();
+	}
+}
 
 /**
 * This function checks wheter a file given as input for 
@@ -92,7 +106,7 @@ function getCommandArgs(line: string, command: string[]):commandStruct {
 * from vscode api
 */
 function getRange(line_str: string, line_idx: number, argument: string):Range {
-    const arg_pos: number = line_str.search(argument)
+    const arg_pos: number = line_str.indexOf(argument)
     return new Range(line_idx, arg_pos, line_idx, arg_pos + argument.length)
 }
 
