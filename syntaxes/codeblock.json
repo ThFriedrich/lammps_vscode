@@ -31,7 +31,7 @@
 				{
 					"begin": "(^|\\G)(\\s*)(.*)",
 					"while": "(^|\\G)(?!\\s*([`~]{3,})\\s*$)",
-					"contentName": "meta.embedded.block.lmps",
+					"contentName": "meta.embedded.block.lammps",
 					"patterns": [
 						{
 							"include": "source.lmps"
