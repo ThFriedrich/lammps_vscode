@@ -32,6 +32,7 @@
           "Lammps",
           "lmps"
         ],
+        "filenamePatterns": ["in.*"],
         "extensions": [
           ".lmp",
           ".lmps",
