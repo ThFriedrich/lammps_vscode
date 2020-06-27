@@ -32,7 +32,9 @@
           "Lammps",
           "lmps"
         ],
-        "filenamePatterns": ["in.*"],
+        "filenamePatterns": [
+          "in.*"
+        ],
         "extensions": [
           ".lmp",
           ".lmps",
@@ -71,11 +73,13 @@
       }
     ],
     "menus": {
-      "editor/context": [ {
-        "command": "extension.show_docs",
-        "when": "editorLangId == lmps&&commandOnCursor",
-        "group": "Navigation"
-      }]
+      "editor/context": [
+        {
+          "command": "extension.show_docs",
+          "when": "editorLangId == lmps&&commandOnCursor",
+          "group": "Navigation"
+        }
+      ]
     },
     "configuration": {
       "title": "Lammps Syntax Highlighting",
@@ -154,6 +158,7 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
+    "acorn": "^7.3.1",
     "mathjax-node": "^2.1.1"
   }
 }
