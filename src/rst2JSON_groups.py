@@ -36,6 +36,16 @@ def regex_group_str(group_list):
             comp_str += "|"+it
     return comp_str[1:]
 
+def remove_duplicates_group_dict(group_dict):
+    for g in list(group_dict.keys()):
+        g_temp = []
+        for c in group_dict[g]:
+            if c not in g_temp:
+                g_temp.append(c)
+            else:
+                print(c)
+        group_dict[g] = g_temp
+    return group_dict
 
 def cmds_by_group(cmd_list, group_dict):
     for cmd in cmd_list:
