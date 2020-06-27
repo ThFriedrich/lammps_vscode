@@ -38,3 +38,22 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
 ## Version 1.2.4 19.04.2020
  - Bugfixes
  - Add Logo to package
+
+## Version 1.3.0 28.06.2020
+ - Auto Completion
+    - Completion suggestions now behave much like snippets. Editable arguments are accessed by tabbing (<kbd>Tab</kbd>) through them. Variables can be edited like text. Arguments that allow specific choices should show a dropdown list with options to choose from. Words that are part of the command description are automatically inserted.
+
+ - Hover Feature
+    - Rendering Equations is now supported using MathJax
+    - Fixed many styling issues
+
+ - Offline embedded documentation
+    - right click on command allows to show documentation in new vscode-panel
+
+ - Linting functions
+    - Set of functions that points out problems before runtime
+    - So far only checking for files and paths on read- and write commands
+    - To be extended in the future
+
+
+
