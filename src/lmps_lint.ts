@@ -167,7 +167,7 @@ function checkPath(document: TextDocument, line_str:string, line_index: number, 
     let msg:string|undefined = undefined
 
     if (com_struct.args.length >= fileArg_idx) { // path specified/argument provided?
-        const file_path: string = com_struct.args[fileArg_idx - 1]
+        const file_path: string = com_struct.args[fileArg_idx - 1].replace(/['"]+/g, '')
         
         switch (checkType) { // Check wether directory/file exists
             case 'dir':
