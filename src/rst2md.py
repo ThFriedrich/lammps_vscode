@@ -94,8 +94,11 @@ def tr_code(code_id: str, code_block: str) -> str:
         lang = [""]
     elif lang.__contains__("LAMMPS"):
         lang = ["lmps"]
-    code_block = code_block.lstrip("\n")
-    return "\n```"+lang[0]+"\n" + code_block + "\n```\n"
+    code_block_fmt = ""
+    code_block_spl = code_block.lstrip("\n").splitlines()
+    for l in code_block_spl:
+        code_block_fmt += l.strip() + '\n'
+    return "\n```"+lang[0]+"\n" + code_block_fmt + "\n```\n"
 
 
 def tr_math(math_block: str) -> str:
