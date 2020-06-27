@@ -7,6 +7,8 @@ import * as vscode from 'vscode';
 
 export async function activate(context: vscode.ExtensionContext) {
 
+	check_versions(context)
+
 	// Initialize Panel and ViewColumn for Documentation WebView
 	let panel: DocPanel | undefined = undefined;
 	let actCol: number = 2;
@@ -15,11 +17,20 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('extension.show_docs', async () => {
 			panel = await manage_doc_panel(context, panel, actCol)
+			// Reset when the panel is closed	
+			panel?.onDidDispose(
+				() => {
+					panel = undefined;
+					console.log(panel)
+				},
+				null,
+				context.subscriptions
+			);
 		}));
 
 	// Redraw active Webview Panel in new Color (for math)
 	context.subscriptions.push(
-		vscode.window.onDidChangeActiveColorTheme(async e => {
+		vscode.window.onDidChangeActiveColorTheme(async () => {
 			if (panel && panel.command) {
 				const md_content: vscode.MarkdownString | undefined = await create_doc_page(panel.command, panel)
 				if (md_content) {
@@ -95,6 +106,40 @@ export async function activate(context: vscode.ExtensionContext) {
 				updateDiagnostics(editor.document, collection);
 			}
 		}));
+}
+
+function check_versions(context: vscode.ExtensionContext) {
+	const v: string = vscode.extensions.getExtension('ThFriedrich.lammps')!.packageJSON.version
+	const v_stored: string | undefined = context.globalState.get('lmps_version')
+	if (v_stored) {
+		if (v != v_stored) {
+			context.globalState.update('lmps_version', v)
+			switch (true) {
+				case v.includes("alpha"):
+					msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
+					This is a alpha release. Please check the Release Notes for instructions on downgrading to a previous release if you want or need to! Please keep an eye out for bugs and issues and report them! 🧐 🐛`)
+					break;
+				case v.includes("beta"):
+					msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
+					This is a beta release. Please check the Release Notes and keep an eye out for bugs! 🧐 🐛`)
+					break;
+				default:
+					msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
+					Please check the Release Notes for Information about this update`)
+					break;
+			}
+		};
+	} else {
+		context.globalState.update('lmps_version', v)
+	}
+}
+
+function msgBox(context: vscode.ExtensionContext, message: string) {
+	vscode.window.showInformationMessage(message, 'Show Release Notes').then(click => {
+		if (click) {
+			vscode.commands.executeCommand('markdown.showPreview', vscode.Uri.joinPath(context.extensionUri, 'RELEASE.md'), "Release Notes")
+		}
+	})
 }
 
 // this method is called when your extension is deactivated
