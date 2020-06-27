@@ -1,6 +1,6 @@
 # lammps_vscode README
 
-This extension for Visual Studio Code provides syntax/keyword highlighting functionality for LAMMPS (Molecular dynamics Software) and LIGGGHTS(R)-PUBLIC (Discrete Element Method Particle Simulation Software) Scripts.
+This extension for Visual Studio Code provides language support for LAMMPS (Molecular dynamics Software) Scripts.
 
 ## Features
 
@@ -8,10 +8,16 @@ This extension for Visual Studio Code provides syntax/keyword highlighting funct
 ![Syntax Highlighting](imgs/lammps-lng-anim.gif)
 
 - Syntax Highlighting for Keywords, Variables and Data Types
-- Keyword list up to date with the Lammps documentation as of April 2020
+- Keyword list up to date with the Lammps documentation as of June 2020
 - Keyword Highlighting for LIGGGHTS(R)-PUBLIC scripts supported
 - Folding possible between Markers #[ and #]
-- Recognizes .lmp, .lmps and .lammps file extensions
+- Recognizes .lmp, .lmps and .lammps file extensions and files beginning with "in."
+---
+### Embedded Offline Documentation 
+![Embedded Offline Documentation](imgs/doc_panel.gif)
+
+- Right click on a command allows to open a documentation page inside vscode
+
 ---
 ### Autocompletion
 ![Autocompletion](imgs/autocomplete.gif)
@@ -24,6 +30,13 @@ This extension for Visual Studio Code provides syntax/keyword highlighting funct
 
 - Information about Lammps commands are displayed when hovering over them
 - Appearance of the hover panel is customisable
+---
+### Linting (in progress)
+![Lint](imgs/lint.gif)
+
+- Set of functions that points out problems before runtime
+- So far only checking for files and paths on read- and write commands
+- To be extended in the future
 ---
 Please report [issues](https://github.com/ThFriedrich/lammps_vscode/issues) and feel free to [contribute](https://github.com/ThFriedrich/lammps_vscode).
 
