@@ -1,4 +1,4 @@
-import { TextDocument, Position, Hover, WorkspaceConfiguration, workspace, MarkdownString} from 'vscode'
+import { TextDocument, Position, Hover, WorkspaceConfiguration, workspace, MarkdownString } from 'vscode'
 import { doc_entry, getColor, fix_img_path } from './doc_fcns'
 import { getMathMarkdown } from './math_render'
 
@@ -24,7 +24,7 @@ export async function createHover(docs: doc_entry): Promise<Hover | undefined> {
             }
             if (docs?.syntax) {
                 content.appendMarkdown("### Syntax: \n")
-                content.appendCodeblock(docs?.syntax, "lmps")
+                content.appendCodeblock(docs?.syntax.join('\n'), "lmps")
                 content.appendMarkdown(await getMathMarkdown(docs?.parameters, color) + "\n\n")
             }
             if (docs?.examples && hover_conf.Examples) {

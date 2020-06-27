@@ -2,6 +2,7 @@ import {
     Uri, WorkspaceConfiguration, CompletionItem, WebviewPanel, CompletionList,
     MarkdownString, SnippetString, CompletionItemKind, extensions, window
 } from 'vscode';
+
 import { getMathMarkdown } from './math_render'
 import { command_docs } from "./lmp_doc";
 import { join } from 'path'
@@ -14,12 +15,12 @@ export function getColor() {
 
 export interface doc_entry {
     command: string[];
-    syntax: string;
+    syntax: string[];
     args: {
         arg: string;
         type: number;
         choices: string[];
-    }[];
+    }[][];
     parameters: string;
     examples: string;
     html_filename: string;
@@ -126,7 +127,8 @@ export function getArgIndex(command: string, argument: RegExp | string): number 
     const com = getCommand(command)
     let idx: number = -1
     if (com) {
-        const args = com.syntax.trim().split(RegExp('\\s+'))
+        const syn_id = getMostLikelySyntax(command, com.syntax)
+        const args = com.syntax[syn_id].trim().split(RegExp('\\s+'))
         for (let index = 0; index < args.length; index++) {
             const find_idx = args[index].search(argument)
             if (find_idx != -1) {
@@ -139,27 +141,48 @@ export function getArgIndex(command: string, argument: RegExp | string): number 
 }
 
 /** Generates Autocompletion SnippetString for CompletionList*/
-function generateSnippetString(command_doc: doc_entry): SnippetString {
+function generateSnippetString(command_doc: doc_entry, syn_idx: number): SnippetString {
 
-    let snip = new SnippetString(command_doc.args[0].arg);
+    let snip = new SnippetString(command_doc.args[syn_idx][0].arg);
 
-    for (let index = 1; index < command_doc.args.length; index++) {
+    for (let index = 1; index < command_doc.args[syn_idx].length; index++) {
         snip.appendText(" ")
-        switch (command_doc.args[index].type) {
+        switch (command_doc.args[syn_idx][index].type) {
             case 1:
-                snip.appendText(command_doc.args[index].arg)
+                snip.appendText(command_doc.args[syn_idx][index].arg)
                 break;
             case 2:
-                snip.appendPlaceholder(command_doc.args[index].arg)
+                snip.appendPlaceholder(command_doc.args[syn_idx][index].arg)
                 break;
             case 3:
-                snip.appendChoice(command_doc.args[index].choices)
+                snip.appendChoice(command_doc.args[syn_idx][index].choices)
                 break;
             default:
                 break;
         }
     }
     return snip
+}
+
+export function getMostLikelySyntax(command: string, syntax: string[]): number {
+    let id_x_out: number = 0
+    let score: number = 0
+    const re: RegExp = RegExp("\\s+")
+    const com_spl = command.split(re)
+    for (let ix = 0; ix < syntax.length; ix++) {
+        const syn_spl = syntax[ix].split(re)
+        let score_t: number = 0
+        for (let ia = 0; ia < syn_spl.length; ia++) {
+            if (com_spl.includes(syn_spl[ia])) {
+                score_t += 1
+            }
+        }
+        if (score_t > score) {
+            score = score_t
+            id_x_out = ix
+        }
+    }
+    return id_x_out
 }
 
 /** Generates CompletionList for all commands*/
@@ -171,13 +194,19 @@ export function getCompletionList(autoConf: WorkspaceConfiguration): CompletionL
 
         for (let c of command_docs.values()) {
             for (let c_ix of c.command.values()) {
+                const syntax_id = getMostLikelySyntax(c_ix, c.syntax)
                 const compl_it = new CompletionItem(c_ix);
                 if (autoConf.Setting == 'Minimal') {
-                    compl_it.detail = c.syntax
+                    compl_it.detail = c.syntax[syntax_id]
                 }
-                compl_it.insertText = generateSnippetString(c)
-                compl_it.kind = CompletionItemKind.Function
-                completion_List.items.push(compl_it)
+                try {
+                    compl_it.insertText = generateSnippetString(c, syntax_id)
+                    compl_it.kind = CompletionItemKind.Function
+                    completion_List.items.push(compl_it)
+                } catch (error) {
+                    console.log(c.command[0])
+                }
+
             }
         }
     }
@@ -186,13 +215,13 @@ export function getCompletionList(autoConf: WorkspaceConfiguration): CompletionL
 
 export async function doc_completion_item(autoConf: WorkspaceConfiguration, compl_it: CompletionItem): Promise<CompletionItem | undefined> {
 
-    function mediumBlock(c: doc_entry, compl_it_doc: MarkdownString): MarkdownString {
+    function mediumBlock(c: doc_entry, compl_it_doc: MarkdownString, syntax_id: number): MarkdownString {
         compl_it_doc = docLink(c.html_filename, compl_it_doc)
-        compl_it_doc.appendCodeblock(c.syntax, 'lmps')
+        compl_it_doc.appendCodeblock(c.syntax.join("\n"), 'lmps')
         compl_it_doc.appendMarkdown(c.parameters)
         return compl_it_doc
     }
-    
+
     function docLink(html_link: string, compl_it_doc: MarkdownString): MarkdownString {
         return compl_it_doc.appendMarkdown("[Open documentation](https://lammps.sandia.gov/doc/" + html_link + ")\n")
     }
@@ -202,16 +231,17 @@ export async function doc_completion_item(autoConf: WorkspaceConfiguration, comp
         if (compl_it.label) {
             const c: doc_entry | undefined = getDocumentation(compl_it.label)
             if (c) {
+                const syntax_id = getMostLikelySyntax(compl_it.label, c.syntax)
                 compl_it.documentation = new MarkdownString("", true);
                 switch (autoConf.Setting) {
                     case "Minimal":
                         compl_it.documentation = docLink(c.html_filename, compl_it.documentation)
                         break;
                     case "Medium":
-                        compl_it.documentation = mediumBlock(c, compl_it.documentation)
+                        compl_it.documentation = mediumBlock(c, compl_it.documentation, syntax_id)
                         break;
                     case "Extensive":
-                        compl_it.documentation = mediumBlock(c, compl_it.documentation)
+                        compl_it.documentation = mediumBlock(c, compl_it.documentation, syntax_id)
                         compl_it.documentation.appendMarkdown(" \n" + "--- " + " \n")
                         compl_it.documentation.appendMarkdown(await getMathMarkdown(c.short_description, color))
                         break;
