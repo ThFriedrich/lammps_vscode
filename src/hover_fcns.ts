@@ -1,4 +1,4 @@
-import { TextDocument, Position, Hover, WorkspaceConfiguration, workspace, MarkdownString } from 'vscode'
+import { TextDocument, Position, Hover, WorkspaceConfiguration, workspace, MarkdownString, ExtensionContext } from 'vscode'
 import { doc_entry, getColor, fix_img_path } from './doc_fcns'
 import { getMathMarkdown } from './math_render'
 
@@ -7,7 +7,7 @@ export function getRangeFromPosition(document: TextDocument, position: Position)
     return document.getText(range)
 }
 
-export async function createHover(docs: doc_entry): Promise<Hover | undefined> {
+export async function createHover(docs: doc_entry, context:ExtensionContext): Promise<Hover | undefined> {
 
     const hover_conf: WorkspaceConfiguration = workspace.getConfiguration('lammps.Hover')
     if (hover_conf.Enabled) {
@@ -17,7 +17,7 @@ export async function createHover(docs: doc_entry): Promise<Hover | undefined> {
             // Constructing the Markdown String to show in the Hover window
             const content = new MarkdownString("", true)
             if (docs?.short_description) {
-                let short_desc: string = fix_img_path(docs.short_description, false, undefined)
+                let short_desc: string = fix_img_path(docs.short_description, false, undefined, context)
                 short_desc = await getMathMarkdown(short_desc, color)
                 content.appendMarkdown(short_desc + ". [Read more... ](https://lammps.sandia.gov/doc/" + docs?.html_filename + ")\n")
                 content.appendMarkdown("\n --- \n")
@@ -32,7 +32,7 @@ export async function createHover(docs: doc_entry): Promise<Hover | undefined> {
                 content.appendMarkdown(docs?.examples)
             }
             if (docs?.description && hover_conf.Detail == 'Complete') {
-                let full_desc: string = fix_img_path(docs.description, true, undefined)
+                let full_desc: string = fix_img_path(docs.description, true, undefined, context)
                 full_desc = await getMathMarkdown(full_desc, color)
                 content.appendMarkdown("### Description: \n")
                 content.appendMarkdown(full_desc + "\n")

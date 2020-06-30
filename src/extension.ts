@@ -32,12 +32,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveColorTheme(async () => {
 			if (panel && panel.command) {
-				const md_content: vscode.MarkdownString | undefined = await create_doc_page(panel.command, panel)
+				const md_content: vscode.MarkdownString | undefined = await create_doc_page(panel.command, panel, context)
 				if (md_content) {
 					set_doc_panel_content(panel, md_content)
 				}
 			}
-
 		}))
 
 	// Register Hover Provider
@@ -49,7 +48,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				// Sets a context variable to control visibility of context menu item "Show documentation for Command"
 				if (docs) {
 					vscode.commands.executeCommand('setContext', 'commandOnCursor', true);
-					return createHover(docs)
+					return createHover(docs, context)
 				} else {
 					vscode.commands.executeCommand('setContext', 'commandOnCursor', false);
 				}
@@ -111,26 +110,22 @@ export async function activate(context: vscode.ExtensionContext) {
 function check_versions(context: vscode.ExtensionContext) {
 	const v: string = vscode.extensions.getExtension('ThFriedrich.lammps')!.packageJSON.version
 	const v_stored: string | undefined = context.globalState.get('lmps_version')
-	if (v_stored) {
-		if (v != v_stored) {
-			context.globalState.update('lmps_version', v)
-			switch (true) {
-				case v.includes("alpha"):
-					msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
-					This is a alpha release. Please check the Release Notes for instructions on downgrading to a previous release if you want or need to! Please keep an eye out for bugs and issues and report them! 🧐 🐛`)
-					break;
-				case v.includes("beta"):
-					msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
-					This is a beta release. Please check the Release Notes and keep an eye out for bugs! 🧐 🐛`)
-					break;
-				default:
-					msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
-					Please check the Release Notes for Information about this update`)
-					break;
-			}
-		};
-	} else {
+	if (!v_stored || v != v_stored) {
 		context.globalState.update('lmps_version', v)
+		switch (true) {
+			case v.includes("alpha"):
+				msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
+					This is a alpha release. Please check the Release Notes for instructions on downgrading to a previous release if you want or need to! Please keep an eye out for bugs and issues and report them! 🧐 🐛`)
+				break;
+			case v.includes("beta"):
+				msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
+					This is a beta release. Please check the Release Notes and keep an eye out for bugs! 🧐 🐛`)
+				break;
+			default:
+				msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
+					Please check the Release Notes for Information about this update`)
+				break;
+		}
 	}
 }
 
