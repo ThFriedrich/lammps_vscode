@@ -104,7 +104,10 @@ class CMD:
                             out += "    " + l_str
                 else:
                     out += b + "   \n"
-            return rst2md.tr_inline_math(rst2md.rm_markup(out))
+            out = rst2md.rm_markup(out)
+            out = rst2md.tr_inline_math(out)
+            out = rst2md.fix_tr_markup_bugs(out)
+            return out
 
         def get_multiple_syntaxes(syn_clean):
             syntaxes = []
@@ -204,17 +207,16 @@ class CMD:
                 # Is it the correct description for the given argument?
                 # And: Is it a level 1 argument?
                 if dscp[0].strip().split(" ")[0] == arg_clean and dscp[2] == 1:
+                    dscp_fil = re.sub(r"(one|zero)\sor\smore(\sof)?\s*","", dscp[1])
                     b_choices = re.search(  # The description contains choices?
-                        r".*\s(or)\s(?!(more))", dscp[1]) != None
-                    if b_choices:
-                        choices = dscp[1].split(' or ')
+                        r".*\s(or)\s", dscp_fil) != None
+                    if b_choices:     
+                        choices = dscp_fil.split(' or ')
                         choices = [x.strip()  # Allow only single words and erase whitespaces
                                    # Filter out some funky cases
                                    for x in choices
                                    if not x.__contains__("=")
-                                   and not x.__contains__(" ")
-                                   and not x.__contains__("one")
-                                   and not x.__contains__("more")]
+                                   and not x.__contains__(" ")]
                         a_type = 3
                         if len(choices)<=1: # Only one choice doesn't make sense...
                             a_type = 2
