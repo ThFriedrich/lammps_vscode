@@ -8,7 +8,7 @@ This extension for Visual Studio Code provides language support for LAMMPS (Mole
 ![Syntax Highlighting](imgs/lammps-lng-anim.gif)
 
 - Syntax Highlighting for Keywords, Variables and Data Types
-- Keyword list up to date with the Lammps documentation as of June 2020
+- Keyword list up to date with the Lammps documentation as of Juli 2020
 - Keyword Highlighting for LIGGGHTS(R)-PUBLIC scripts supported
 - Folding possible between Markers #[ and #]
 - Recognizes .lmp, .lmps and .lammps file extensions and files beginning with "in."
@@ -23,7 +23,8 @@ This extension for Visual Studio Code provides language support for LAMMPS (Mole
 ![Autocompletion](imgs/autocomplete.gif)
 
 - Completion suggestions with corresponding informations are displayed
-- Different autocompletion behaviours can be selected 
+- Functionality can be turned off
+- Different information-display options possible 
 ---
 ### Hover information
 ![Hover](imgs/hover.gif)
