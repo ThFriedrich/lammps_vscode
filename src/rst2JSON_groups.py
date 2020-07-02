@@ -27,7 +27,7 @@ def write_groups_to_json(group_dict):
                        'match': "\\b(" + regex_group_str(group) + ")(?=[\\t\\s])"},
                       f, ensure_ascii=False, indent=4)
             f.write(",\n")
-        
+
 
 def regex_group_str(group_list):
     comp_str = ""
@@ -36,16 +36,16 @@ def regex_group_str(group_list):
             comp_str += "|"+it
     return comp_str[1:]
 
+
 def remove_duplicates_group_dict(group_dict):
     for g in list(group_dict.keys()):
         g_temp = []
         for c in group_dict[g]:
             if c not in g_temp:
                 g_temp.append(c)
-            else:
-                print(c)
         group_dict[g] = g_temp
     return group_dict
+
 
 def cmds_by_group(cmd_list, group_dict):
     for cmd in cmd_list:
@@ -72,10 +72,12 @@ def cmds_by_group(cmd_list, group_dict):
             group_dict['general'].append(' '.join(cmd.split()))
     return group_dict
 
+
 def read_json(json_path):
     with open(json_path, 'r') as json_file:
         data = json.load(json_file)
-    return data 
+    return data
+
 
 def gen_group_obj(group_dict):
     groups = []
@@ -88,7 +90,8 @@ def gen_group_obj(group_dict):
         groups.append({'name': group_identifier,
                        'match': "\\b(" + regex_group_str(group) + ")(?=[\\t\\s])"})
     return groups
-                    
+
+
 def update_syntax(syntax_path, groups):
     groups_updated = []
     syn = read_json(syntax_path)

@@ -71,24 +71,25 @@ export async function create_doc_page(snippet: string, panel: WebviewPanel | und
             }
         }
         if (docs?.syntax) {
-            content.appendMarkdown("## Syntax: \n")
+            content.appendMarkdown("### Syntax: \n")
             content.appendCodeblock(docs?.syntax.join('\n'), "lmps")
             content.appendMarkdown(await getMathMarkdown(docs?.parameters, color) + "\n\n")
         }
         if (docs?.examples) {
-            content.appendMarkdown("## Examples: \n")
+            content.appendMarkdown("### Examples: \n")
             content.appendMarkdown(docs?.examples)
         }
         if (docs?.description) {
             let full_desc: string = fix_img_path(docs.description, true, panel, context)
             full_desc = await getMathMarkdown(full_desc, color)
-            content.appendMarkdown("## Description: \n")
+            content.appendMarkdown("### Description: \n")
             content.appendMarkdown(full_desc + "\n")
         }
         if (docs?.restrictions) {
-            content.appendMarkdown("## Restrictions: \n")
+            content.appendMarkdown("### Restrictions: \n")
             content.appendMarkdown(docs?.restrictions)
         }
+        // Related commands section has references in it. Needs fixing.
         // if (docs?.related) {
         //     content.appendMarkdown("### Related commands: \n")
         //     content.appendMarkdown(docs?.related)
