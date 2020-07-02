@@ -4,6 +4,7 @@ import re
 def tr_section(section_rst: str, references: dict) -> str:
     section_md = tr_inline_math(section_rst)
     section_md = tr_inline_doc(section_md)
+    section_md = tr_inline_link(section_md)
     section_md = tr_inline_pdf(section_md)
     section_md = tr_table(section_md)
     section_md = tr_references(section_md, references)
@@ -56,6 +57,15 @@ def tr_inline_doc(txt: str) -> str:
             d[0], "[" + d[1].replace("\n", "") + "](https://lammps.sandia.gov/doc/" + d[2].replace("\n", "") + ".html)")
     return txt
 
+def tr_inline_link(txt: str) -> str:
+    # `https://openkim.org/browse/models/by-type <https://openkim.org/browse/models/by-type>`_
+    lnk = re.findall(
+        r"(\`(http[\S\r]*?)\s+\<(http[\S\r]*?)\>\`\_)", txt, 8)
+    for d in lnk:
+        txt = txt.replace(
+            d[0], "[" + d[1].replace("\n", "") + "](" + d[2].replace("\n", "") + ")")
+    return txt
+
 def tr_inline_pdf(txt: str) -> str:
     # `this PDF guide <PDF/SMD_LAMMPS_userguide.pdf>`_
     doc_lnk = re.findall(
@@ -67,9 +77,13 @@ def tr_inline_pdf(txt: str) -> str:
 
 
 def rm_markup(txt: str) -> str:
+    # Remove enclosing markup for bold, italic
     mrk = re.findall(r"\s([\*\_]+)(\S+?)([\*\_]+)\s", txt, 8)
     for m in mrk:
         txt = txt.replace("".join(m), m[1])
+
+    # Remove escaped whitespaces 
+    txt = txt.replace("\ "," ")
 
     return txt
 
