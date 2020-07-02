@@ -33,24 +33,22 @@ export interface doc_entry {
 /** Searches a string for Markdown-Image links and adds the extension path to
  * the image url if argument b_img is true, otherwise it deletes the link to remove 
  * the image from the text.*/
-export function fix_img_path(txt: string, b_img: boolean, web_panel: WebviewPanel | undefined, context:ExtensionContext): string {
-    const img: (RegExpMatchArray | null)[] = [txt.match(RegExp('\\!\\[Image\\]\\((.*?)\\)'))]
-    if (img[0]) {
+export function fix_img_path(txt: string, b_img: boolean, web_panel: WebviewPanel | undefined, context: ExtensionContext): string {
+    const img: (RegExpMatchArray | null) = txt.match(RegExp('\\!\\[Image\\]\\((.*?)\\)', 'g'))
+    if (img) {
         // const ex_dir = extensions.getExtension('ThFriedrich.lammps')?.extensionPath;
         img.forEach(im => {
             if (b_img) {
-                const img_path: string = join('rst', im![1])
+                const im_spl = im.match(RegExp('\\!\\[Image\\]\\((.*?)\\)'))
+                const img_path: string = join('rst', im_spl![1])
+                const img_path_abs: string = context.asAbsolutePath(img_path)
+                let img_uri: Uri = Uri.file(img_path_abs)
                 if (web_panel) {
-                    const ex_dir = extensions.getExtension('ThFriedrich.lammps')?.extensionPath
-                    const md_str: string = join(ex_dir!, img_path)
-                    const web_uri: string = web_panel.webview.asWebviewUri(Uri.file(md_str)).toString()
-                    txt = txt.replace(im![1], web_uri)
-                } else {
-                    const md_str: string = Uri.file(context.asAbsolutePath(img_path)).toString()
-                    txt = txt.replace(im![1], md_str)
+                    img_uri = web_panel.webview.asWebviewUri(img_uri)
                 }
+                txt = txt.replace(im_spl![1], img_uri.toString())
             } else {
-                txt = txt.replace(im![0], "")
+                txt = txt.replace(im, "")
             }
         });
     }

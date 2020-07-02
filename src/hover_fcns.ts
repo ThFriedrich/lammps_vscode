@@ -28,8 +28,10 @@ export async function createHover(docs: doc_entry, context:ExtensionContext): Pr
                 content.appendMarkdown(await getMathMarkdown(docs?.parameters, color) + "\n\n")
             }
             if (docs?.examples && hover_conf.Examples) {
+                let exmpl: string = fix_img_path(docs?.examples, true, undefined, context)
+                exmpl = await getMathMarkdown(exmpl, color)
                 content.appendMarkdown("### Examples: \n")
-                content.appendMarkdown(docs?.examples)
+                content.appendMarkdown(exmpl + '\n')
             }
             if (docs?.description && hover_conf.Detail == 'Complete') {
                 let full_desc: string = fix_img_path(docs.description, true, undefined, context)

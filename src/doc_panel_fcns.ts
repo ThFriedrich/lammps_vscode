@@ -76,8 +76,10 @@ export async function create_doc_page(snippet: string, panel: WebviewPanel | und
             content.appendMarkdown(await getMathMarkdown(docs?.parameters, color) + "\n\n")
         }
         if (docs?.examples) {
+            let exmpl: string = fix_img_path(docs?.examples, true, panel, context)
+            exmpl = await getMathMarkdown(exmpl, color)
             content.appendMarkdown("### Examples: \n")
-            content.appendMarkdown(docs?.examples)
+            content.appendMarkdown(exmpl + '\n')
         }
         if (docs?.description) {
             let full_desc: string = fix_img_path(docs.description, true, panel, context)
