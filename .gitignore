@@ -12,7 +12,7 @@ src/__pycache__
 *.html
 *.pdf
 *.fig
+*.vsix
 !rst/JPG
 rst
-.vscodeignore
 .eslintrc.json
