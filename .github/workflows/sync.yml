@@ -4,8 +4,10 @@
 name: SYNC
 
 on:
- schedule:
-   - cron:  '0 12 * * 7'
+  push:
+    branches: master
+  schedule:
+    - cron: '0 12 * * 0'
 
 jobs:
   # This workflow contains a single job called "build"
