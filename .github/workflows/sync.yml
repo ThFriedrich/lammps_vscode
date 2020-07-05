@@ -4,8 +4,6 @@
 name: SYNC
 
 on:
-  push:
-    branches: master
   schedule:
     - cron: '0 12 * * 0'
 
@@ -33,7 +31,7 @@ jobs:
           
     - name: Download updated Docs
       run:
-        svn export https://github.com/ThFriedrich/lammps/trunk/doc/src rst --force
+        svn export https://github.com/lammps/lammps/trunk/doc/src rst --force
 
     - name: Build Docs TS-Object
       run: |
@@ -52,7 +50,7 @@ jobs:
       run: | 
         echo "::set-output name=date::$(date +'%Y-%m-%d')"
         echo "::set-output name=vsix_file::$(find *.vsix)"
-        echo "::set-output name=tag::$(find *.vsix | tr -cd '[[0-9.]]' | rev | cut -c2- | rev)"
+        echo "::set-output name=tag::$(find *.vsix | cut -d'.' -f1-3 | cut -d'-' -f2-3)"
         
     - name: Create Release
       if: ${{ success() }}
@@ -60,11 +58,9 @@ jobs:
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        DATE: ${{ steps.date_tag.outputs.date }}
-        TAG: ${{ steps.date_tag.outputs.tag }}  
       with:
-        tag_name: sync-${{ steps.date_tag.outputs.date }}
-        release_name: Lammps-${{ steps.date_tag.outputs.tag }} Synchronisation Release - ${{ steps.date_tag.outputs.date }}
+        tag_name: v${{ steps.date_tag.outputs.tag }}
+        release_name: v${{ steps.date_tag.outputs.tag }} Sync Release - ${{ steps.date_tag.outputs.date }}
         body: Scheduled synchronisation of lammps_vscode-${{ steps.date_tag.outputs.tag }} with Lammps documentation from ${{ steps.date_tag.outputs.date }} 
         draft: false
         prerelease: false   
