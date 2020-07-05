@@ -1,7 +1,7 @@
 # This is a syncronisation workflow to that pulls the latest documentation from the lammps repository
 # and builds an updated vsix-package based on these files.
 
-name: SYNC
+name: CI
 
 on:
   push:
