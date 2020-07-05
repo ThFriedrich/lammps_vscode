@@ -1,8 +1,8 @@
 # Lammps language extension for vscode README
-![Version](https://vsmarketplacebadges.dev/version-short/thfriedrich.lammps.svg)
+![Version](https://vsmarketplacebadges.dev/version-short/thfriedrich.lammps.png)
 ![GitHub](https://img.shields.io/github/license/thfriedrich/lammps_vscode?color=brightgreen)
 ![Updated](https://img.shields.io/github/release-date/thfriedrich/lammps_vscode?label=last%20update%20)
-![Installs](https://vsmarketplacebadges.dev/installs-short/thfriedrich.lammps.svg)
+![Installs](https://vsmarketplacebadges.dev/installs-short/thfriedrich.lammps.png)
 [![Plant Tree](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=Plant%20Tree&query=%24.total&url=https%3A%2F%2Fpublic.offset.earth%2Fusers%2Ftreeware%2Ftrees)](https://plant.treeware.earth/thfriedrich/lammps_vscode)
 
 This extension for Visual Studio Code provides language support for LAMMPS (Molecular dynamics Software) Scripts.
