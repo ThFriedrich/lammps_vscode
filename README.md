@@ -10,7 +10,6 @@ This extension for Visual Studio Code provides language support for LAMMPS (Mole
 ## Features
 
 ### Syntax/Keyword Highlighting 
-
 ![Syntax Highlighting](imgs/lammps-lng-anim.gif)
 
 - Syntax Highlighting for Keywords, Variables and Data Types
