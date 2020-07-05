@@ -10,6 +10,7 @@ out/
 src/
 tsconfig.json
 webpack.config.js
+syntaxes/codeblock.json
 
 # Reduce size of mathjax
 !node_modules/mathjax-node/LICENSE
