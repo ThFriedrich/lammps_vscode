@@ -318,7 +318,7 @@ with open('./src/lmp_doc.ts', 'w', encoding='utf-8') as f:
     for rst in rst_files:
         Doc = CMD(os.path.join(rst_path, rst))
         if Doc.valid:
-            dbg_print(Doc)
+            # dbg_print(Doc)
             groups = rst2JSON_groups.cmds_by_group(Doc.cmd_list, groups)
             cmd_count += len(Doc.cmd_list)
             json.dump({'command': Doc.cmd_list,
@@ -333,7 +333,7 @@ with open('./src/lmp_doc.ts', 'w', encoding='utf-8') as f:
                         'related': Doc.related},
                         f, ensure_ascii=False, indent=4)
             f.write(",\n")
-            # print("passed: " + rst)
+            print("passed: " + rst)
         else:
             pass
             # print("failed: " + rst)
