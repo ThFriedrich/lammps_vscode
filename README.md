@@ -8,6 +8,7 @@
 [![Plant Tree](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=Plant%20Tree&query=%24.total&url=https%3A%2F%2Fpublic.offset.earth%2Fusers%2Ftreeware%2Ftrees)](https://plant.treeware.earth/thfriedrich/lammps_vscode)
 
 This extension for Visual Studio Code provides language support for LAMMPS (Molecular dynamics Software) Scripts.
+This package is being synchronised with the Lammps documentation through a continuous integration pipeline on a monthly schedule to keep the keyword lists and embedded command documentations up to date.
 
 ## Features
 
@@ -15,7 +16,6 @@ This extension for Visual Studio Code provides language support for LAMMPS (Mole
 ![Syntax Highlighting](imgs/lammps-lng-anim.gif)
 
 - Syntax Highlighting for Keywords, Variables and Data Types
-- Keyword list up to date with the Lammps documentation as of Juli 2020
 - Keyword Highlighting for LIGGGHTS(R)-PUBLIC scripts supported
 - Folding possible between Markers #[ and #]
 - Recognizes .lmp, .lmps and .lammps file extensions and files beginning with "in."
