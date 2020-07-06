@@ -47,20 +47,21 @@ export async function manage_doc_panel(context: ExtensionContext, panel: DocPane
     return panel
 }
 
-export async function set_doc_panel_content(panel: DocPanel | undefined, md_content: MarkdownString) {
-    const html: string = await commands.executeCommand('markdown.api.render', md_content.value) as string;
-    const style = "<style type=\"text/css\"> \
+const html_style:string = "<style type=\"text/css\"> \
     body.vscode-light { \
         color: black;\
         }\
-        body.vscode-dark {\
+    body.vscode-dark {\
         color: white;\
         }\
-        body.vscode-high-contrast {\
+    body.vscode-high-contrast {\
         color: white;\
         }\
     </style>"
-    panel!.webview.html = style + html;
+
+export async function set_doc_panel_content(panel: DocPanel | undefined, md_content: MarkdownString) {
+    const html: string = await commands.executeCommand('markdown.api.render', md_content.value) as string;
+    panel!.webview.html = html_style + html;
 }
 
 export async function create_doc_page(snippet: string, panel: WebviewPanel | undefined, context: ExtensionContext): Promise<MarkdownString | undefined> {
