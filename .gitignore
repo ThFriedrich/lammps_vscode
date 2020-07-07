@@ -13,6 +13,5 @@ src/__pycache__
 *.pdf
 *.fig
 *.vsix
-!rst/JPG
 rst
 .eslintrc.json
