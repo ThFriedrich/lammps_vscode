@@ -5,7 +5,7 @@ name: SYNC
 
 on:
   schedule:
-    - cron: '0 12 7 * *'
+    - cron: '0 15 8 * *'
 
 jobs:
   build:
@@ -77,6 +77,10 @@ jobs:
       with:
         releaseId: ${{ steps.create_release.outputs.id }} 
         args: ${{ steps.date_tag.outputs.vsix_file }}
-    
+    - name: Publish
+      if: ${{ success() }}
+      run: npm run deploy
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
         
         
