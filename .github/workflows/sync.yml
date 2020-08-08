@@ -5,7 +5,7 @@ name: SYNC
 
 on:
   schedule:
-    - cron: '10 16 8 * *'
+    - cron: '30 16 8 * *'
 
 jobs:
   build:
@@ -40,6 +40,7 @@ jobs:
       run: |
         npm install
         npm install -g vsce
+        npm version patch
         vsce package
         
     - name: Get Tag and Date
@@ -49,18 +50,18 @@ jobs:
         echo "::set-output name=vsix_file::$(find *.vsix)"
         echo "::set-output name=tag::$(find *.vsix | cut -d'.' -f1-3 | cut -d'-' -f2-3)"
         
-    - name: Create Release
-      if: ${{ success() }}
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v${{ steps.date_tag.outputs.tag }}-sync${{ steps.date_tag.outputs.date }}
-        release_name: v${{ steps.date_tag.outputs.tag }} Sync Release - ${{ steps.date_tag.outputs.date }}
-        body: Scheduled synchronisation of lammps_vscode-${{ steps.date_tag.outputs.tag }} with Lammps documentation from ${{ steps.date_tag.outputs.date }} 
-        draft: false
-        prerelease: false   
+    # - name: Create Release
+    #   if: ${{ success() }}
+    #   id: create_release
+    #   uses: actions/create-release@v1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     tag_name: v${{ steps.date_tag.outputs.tag }}-sync${{ steps.date_tag.outputs.date }}
+    #     release_name: v${{ steps.date_tag.outputs.tag }} Sync Release - ${{ steps.date_tag.outputs.date }}
+    #     body: Scheduled synchronisation of lammps_vscode-${{ steps.date_tag.outputs.tag }} with Lammps documentation from ${{ steps.date_tag.outputs.date }} 
+    #     draft: false
+    #     prerelease: false   
 
     - name: Publish package
       if: ${{ success() }}
