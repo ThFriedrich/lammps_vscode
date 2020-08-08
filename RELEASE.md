@@ -1,6 +1,6 @@
-# Release Notes v.1.3.0-beta
+# Release Notes v.1.3.0
 
-In this update some major changes were introduced and features added. This is a beta release. You may encounter problems running the extension or notice some unecpected behaviour. Please [report these issues](https://github.com/ThFriedrich/lammps_vscode/issues/new/choose) if you encounter them so they can be fixed. Much of the content of this extension is generated in a semi-automated fashion from the official [Lammps documentation](https://lammps.sandia.gov/doc/Manual.html). It is hardly possible to check the behaviour of autocomplete and hover features for each individual command, what makes bug reports all the more important and valueable. Also, please share your ideas for enhancements or new features. 
+In this update some major changes were introduced and features added. Please [report issues](https://github.com/ThFriedrich/lammps_vscode/issues/new/choose) if you encounter any problems so they can be fixed. Much of the content of this extension is generated in an automated fashion from the official [Lammps documentation](https://lammps.sandia.gov/doc/Manual.html). It is hardly possible to check the behaviour of autocomplete and hover features for each individual command, what makes bug reports all the more important and valueable. Also, please share your ideas for enhancements or new features. 
 
 If you have to or want to revert to a previous release, please download the corresponding vsix-package from [GitHub](https://github.com/ThFriedrich/lammps_vscode/releases) and [install it](https://code.visualstudio.com/docs/editor/extension-gallery#_install-from-a-vsix) from the command line with the following command:
 ```bash
@@ -25,3 +25,7 @@ Completion suggestions now behave much like snippets. Editable arguments are acc
 * Set of functions that points out problems before runtime
 * So far only checking for files and paths on read- and write commands
 * To be extended in the future
+
+## Automatic Updates
+* The build of this extension is fully automated to synchronise it's contents with the Official Lammps documentation on a monthly schedule
+

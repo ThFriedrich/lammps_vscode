@@ -5,7 +5,7 @@ name: SYNC
 
 on:
   schedule:
-    - cron: '10 15 8 * *'
+    - cron: '50 15 8 * *'
 
 jobs:
   build:
@@ -61,13 +61,6 @@ jobs:
         body: Scheduled synchronisation of lammps_vscode-${{ steps.date_tag.outputs.tag }} with Lammps documentation from ${{ steps.date_tag.outputs.date }} 
         draft: false
         prerelease: false   
-    
-    - name: Archive package
-      if: ${{ success() }}
-      uses: actions/upload-artifact@v2
-      with:
-        path: ${{ steps.date_tag.outputs.vsix_file }}
-        name: ${{ steps.date_tag.outputs.vsix_file }}
 
     - name: Publish package
       if: ${{ success() }}
