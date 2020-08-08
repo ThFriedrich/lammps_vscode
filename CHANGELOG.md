@@ -54,5 +54,8 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
  - Grammar
     - Keywords updated 
 
+## Version 1.3.0 08.08.2020
+ - CI for Synchronisation with the Lammps documentation, Github publishing and automatic Marketplace publishing 
+
 
 
