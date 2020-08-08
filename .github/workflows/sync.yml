@@ -5,7 +5,7 @@ name: SYNC
 
 on:
   schedule:
-    - cron: '0 15 8 * *'
+    - cron: '10 15 8 * *'
 
 jobs:
   build:
