@@ -141,7 +141,8 @@
     "webpack": "webpack --mode development",
     "webpack-dev": "webpack --mode development --watch",
     "test-compile": "tsc -p ./",
-    "deploy": "vsce publish --yarn"
+    "prepublish": "",
+    "deploy": "vsce publish patch --yarn"
   },
   "devDependencies": {
     "@types/glob": "^7.1.1",
