@@ -37,5 +37,6 @@ node_modules/mathjax-node/**
 node_modules/mathjax/**
 
 !rst/JPG
+!rst/img
 rst
 
