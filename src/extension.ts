@@ -112,8 +112,8 @@ function check_versions(context: vscode.ExtensionContext) {
 	const v_stored: string | undefined = context.globalState.get('lmps_version')
 	if (!v_stored || v != v_stored) {
 		context.globalState.update('lmps_version', v)
-		msgBox(context, `Lammps Language extension was updated to version ${v}-beta. \n 
-					This is a beta release. Please check the Release Notes for instructions on downgrading to a previous release if you want or need to! Please keep an eye out for bugs and issues and report them! 🧐 🐛`)
+		msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
+					This is a synchronisation release that keeps the extension up to date. Please keep an eye out for bugs and issues and report them! 🧐 🐛`)
 		// switch (true) {
 		// 	case v.includes("alpha"):
 		// 		msgBox(context, `Lammps Language extension was updated to version ${v}. \n 

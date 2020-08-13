@@ -1,4 +1,4 @@
-# Release Notes v.1.3.0
+# Release Notes v.1.3
 
 In this update some major changes were introduced and features added. Please [report issues](https://github.com/ThFriedrich/lammps_vscode/issues/new/choose) if you encounter any problems so they can be fixed. Much of the content of this extension is generated in an automated fashion from the official [Lammps documentation](https://lammps.sandia.gov/doc/Manual.html). It is hardly possible to check the behaviour of autocomplete and hover features for each individual command, what makes bug reports all the more important and valueable. Also, please share your ideas for enhancements or new features. 
 
