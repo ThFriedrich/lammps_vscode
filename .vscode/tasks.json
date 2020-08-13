@@ -43,7 +43,7 @@
 			"label": "UpdateRST",
 			"type": "shell",
 			"group": "build",
-			"command": "svn export https://github.com/ThFriedrich/lammps/trunk/doc/src rst --force; python3 ./src/rst2JSON.py; rm -r rst/PDF; rm -r rst/Developer; rm -r rst/99; rm -r rst/2001; rm -r rst/_ext; ",
+			"command": "svn export https://github.com/lammps/lammps/trunk/doc/src rst --force; python3 ./src/rst2JSON.py; rm -r rst/PDF; rm -r rst/Developer; rm -r rst/99; rm -r rst/2001; rm -r rst/_ext; ",
 			"presentation": {
 				"echo": true,
 				"reveal": "always",
