@@ -140,8 +140,7 @@
     "vscode:prepublish": "webpack --mode production",
     "webpack": "webpack --mode development",
     "webpack-dev": "webpack --mode development --watch",
-    "test-compile": "tsc -p ./",
-    "deploy": "vsce publish --yarn"
+    "test-compile": "tsc -p ./"
   },
   "devDependencies": {
     "@types/glob": "^7.1.1",
