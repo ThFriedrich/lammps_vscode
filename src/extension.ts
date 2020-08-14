@@ -4,7 +4,6 @@ import { createHover, getRangeFromPosition } from './hover_fcns';
 import { updateDiagnostics } from './lmps_lint';
 import * as vscode from 'vscode';
 
-
 export async function activate(context: vscode.ExtensionContext) {
 
 	check_versions(context)
@@ -74,9 +73,15 @@ export async function activate(context: vscode.ExtensionContext) {
 					position: vscode.Position,
 					token: vscode.CancellationToken,
 					context: vscode.CompletionContext) {
-					const autoConf = vscode.workspace.getConfiguration('lammps.AutoComplete')
-					let compl_str: vscode.CompletionList = getCompletionList(autoConf)
-					return compl_str
+					const linePrefix = document.lineAt(position).text.substr(0, position.character);
+					// provide completion suggestion only at the beginning of the line
+					if (linePrefix.search(RegExp('^\\s*[\\S]+\\s')) >= 0) {
+						return undefined;
+					} else {
+						const autoConf = vscode.workspace.getConfiguration('lammps.AutoComplete')
+						let compl_str: vscode.CompletionList = getCompletionList(autoConf)
+						return compl_str
+					}
 				}
 			}));
 
@@ -87,21 +92,17 @@ export async function activate(context: vscode.ExtensionContext) {
 			if (doc.languageId == 'lmps') {
 				updateDiagnostics(doc, collection);
 			}
-		}));
-
-	context.subscriptions.push(
+		}),
 		vscode.workspace.onDidSaveTextDocument(doc => {
 			if (doc.languageId == 'lmps') {
 				updateDiagnostics(doc, collection);
 			}
-		}));
-
-	context.subscriptions.push(
+		}),
 		vscode.workspace.onDidChangeTextDocument(editor => {
 			const c_str: string = editor.contentChanges[0].text
 			// Check only when a word was typed out comletely
 			const b_trig: boolean = c_str.search(RegExp('[\\n\\s#]')) != -1
-			if (b_trig) {
+			if (b_trig && editor.document.languageId == 'lmps') {
 				updateDiagnostics(editor.document, collection);
 			}
 		}));
@@ -112,31 +113,19 @@ function check_versions(context: vscode.ExtensionContext) {
 	const v_stored: string | undefined = context.globalState.get('lmps_version')
 	if (!v_stored || v != v_stored) {
 		context.globalState.update('lmps_version', v)
-		msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
-					This is a synchronisation release that keeps the extension up to date. Please keep an eye out for bugs and issues and report them! 🧐 🐛`)
-		// switch (true) {
-		// 	case v.includes("alpha"):
-		// 		msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
-		// 			This is a alpha release. Please check the Release Notes for instructions on downgrading to a previous release if you want or need to! Please keep an eye out for bugs and issues and report them! 🧐 🐛`)
-		// 		break;
-		// 	case v.includes("beta"):
-		// 		msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
-		// 			This is a beta release. Please check the Release Notes and keep an eye out for bugs! 🧐 🐛`)
-		// 		break;
-		// 	default:
-		// 		msgBox(context, `Lammps Language extension was updated to version ${v}. \n 
-		// 			Please check the Release Notes for Information about this update`)
-		// 		break;
-		// }
+		const buttons = ['🧐 Show Release Notes','🌱 Buy the world a tree'];
+		const message = 	`Lammps Language extension was updated to version ${v}. \n 
+							Please keep an eye out for bugs and issues and report them! 🧐🐛 \n
+							This software supports the [Treeware project](https://treeware.earth).`
+		vscode.window.showInformationMessage(message, buttons[0], buttons[1]).then(click => {
+			if (click == buttons[0]) {
+				vscode.commands.executeCommand('markdown.showPreview', vscode.Uri.joinPath(context.extensionUri, 'RELEASE.md'), "Release Notes")
+			}
+			if (click == buttons[1]) {
+				vscode.env.openExternal(vscode.Uri.parse("https://plant.treeware.earth/thfriedrich/lammps_vscode"))
+			}
+		})
 	}
-}
-
-function msgBox(context: vscode.ExtensionContext, message: string) {
-	vscode.window.showInformationMessage(message, 'Show Release Notes').then(click => {
-		if (click) {
-			vscode.commands.executeCommand('markdown.showPreview', vscode.Uri.joinPath(context.extensionUri, 'RELEASE.md'), "Release Notes")
-		}
-	})
 }
 
 // this method is called when your extension is deactivated
