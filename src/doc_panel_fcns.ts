@@ -1,6 +1,6 @@
 import { WebviewPanel, ExtensionContext, Uri, window, TextDocument, TextEditor, MarkdownString, Position, commands } from 'vscode';
 import { doc_entry, getColor, fix_img_path, getDocumentation } from './doc_fcns'
-import { getMathMarkdown } from './math_render'
+import { getMathMarkdown } from './render_fcns'
 import { getRangeFromPosition } from './hover_fcns';
 import { join } from 'path'
 

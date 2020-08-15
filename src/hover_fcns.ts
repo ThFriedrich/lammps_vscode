@@ -1,6 +1,6 @@
 import { TextDocument, Position, Hover, WorkspaceConfiguration, workspace, MarkdownString, ExtensionContext, Uri } from 'vscode'
 import { doc_entry, getColor, fix_img_path } from './doc_fcns'
-import { getMathMarkdown } from './math_render'
+import { getMathMarkdown } from './render_fcns'
 
 export function getRangeFromPosition(document: TextDocument, position: Position): string {
     const range = document.getWordRangeAtPosition(position, RegExp('[\\w\\/]+(?:[\\t\\s]+[^\#\\s\\t]+)*'))

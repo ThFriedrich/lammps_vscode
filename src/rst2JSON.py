@@ -313,7 +313,7 @@ rst_files = [f for f in os.listdir(rst_path) if (
     f.endswith('.rst'))]
 groups = rst2JSON_groups.init_group_dict()
 cmd_count = 0
-with open('./src/lmp_doc.ts', 'w', encoding='utf-8') as f:
+with open('./src/doc_obj.ts', 'w', encoding='utf-8') as f:
     f.write("export const command_docs = [\n")
     for rst in rst_files:
         Doc = CMD(os.path.join(rst_path, rst))
