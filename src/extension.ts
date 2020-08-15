@@ -2,6 +2,7 @@ import { doc_entry, getCompletionList, getDocumentation, doc_completion_item } f
 import { DocPanel, manage_doc_panel, set_doc_panel_content, create_doc_page } from './doc_panel_fcns';
 import { createHover, getRangeFromPosition } from './hover_fcns';
 import { updateDiagnostics } from './lmps_lint';
+import { get_tasks, resolve_task } from './task_fcns'
 import * as vscode from 'vscode';
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -11,11 +12,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Initialize Panel and ViewColumn for Documentation WebView
 	let panel: DocPanel | undefined = undefined;
 	let actCol: number = 2;
+	let commandUnderCursor: string | undefined = undefined;
 
 	// Register Command to show Command documentation in WebView
 	context.subscriptions.push(
 		vscode.commands.registerCommand('extension.show_docs', async () => {
-			panel = await manage_doc_panel(context, panel, actCol)
+			panel = await manage_doc_panel(context, panel, actCol, commandUnderCursor)
 			// Reset when the panel is closed	
 			panel?.onDidDispose(
 				() => {
@@ -47,6 +49,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				// Sets a context variable to control visibility of context menu item "Show documentation for Command"
 				if (docs) {
 					vscode.commands.executeCommand('setContext', 'commandOnCursor', true);
+					commandUnderCursor = command;
 					return createHover(docs, context)
 				} else {
 					vscode.commands.executeCommand('setContext', 'commandOnCursor', false);
@@ -106,6 +109,16 @@ export async function activate(context: vscode.ExtensionContext) {
 				updateDiagnostics(editor.document, collection);
 			}
 		}));
+
+	context.subscriptions.push(
+		vscode.tasks.registerTaskProvider('lmps', {
+			provideTasks(token?: vscode.CancellationToken) {
+				return get_tasks()
+			},
+			resolveTask(tsk: vscode.Task): vscode.Task | undefined {
+				return resolve_task(tsk)
+			}
+		}));
 }
 
 function check_versions(context: vscode.ExtensionContext) {
@@ -113,8 +126,8 @@ function check_versions(context: vscode.ExtensionContext) {
 	const v_stored: string | undefined = context.globalState.get('lmps_version')
 	if (!v_stored || v != v_stored) {
 		context.globalState.update('lmps_version', v)
-		const buttons = ['🧐 Show Release Notes','🌱 Buy the world a tree'];
-		const message = 	`Lammps Language extension was updated to version ${v}. \n 
+		const buttons = ['🧐 Show Release Notes', '🌱 Buy the world a tree'];
+		const message = `Lammps Language extension was updated to version ${v}. \n 
 							Please keep an eye out for bugs and issues and report them! 🧐🐛 \n
 							This software supports the [Treeware project](https://treeware.earth).`
 		vscode.window.showInformationMessage(message, buttons[0], buttons[1]).then(click => {
