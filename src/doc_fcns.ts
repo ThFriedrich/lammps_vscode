@@ -1,6 +1,6 @@
 import {
     Uri, WorkspaceConfiguration, CompletionItem, WebviewPanel, CompletionList,
-    MarkdownString, SnippetString, CompletionItemKind, extensions, window, ExtensionContext
+    MarkdownString, SnippetString, CompletionItemKind, window, ExtensionContext
 } from 'vscode';
 
 import { getMathMarkdown } from './render_fcns'
