@@ -43,6 +43,14 @@ This package is being synchronised with the Lammps documentation through a conti
 - Information about Lammps commands are displayed when hovering over them
 - Appearance of the hover panel is customisable
 
+### Task Provider
+
+![Tasks](imgs/run_task.gif)
+
+- Differnt preconfigured run tasks can be executed
+- Path to Lammps executable must be set in the extensions settings 
+- Tasks of `"type": "lmps"` can also be configured manually in a tasks.json file
+
 ### Linting (in progress)
 
 ![Lint](imgs/lint.gif)
@@ -50,7 +58,6 @@ This package is being synchronised with the Lammps documentation through a conti
 - Set of functions that points out problems before runtime
 - So far only checking for files and paths on read- and write commands
 - To be extended in the future
-
 
 
 --- 
