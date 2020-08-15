@@ -47,7 +47,7 @@ This package is being synchronised with the Lammps documentation through a conti
 
 ![Tasks](imgs/run_task.gif)
 
-- Differnt preconfigured run tasks can be executed
+- Different preconfigured run tasks can be executed
 - Path to Lammps executable must be set in the extensions settings 
 - Tasks of `"type": "lmps"` can also be configured manually in a tasks.json file
 
