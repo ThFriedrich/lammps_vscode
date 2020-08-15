@@ -128,9 +128,54 @@
             "Autocomplete-Info Panel shows a description of the parameters and a short description of the command"
           ],
           "markdownDescription": "This option controls the behaviour of the autocompletion feature. This setting may influence the performance of the feature."
+        },
+        "lammps.tasks.binary": {
+          "type": "string",
+          "default": "/bin/lmp",
+          "description": "Path to the Lammps executable"
+        },
+        "lammps.tasks.mpi_tasks": {
+          "type": "integer",
+          "default": 4,
+          "description": "Number of tasks to run with MPI"
+        },
+        "lammps.tasks.gpu_nodes": {
+          "type": "integer",
+          "default": 1,
+          "description": "GPU nodes to use"
         }
       }
-    }
+    },
+    "taskDefinitions": [
+      {
+        "type": "lmps",
+        "required": [
+          "task", "binary", "mpi_tasks", "gpu_nodes"
+        ],
+        "properties": {
+          "binary": {
+            "type": "string",
+            "default": "/bin/lmp",
+            "description": "Path to the Lammps executable"
+          },
+          "task": {
+            "type": "string",
+            "default": "Run Multi-Task",
+            "description": "Run Single-Task | Run Multi-Task | Run Single-Task GPU | Run Multi-Task GPU"
+          },
+          "mpi_tasks": {
+            "type": "integer",
+            "default": 4,
+            "description": "Number of tasks to run with MPI."
+          },
+          "gpu_nodes": {
+            "type": "integer",
+            "default": 1,
+            "description": "GPU nodes to use."
+          }
+        }
+      }
+    ]
   },
   "scripts": {
     "compile": "tsc -p ./",
