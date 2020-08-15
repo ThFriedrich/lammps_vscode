@@ -5,6 +5,7 @@
 *.lmp
 *.lmps
 *.vsix
+*.py
 .vscode
 out/
 src/
