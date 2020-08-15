@@ -1,7 +1,7 @@
 import { doc_entry, getCompletionList, getDocumentation, doc_completion_item } from "./doc_fcns";
 import { DocPanel, manage_doc_panel, set_doc_panel_content, create_doc_page } from './doc_panel_fcns';
 import { createHover, getRangeFromPosition } from './hover_fcns';
-import { updateDiagnostics } from './lmps_lint';
+import { updateDiagnostics } from './lint_fcns';
 import { get_tasks, resolve_task } from './task_fcns'
 import * as vscode from 'vscode';
 
@@ -66,8 +66,10 @@ export async function activate(context: vscode.ExtensionContext) {
 					const autoConf = vscode.workspace.getConfiguration('lammps.AutoComplete')
 					const item_doc = await doc_completion_item(autoConf, item);
 					if (item_doc) {
+						commandUnderCursor = item_doc.label;
 						return item_doc
 					} else {
+						commandUnderCursor = item.label;
 						return item
 					}
 				},

@@ -3,8 +3,8 @@ import {
     MarkdownString, SnippetString, CompletionItemKind, extensions, window, ExtensionContext
 } from 'vscode';
 
-import { getMathMarkdown } from './math_render'
-import { command_docs } from "./lmp_doc";
+import { getMathMarkdown } from './render_fcns'
+import { command_docs } from "./doc_obj";
 import { join } from 'path'
 
 export function getColor() {
@@ -217,14 +217,16 @@ export function getCompletionList(autoConf: WorkspaceConfiguration): CompletionL
 export async function doc_completion_item(autoConf: WorkspaceConfiguration, compl_it: CompletionItem): Promise<CompletionItem | undefined> {
 
     function mediumBlock(c: doc_entry, compl_it_doc: MarkdownString, syntax_id: number): MarkdownString {
-        compl_it_doc = docLink(c.html_filename, compl_it_doc)
+        compl_it_doc = docLink(compl_it_doc)
         compl_it_doc.appendCodeblock(c.syntax.join("\n"), 'lmps')
         compl_it_doc.appendMarkdown(c.parameters)
         return compl_it_doc
     }
 
-    function docLink(html_link: string, compl_it_doc: MarkdownString): MarkdownString {
-        return compl_it_doc.appendMarkdown("[Open documentation](https://lammps.sandia.gov/doc/" + html_link + ")\n")
+    function docLink(compl_it_doc: MarkdownString): MarkdownString {
+        const show_doc_uri = Uri.parse(`command:extension.show_docs`);
+        compl_it_doc.isTrusted = true;
+        return compl_it_doc.appendMarkdown(`[Open documentation]( ${show_doc_uri} ) \n`)
     }
 
     if (autoConf.Setting != "None") {
@@ -236,7 +238,7 @@ export async function doc_completion_item(autoConf: WorkspaceConfiguration, comp
                 compl_it.documentation = new MarkdownString("", true);
                 switch (autoConf.Setting) {
                     case "Minimal":
-                        compl_it.documentation = docLink(c.html_filename, compl_it.documentation)
+                        compl_it.documentation = docLink(compl_it.documentation)
                         break;
                     case "Medium":
                         compl_it.documentation = mediumBlock(c, compl_it.documentation, syntax_id)
