@@ -1,4 +1,4 @@
-import { TextDocument, Position, Hover, WorkspaceConfiguration, workspace, MarkdownString, ExtensionContext } from 'vscode'
+import { TextDocument, Position, Hover, WorkspaceConfiguration, workspace, MarkdownString, ExtensionContext, Uri } from 'vscode'
 import { doc_entry, getColor, fix_img_path } from './doc_fcns'
 import { getMathMarkdown } from './math_render'
 
@@ -17,9 +17,10 @@ export async function createHover(docs: doc_entry, context:ExtensionContext): Pr
             // Constructing the Markdown String to show in the Hover window
             const content = new MarkdownString("", true)
             if (docs?.short_description) {
+                const show_doc_uri = Uri.parse(`command:extension.show_docs`);
                 let short_desc: string = fix_img_path(docs.short_description, false, undefined, context)
                 short_desc = await getMathMarkdown(short_desc, color)
-                content.appendMarkdown(short_desc + ". [Read more... ](https://lammps.sandia.gov/doc/" + docs?.html_filename + ")\n")
+                content.appendMarkdown(short_desc + `. [Read more... ]( ${show_doc_uri} ) \n`)
                 content.appendMarkdown("\n --- \n")
             }
             if (docs?.syntax) {
@@ -43,6 +44,7 @@ export async function createHover(docs: doc_entry, context:ExtensionContext): Pr
                 content.appendMarkdown("### Restrictions: \n")
                 content.appendMarkdown(docs?.restrictions)
             }
+            content.isTrusted = true;
             return new Hover(content)
         }
     }

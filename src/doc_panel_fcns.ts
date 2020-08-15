@@ -8,7 +8,7 @@ export interface DocPanel extends WebviewPanel {
     command?: string
 }
 
-export async function manage_doc_panel(context: ExtensionContext, panel: DocPanel | undefined, actCol: number): Promise<DocPanel | undefined> {
+export async function manage_doc_panel(context: ExtensionContext, panel: DocPanel | undefined, actCol: number, commandUnderCursor: string | undefined): Promise<DocPanel | undefined> {
 
     const img_path_light = Uri.file(join(context.extensionPath, 'imgs', 'logo_sq_l.gif'))
     const img_path_dark = Uri.file(join(context.extensionPath, 'imgs', 'logo_sq_d.gif'))
@@ -33,16 +33,19 @@ export async function manage_doc_panel(context: ExtensionContext, panel: DocPane
         context.subscriptions.push(panel)
     }
 
-    const editor: TextEditor | undefined = window.activeTextEditor;
-    const document: TextDocument = window.activeTextEditor!.document
-    const position: Position = editor!.selection.active;
-    const command: string = getRangeFromPosition(document, position)
-    const md_content: MarkdownString | undefined = await create_doc_page(command, panel, context)
-
+    if (!commandUnderCursor) {
+        const editor: TextEditor | undefined = window.activeTextEditor;
+        const document: TextDocument = window.activeTextEditor!.document
+        const position: Position = editor!.selection.active;
+        commandUnderCursor = getRangeFromPosition(document, position)
+    }  
+ 
+    const md_content: MarkdownString | undefined = await create_doc_page(commandUnderCursor, panel, context)
     if (md_content && panel) {
-        panel.command = command
+        panel.command = commandUnderCursor
         set_doc_panel_content(panel, md_content)
     }
+    
     commands.executeCommand('setContext', 'commandOnCursor', false);
     return panel
 }
@@ -103,6 +106,7 @@ export async function create_doc_page(snippet: string, panel: WebviewPanel | und
             content.appendMarkdown("### Restrictions: \n")
             content.appendMarkdown(docs?.restrictions)
         }
+        // TODO: 
         // Related commands section has references in it. Needs fixing.
         // if (docs?.related) {
         //     content.appendMarkdown("### Related commands: \n")
