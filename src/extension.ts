@@ -19,11 +19,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('extension.show_docs', async () => {
 			panel = await manage_doc_panel(context, panel, actCol, commandUnderCursor)
 			// Reset when the panel is closed	
-			panel?.onDidDispose(
-				() => {
-					panel = undefined;
-					console.log(panel)
-				},
+			panel?.onDidDispose(() => {
+				panel = undefined;
+			},
 				null,
 				context.subscriptions
 			);
@@ -112,6 +110,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}));
 
+	// Provide Tasks to run Lammps-script in vscode
 	context.subscriptions.push(
 		vscode.tasks.registerTaskProvider('lmps', {
 			provideTasks(token?: vscode.CancellationToken) {
@@ -123,6 +122,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}));
 }
 
+// Function to display update notification
 function check_versions(context: vscode.ExtensionContext) {
 	const v: string = vscode.extensions.getExtension('ThFriedrich.lammps')!.packageJSON.version
 	const v_stored: string | undefined = context.globalState.get('lmps_version')
