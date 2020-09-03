@@ -57,5 +57,40 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
 ## Version 1.3.0 08.08.2020
  - CI for Synchronisation with the Lammps documentation, Github publishing and automatic Marketplace publishing 
 
+## Version 1.3.2 14.08.2020
+ - Scheduled synchronisation of lammps_vscode with Lammps documentation
+
+## Version 1.4.0 03.09.2020
+ - Synchronisation of lammps_vscode with Lammps documentation
+ - Task Provider 
+   - Lammps can now be run as a task from within vscode
+   - Settings added for: 
+      - __binary__: path to the Lammps executable
+      - __mpi_tasks__: # of MPI tasks to run for parallel execution
+      - __gpu_nodes__: # of GPU Nodes to use with the *gpu* package
+   - Task type *"lmps"* provided to set up tasks manually in a *tasks.json* file 
+ - Hover Feature
+   - Documentation links in hover boxes now open the embedded documentation pages inside vscode instead of pointing to the weblink
+   - Package now bundles all images with versions in width=256px, used by the Hover only
+ - Auto Completion
+   - Documentation links in autocomplete-info boxes now open the embedded documentation pages inside vscode instead of pointing to the weblink
+   - Autocomplete suggestions are now only triggered at the beginning of lines
+ - Grammar
+   - Keywords updated 
+   - Updates to Grammar rules to avoid some false positive 
+ - Offline embedded documentation
+   - Improved layout of "Note" and "Warning" sections
+   - fix missing rst-file includes 
+   - fixed several formatting issues
+   - added Syntax highlighting support through vscode-textmate and markdown-it.
+   - added standard light/dark css-files to control syntax highlighting in the webview. (because Token-Colors are not exposed through vscode API yet)
+ - Depencies added:
+   - markdown-it
+   - plist
+   - request
+   - underscore-plus
+   - vscode-oniguruma
+   - vscode-textmate
+
 
 
