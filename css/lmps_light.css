@@ -1,0 +1,48 @@
+body.vscode-light {
+    color: black;
+}
+
+body.vscode-dark {
+    color: white;
+}
+
+body.vscode-high-contrast {
+    color: white;
+}
+
+blockquote {
+    color: black;
+    background-color: var(--vscode-editor-background);
+}
+
+.comment {
+    color: #008000;
+}
+
+.keyword {
+    color: #0000ff;
+}
+
+.keyword.operator {
+    color: #000000;
+}
+
+.string {
+    color: #a31515;
+}
+
+.constant.numeric {
+    color: #098658;
+}
+
+.constant.character.escape {
+    color: #008000;
+}
+
+.variable.parameter {
+    color: #ff0000;
+}
+
+.support.function {
+    color: #0451a5;
+}

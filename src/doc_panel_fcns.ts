@@ -2,13 +2,14 @@ import { WebviewPanel, ExtensionContext, Uri, window, TextDocument, TextEditor, 
 import { doc_entry, getColor, fix_img_path, getDocumentation } from './doc_fcns'
 import { getMathMarkdown } from './render_fcns'
 import { getRangeFromPosition } from './hover_fcns';
+
 import { join } from 'path'
 
 export interface DocPanel extends WebviewPanel {
     command?: string
 }
 
-export async function manage_doc_panel(context: ExtensionContext, panel: DocPanel | undefined, actCol: number, commandUnderCursor: string | undefined): Promise<DocPanel | undefined> {
+export async function manage_doc_panel(context: ExtensionContext, panel: DocPanel | undefined, actCol: number, commandUnderCursor: string | undefined, md: { render: (arg0: string) => any; }): Promise<DocPanel | undefined> {
 
     const img_path_light = Uri.file(join(context.extensionPath, 'imgs', 'logo_sq_l.gif'))
     const img_path_dark = Uri.file(join(context.extensionPath, 'imgs', 'logo_sq_d.gif'))
@@ -38,33 +39,46 @@ export async function manage_doc_panel(context: ExtensionContext, panel: DocPane
         const document: TextDocument = window.activeTextEditor!.document
         const position: Position = editor!.selection.active;
         commandUnderCursor = getRangeFromPosition(document, position)
-    }  
- 
+    }
+
     const md_content: MarkdownString | undefined = await create_doc_page(commandUnderCursor, panel, context)
     if (md_content && panel) {
         panel.command = commandUnderCursor
-        set_doc_panel_content(panel, md_content)
+        set_doc_panel_content(panel, md_content, context, md)
     }
-    
+
     commands.executeCommand('setContext', 'commandOnCursor', false);
     return panel
 }
 
-const html_style:string = "<style type=\"text/css\"> \
-    body.vscode-light { \
-        color: black;\
-        }\
-    body.vscode-dark {\
-        color: white;\
-        }\
-    body.vscode-high-contrast {\
-        color: white;\
-        }\
-    </style>"
+function fix_base64_image_html(txt: string): string {
+    const imgs = txt.match(RegExp("(\\!\\[\\S*?\\]\\()(.*?)(\\))", "g"))
+    if (imgs) {
+        imgs.forEach(img => {
+            const tag = img.replace(RegExp("\\!\\[\\S*?\\]\\("), "<img src=\"").slice(0, -1) + "\"/>"
+            txt = txt.replace(img, tag)
+        })
+    }
+    return txt
+}
 
-export async function set_doc_panel_content(panel: DocPanel | undefined, md_content: MarkdownString) {
-    const html: string = await commands.executeCommand('markdown.api.render', md_content.value) as string;
-    panel!.webview.html = html_style + html;
+
+export async function set_doc_panel_content(panel: DocPanel | undefined, md_content: MarkdownString, context: ExtensionContext, md: { render: (arg0: string) => any; }) {
+
+    if (panel) {
+        const css_lmps: Uri[] = [
+            Uri.file(join(context.extensionPath, 'css', 'lmps_light.css')),
+            Uri.file(join(context.extensionPath, 'css', 'lmps_dark.css')),
+            Uri.file(join(context.extensionPath, 'css', 'lmps_dark.css'))]
+
+        const style: Uri = css_lmps[window.activeColorTheme.kind - 1]
+        const style_panel_uri = panel.webview.asWebviewUri(style)
+        const incl_str: string = `<link rel="stylesheet" type="text/css" href="${style_panel_uri}">`
+
+        let html = md.render(md_content.value)
+        html = fix_base64_image_html(html)
+        panel.webview.html = incl_str + html
+    }
 }
 
 export async function create_doc_page(snippet: string, panel: WebviewPanel | undefined, context: ExtensionContext): Promise<MarkdownString | undefined> {

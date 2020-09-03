@@ -36,15 +36,17 @@ export interface doc_entry {
 export function fix_img_path(txt: string, b_img: boolean, web_panel: WebviewPanel | undefined, context: ExtensionContext): string {
     const img: (RegExpMatchArray | null) = txt.match(RegExp('\\!\\[Image\\]\\((.*?)\\)', 'g'))
     if (img) {
-        // const ex_dir = extensions.getExtension('ThFriedrich.lammps')?.extensionPath;
-        img.forEach(im => {
+        img.forEach(async im => {
             if (b_img) {
                 const im_spl = im.match(RegExp('\\!\\[Image\\]\\((.*?)\\)'))
                 const img_path: string = join('rst', im_spl![1])
-                const img_path_abs: string = context.asAbsolutePath(img_path)
-                let img_uri: Uri = Uri.file(img_path_abs)
+                let img_uri:Uri
                 if (web_panel) {
-                    img_uri = web_panel.webview.asWebviewUri(img_uri)
+                    const img_path_abs: Uri = Uri.file(context.asAbsolutePath(img_path))
+                    img_uri = web_panel.webview.asWebviewUri(img_path_abs)
+                } else {
+                    const dot: number = img_path.lastIndexOf(".") 
+                    img_uri = Uri.file(context.asAbsolutePath([img_path.slice(0, dot), "_256.png"].join('')))
                 }
                 txt = txt.replace(im_spl![1], img_uri.toString())
             } else {

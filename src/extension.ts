@@ -4,10 +4,12 @@ import { createHover, getRangeFromPosition } from './hover_fcns';
 import { updateDiagnostics } from './lint_fcns';
 import { get_tasks, resolve_task } from './task_fcns'
 import * as vscode from 'vscode';
+import { get_markdown_it } from './highlight_fcns';
 
 export async function activate(context: vscode.ExtensionContext) {
 
 	check_versions(context)
+	const md = await get_markdown_it(context)
 
 	// Initialize Panel and ViewColumn for Documentation WebView
 	let panel: DocPanel | undefined = undefined;
@@ -17,7 +19,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Register Command to show Command documentation in WebView
 	context.subscriptions.push(
 		vscode.commands.registerCommand('extension.show_docs', async () => {
-			panel = await manage_doc_panel(context, panel, actCol, commandUnderCursor)
+			panel = await manage_doc_panel(context, panel, actCol, commandUnderCursor, md)
 			// Reset when the panel is closed	
 			panel?.onDidDispose(() => {
 				panel = undefined;
@@ -33,7 +35,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			if (panel && panel.command) {
 				const md_content: vscode.MarkdownString | undefined = await create_doc_page(panel.command, panel, context)
 				if (md_content) {
-					set_doc_panel_content(panel, md_content)
+					set_doc_panel_content(panel, md_content, context, md)
 				}
 			}
 		}))
