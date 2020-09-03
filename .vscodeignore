@@ -7,11 +7,13 @@
 *.vsix
 *.py
 .vscode
-out/
-src/
+rst2json
+out
+src
+scripts
+
 tsconfig.json
 webpack.config.js
-syntaxes/codeblock.json
 
 # Reduce size of mathjax
 !node_modules/mathjax-node/LICENSE
@@ -38,6 +40,7 @@ node_modules/mathjax-node/**
 node_modules/mathjax/**
 
 !rst/JPG
-!rst/img
+!rst/img/*
+rst/img/wsl_tutorial
 rst
 

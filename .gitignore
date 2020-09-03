@@ -2,7 +2,7 @@ node_modules
 html
 out
 dist
-src/__pycache__
+rst2json/__pycache__
 .vscode-test/
 *.lmp
 *.lmps

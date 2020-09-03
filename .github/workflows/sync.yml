@@ -33,7 +33,7 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         pip3 install numpy
-        python3 ./src/rst2JSON.py
+        python3 ./rst2json/rst2JSON.py
     
     - name: Push2Git
       if: ${{ success() }}
@@ -59,6 +59,8 @@ jobs:
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
       run: |
+        apt install imagemagick -sync
+        bash ./scripts/resize256.sh
         npm install
         npm install -g vsce
         npm audit fix
