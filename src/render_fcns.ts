@@ -66,20 +66,24 @@ function svgToDataUrl(xml: string): string {
     return b64Start + svg64
 }
 
-async function typeset(arg: string, scale: number, color:string, format:string): Promise<string> {
+async function typeset(arg: string, scale: number, color:string, format:string, b_md:boolean): Promise<string> {
     const data = await mj.typeset({
         math: arg,
         format: format,
         svgNode: true
     })
-    scaleSVG(data, scale)
-    const xml = colorSVG(data.svgNode.outerHTML, color)
-    const md = svgToDataUrl(xml)
-    return `![image](${md})`
+    if (b_md) {
+        scaleSVG(data, scale) 
+        const xml = colorSVG(data.svgNode.outerHTML, color)
+        const md = svgToDataUrl(xml)
+        return `![equation](${md})`
+    } else {
+        return data.svgNode.outerHTML
+    }
 }
 
 
-export async function getMathMarkdown(txt: string, color:string): Promise<string> {
+export async function getMathMarkdown(txt: string, color:string, b_md:boolean): Promise<string> {
     
     let strOut: string = ""
     // RegExp to match block equations and split text into blocks of Text or Equations
@@ -88,7 +92,7 @@ export async function getMathMarkdown(txt: string, color:string): Promise<string
 
     for (let ix = 0; ix < txtSplit.length; ix++) {
         if (txtSplit[ix].search(eqPat) != -1) {
-            strOut += lf + await typeset(txtSplit[ix].replace(RegExp('\\\\(\\[|\\])', 'g'), ""), 1, color, "TeX") + lf
+            strOut += lf + await typeset(txtSplit[ix].replace(RegExp('\\\\(\\[|\\])', 'g'), ""), 1, color, "TeX", b_md) + lf
         } else {
             // Check for Inline Math in standard Text Block
             // RegExp to match Inline Equations and Symbols
@@ -96,7 +100,7 @@ export async function getMathMarkdown(txt: string, color:string): Promise<string
             const txtSubSplit = txtSplit[ix].split(inlinePat)
             for (let iz = 0; iz < txtSubSplit.length; iz++) {
                 if (txtSubSplit[iz].search(inlinePat) != -1) {
-                    strOut += await typeset(txtSubSplit[iz].replace(RegExp('\\\\(\\(|\\))', 'g'), ""), 0.75, color, "inline-TeX")
+                    strOut += await typeset(txtSubSplit[iz].replace(RegExp('\\\\(\\(|\\))', 'g'), ""), 0.75, color, "inline-TeX", b_md)
                 } else {
                     strOut += txtSubSplit[iz]
                 }

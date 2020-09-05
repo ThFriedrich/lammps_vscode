@@ -13,7 +13,7 @@ const on_wasm = oniguruma.loadWASM(wasm);
 /**
  * Read a json file and convert to plist as a promise
  */
-export function readJSON2plist(path: string): Promise<string> {
+function readJSON2plist(path: string): Promise<string> {
 	return new Promise<string>((resolve, reject) => {
 		readFile(path, (error, data) => {
 			if (error) {

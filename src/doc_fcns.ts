@@ -248,7 +248,7 @@ export async function doc_completion_item(autoConf: WorkspaceConfiguration, comp
                     case "Extensive":
                         compl_it.documentation = mediumBlock(c, compl_it.documentation, syntax_id)
                         compl_it.documentation.appendMarkdown(" \n" + "--- " + " \n")
-                        compl_it.documentation.appendMarkdown(await getMathMarkdown(c.short_description, color))
+                        compl_it.documentation.appendMarkdown(await getMathMarkdown(c.short_description, color, true))
                         break;
                     default:
                         break;

@@ -2,7 +2,6 @@ import { WebviewPanel, ExtensionContext, Uri, window, TextDocument, TextEditor, 
 import { doc_entry, getColor, fix_img_path, getDocumentation } from './doc_fcns'
 import { getMathMarkdown } from './render_fcns'
 import { getRangeFromPosition } from './hover_fcns';
-
 import { join } from 'path'
 
 export interface DocPanel extends WebviewPanel {
@@ -63,7 +62,7 @@ function fix_base64_image_html(txt: string): string {
 }
 
 
-export async function set_doc_panel_content(panel: DocPanel | undefined, md_content: MarkdownString, context: ExtensionContext, md: { render: (arg0: string) => any; }) {
+export function set_doc_panel_content(panel: DocPanel | undefined, md_content: MarkdownString, context: ExtensionContext, md: { render: (arg0: string) => any; }) {
 
     if (panel) {
         const css_lmps: Uri[] = [
@@ -102,17 +101,17 @@ export async function create_doc_page(snippet: string, panel: WebviewPanel | und
         if (docs?.syntax) {
             content.appendMarkdown("### Syntax: \n")
             content.appendCodeblock(docs?.syntax.join('\n'), "lmps")
-            content.appendMarkdown(await getMathMarkdown(docs?.parameters, color) + "\n\n")
+            content.appendMarkdown(await getMathMarkdown(docs?.parameters, color, false) + "\n\n")
         }
         if (docs?.examples) {
             let exmpl: string = fix_img_path(docs?.examples, true, panel, context)
-            exmpl = await getMathMarkdown(exmpl, color)
+            exmpl = await getMathMarkdown(exmpl, color, false)
             content.appendMarkdown("### Examples: \n")
             content.appendMarkdown(exmpl + '\n')
         }
         if (docs?.description) {
             let full_desc: string = fix_img_path(docs.description, true, panel, context)
-            full_desc = await getMathMarkdown(full_desc, color)
+            full_desc = await getMathMarkdown(full_desc, color, false)
             content.appendMarkdown("### Description: \n")
             content.appendMarkdown(full_desc + "\n")
         }

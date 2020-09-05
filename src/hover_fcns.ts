@@ -19,24 +19,24 @@ export async function createHover(docs: doc_entry, context:ExtensionContext): Pr
             if (docs?.short_description) {
                 const show_doc_uri = Uri.parse(`command:extension.show_docs`);
                 let short_desc: string = fix_img_path(docs.short_description, false, undefined, context)
-                short_desc = await getMathMarkdown(short_desc, color)
+                short_desc = await getMathMarkdown(short_desc, color, true)
                 content.appendMarkdown(short_desc + `. [Read more... ]( ${show_doc_uri} ) \n`)
                 content.appendMarkdown("\n --- \n")
             }
             if (docs?.syntax) {
                 content.appendMarkdown("### Syntax: \n")
                 content.appendCodeblock(docs?.syntax.join('\n'), "lmps")
-                content.appendMarkdown(await getMathMarkdown(docs?.parameters, color) + "\n\n")
+                content.appendMarkdown(await getMathMarkdown(docs?.parameters, color, true) + "\n\n")
             }
             if (docs?.examples && hover_conf.Examples) {
                 let exmpl: string = fix_img_path(docs?.examples, true, undefined, context)
-                exmpl = await getMathMarkdown(exmpl, color)
+                exmpl = await getMathMarkdown(exmpl, color, true)
                 content.appendMarkdown("### Examples: \n")
                 content.appendMarkdown(exmpl + '\n')
             }
             if (docs?.description && hover_conf.Detail == 'Complete') {
                 let full_desc: string = fix_img_path(docs.description, true, undefined, context)
-                full_desc = await getMathMarkdown(full_desc, color)
+                full_desc = await getMathMarkdown(full_desc, color, true)
                 content.appendMarkdown("### Description: \n")
                 content.appendMarkdown(full_desc + "\n")
             }

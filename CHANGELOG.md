@@ -77,20 +77,24 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
    - Autocomplete suggestions are now only triggered at the beginning of lines
  - Grammar
    - Keywords updated 
-   - Updates to Grammar rules to avoid some false positive 
+   - Updates to Grammar rules to avoid some false positives 
  - Offline embedded documentation
    - Improved layout of "Note" and "Warning" sections
    - fix missing rst-file includes 
    - fixed several formatting issues
    - added Syntax highlighting support through vscode-textmate and markdown-it.
    - added standard light/dark css-files to control syntax highlighting in the webview. (because Token-Colors are not exposed through vscode API yet)
- - Depencies added:
+ - Dependencies added:
    - markdown-it
    - plist
    - request
-   - underscore-plus
    - vscode-oniguruma
    - vscode-textmate
+  
+## Version 1.4.1 14.09.2020
+ - Offline embedded documentation
+   - Styling improvements for rendering of tables, generic text and *Note* blocks
+   - Math rendering changed to html for webview, now allowing to use theme colors for equations in the documentation panel
 
 
 
