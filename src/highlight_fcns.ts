@@ -2,13 +2,8 @@ import { readFileSync, readFile } from 'fs'
 import path from 'path';
 import { env, ExtensionContext } from 'vscode'
 import * as vsctm from 'vscode-textmate'
-
 const plist = require('plist');
-const oniguruma_root: string = path.join(env.appRoot, 'node_modules.asar', 'vscode-oniguruma')
 const oniguruma = require('vscode-oniguruma')
-const wasm = readFileSync(path.join(oniguruma_root, 'release', 'onig.wasm')).buffer;
-const on_wasm = oniguruma.loadWASM(wasm);
-
 
 /**
  * Read a json file and convert to plist as a promise
@@ -29,34 +24,50 @@ function readJSON2plist(path: string): Promise<string> {
 }
 
 export async function get_markdown_it(context: ExtensionContext) {
-	const registry = new vsctm.Registry({
-		onigLib: Promise.resolve({
-			createOnigScanner: (sources) => new oniguruma.OnigScanner(sources),
-			createOnigString: (str) => new oniguruma.OnigString(str)
-		}),
-		loadGrammar: () => {
-			return readJSON2plist(path.join(context.extensionPath, 'syntaxes', 'lmps.tmLanguage.json'))
-				.then(data => {
-					return vsctm.parseRawGrammar(data)
-				}).catch(null)
-		}
-	});
-
-	const grammar = await registry.loadGrammar('source.lmps')
-
-	const md = require('markdown-it')(
-		{
-			html: true,
-			linkify: true,
-			typographer: true,
-			langPrefix: '',
-			highlight: function (str: string, lang: string) {
-				if (grammar && lang && lang == 'lmps') {
-					return tokenize_lmps(str, grammar)
-				}
+	try {
+		
+		const oniguruma_root: string = path.join(env.appRoot, 'node_modules.asar', 'vscode-oniguruma')
+		const wasm = readFileSync(path.join(oniguruma_root, 'release', 'onig.wasm')).buffer;
+		const on_wasm = oniguruma.loadWASM(wasm);
+		const registry = new vsctm.Registry({
+			onigLib: Promise.resolve({
+				createOnigScanner: (sources) => new oniguruma.OnigScanner(sources),
+				createOnigString: (str) => new oniguruma.OnigString(str)
+			}),
+			loadGrammar: () => {
+				return readJSON2plist(path.join(context.extensionPath, 'syntaxes', 'lmps.tmLanguage.json'))
+					.then(data => {
+						return vsctm.parseRawGrammar(data)
+					}).catch(null)
 			}
 		});
-	return md
+	
+		const grammar = await registry.loadGrammar('source.lmps')
+	
+		const md = require('markdown-it')(
+			{
+				html: true,
+				linkify: true,
+				typographer: true,
+				langPrefix: '',
+				highlight: function (str: string, lang: string) {
+					if (grammar && lang && lang == 'lmps') {
+						return tokenize_lmps(str, grammar)
+					}
+				}
+			});
+		return md
+	} catch (error) {
+		const md = require('markdown-it')(
+			{
+				html: true,
+				linkify: true,
+				typographer: true,
+				langPrefix: '',
+			});
+		return md
+	}
+	
 }
 
 let scopeStack:string[] = [];
