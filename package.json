@@ -62,9 +62,14 @@
             }
         ],
         "commands": [{
-            "command": "extension.show_docs",
-            "title": "Show Documentation for this Command"
-        }],
+                "command": "extension.show_docs",
+                "title": "Show Documentation for this Command"
+            },
+            {
+                "command": "extension.show_plots",
+                "title": "Plot Log Outputs"
+            }
+        ],
         "menus": {
             "editor/context": [{
                 "command": "extension.show_docs",

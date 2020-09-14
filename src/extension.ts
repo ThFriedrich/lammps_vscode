@@ -1,13 +1,14 @@
 import { doc_entry, getCompletionList, getDocumentation, doc_completion_item } from "./doc_fcns";
 import { DocPanel, manage_doc_panel, set_doc_panel_content, create_doc_page } from './doc_panel_fcns';
+import { PlotPanel, manage_plot_panel, set_plot_panel_content } from './plot_fcns';
 import { createHover, getRangeFromPosition } from './hover_fcns';
 import { updateDiagnostics } from './lint_fcns';
 import { get_tasks, resolve_task } from './task_fcns'
 import * as vscode from 'vscode';
 import { get_markdown_it } from './highlight_fcns';
-
 export async function activate(context: vscode.ExtensionContext) {
 
+	// plot('x')
 	check_versions(context)
 	const md = await get_markdown_it(context)
 
@@ -15,6 +16,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	let panel: DocPanel | undefined = undefined;
 	let actCol: number = 2;
 	let commandUnderCursor: string | undefined = undefined;
+
+	// Initialize Panel and ViewColumn for Documentation WebView
+	let plot_panel: PlotPanel | undefined = undefined;
+	let plot_actCol: number = 3;
 
 	// Register Command to show Command documentation in WebView
 	context.subscriptions.push(
@@ -29,6 +34,18 @@ export async function activate(context: vscode.ExtensionContext) {
 			);
 		}));
 
+	// Register Command to show Plots in WebView
+	context.subscriptions.push(
+		vscode.commands.registerCommand('extension.show_plots', async () => {
+			plot_panel = await manage_plot_panel(context, plot_panel, plot_actCol)
+			plot_panel?.onDidDispose(() => {
+				plot_panel = undefined;
+			},
+				null,
+				context.subscriptions
+			);
+		}));
+
 	// Redraw active Webview Panel in new Color (for math)
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveColorTheme(async () => {
@@ -37,6 +54,9 @@ export async function activate(context: vscode.ExtensionContext) {
 				if (md_content) {
 					set_doc_panel_content(panel, md_content, context, md)
 				}
+			}
+			if (plot_panel) {
+				set_plot_panel_content(plot_panel, context)
 			}
 		}))
 
