@@ -72,3 +72,19 @@ blockquote {
 .support.function {
     color: #0451a5;
 }
+
+button {
+    display: inline-block;
+    background-color: var(--vscode-button-background);
+    border: 2px var(--vscode-button-foreground);
+    color: var(--vscode-button-foreground);
+    text-align: center;
+    padding: 10px 20px;
+    margin: 14px 7px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: var(--vscode-button-hoverBackground);
+    color: var(--vscode-button-foreground);
+}

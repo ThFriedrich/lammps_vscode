@@ -1,6 +1,7 @@
-import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions, workspace } from 'vscode';
+import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions } from 'vscode';
 import { join, dirname } from 'path'
 import { readFileSync } from 'fs';
+import { get_css } from './doc_panel_fcns'
 
 export interface PlotPanel extends WebviewPanel {
     log?: string
@@ -48,6 +49,21 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
             null,
             context.subscriptions
         );
+        panel.webview.onDidReceiveMessage(
+            message => {
+                switch (message.command) {
+                    case 'load_log':
+                        if (panel) {
+                            panel.log = undefined;
+                            set_plot_panel_content(panel, context)
+                        }
+                        return;
+                }
+            },
+            null,
+            context.subscriptions
+        );
+
         context.subscriptions.push(panel)
     }
     if (panel) {
@@ -64,38 +80,44 @@ export async function set_plot_panel_content(panel: PlotPanel | undefined, conte
             panel.log = await get_log_path() // Let user select a log file
         }
         if (panel.log) {
-            let ax_layouts:ax_layout = {}
+            let ax_layouts: ax_layout = {}
             let dat_log = read_log_data(panel.log)
             if (dat_log) {
                 let dat: plot_data[] = []
                 for (let iy = 0; iy < dat_log.length; iy++) {
-                    let y_axis_lab:string = 'yaxis'
-                    let y_axis_lab_short:string = 'y'
+                    let x_axis_lab: string = 'xaxis'
+                    let x_axis_lab_short: string = 'x'
+                    let y_axis_lab: string = 'yaxis'
+                    let y_axis_lab_short: string = 'y'
                     if (iy > 0) {
-                        y_axis_lab = 'yaxis' + (iy+1).toString()
-                        y_axis_lab_short = 'y' + (iy+1).toString()
-                        
+                        x_axis_lab = 'xaxis' + (iy + 1).toString()
+                        x_axis_lab_short = 'x' + (iy + 1).toString()
+                        y_axis_lab = 'yaxis' + (iy + 1).toString()
+                        y_axis_lab_short = 'y' + (iy + 1).toString()
+
                     }
-                    
+
                     for (let ix = 1; ix < dat_log[iy].data[0].length; ix++) {
                         dat.push({
                             x: dat_log[iy].data.map(data => data[0]),
                             y: dat_log[iy].data.map(data => data[ix]),
-                            xaxis: 'x',
+                            xaxis: x_axis_lab_short,
                             yaxis: y_axis_lab_short,
                             name: dat_log[iy].header[ix],
                             mode: 'line',
                             line: {
-                                // color: 'blue',
-                                // shape: 'spline',
                                 width: 2,
                             }
                         })
-                        ax_layouts[y_axis_lab] = { domain: [iy/dat_log.length, (iy+1)/dat_log.length-0.1] }
-                    }    
+                        ax_layouts[x_axis_lab] = { domain: [0, 1], anchor: y_axis_lab_short }
+                        ax_layouts[y_axis_lab] = { domain: [iy / dat_log.length, (iy + 1) / dat_log.length - 0.1] }
+                    }
                 }
-                
-                panel.webview.html = build_plot_html(dat, ax_layouts)
+                const script_lib: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'node_modules', 'plotly.js-dist-min', 'plotly.min.js')))
+                const script: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'src', 'dashboard.js')))
+                const css = get_css(panel, context)
+                panel.webview.html = css + build_plot_html(script_lib, script)
+                panel.webview.postMessage({ data: dat, layout: ax_layouts });
             }
         }
     }
@@ -110,13 +132,13 @@ function read_log_data(log_path: string) {
         }[] = []
 
         while ((data_block = re_log_data.exec(log_file)) != null) {
-            const header = data_block.input.slice(data_block.input.slice(0, data_block.index-1).lastIndexOf('\n'),data_block.index).trim().split(RegExp('\\s+','g'))
+            const header = data_block.input.slice(data_block.input.slice(0, data_block.index - 1).lastIndexOf('\n'), data_block.index).trim().split(RegExp('\\s+', 'g'))
             const dat_l = data_block.toString().split(RegExp("\\n+", "g"))
             const dat_n: string[][] = dat_l.map((value) => value.trim().split(RegExp('\\s+')))
             if (header.length == dat_n[0].length) {
-                log_ds.push({header:header,data:dat_n})
+                log_ds.push({ header: header, data: dat_n })
             }
-            
+
         }
         return log_ds
     }
@@ -141,69 +163,28 @@ async function get_log_path(): Promise<string | undefined> {
     return log_path
 }
 
-function build_plot_html(dat: plot_data[], ax_layouts: ax_layout) {
-    const data: string = JSON.stringify(dat) 
-    const ax_ly: string = JSON.stringify(ax_layouts).slice(1,-1) 
+function build_plot_html(plotly_lib: Uri, script: Uri) {
+
     const html: string =
         `<!DOCTYPE html>
     <html lang="en">
-    
+
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <!-- Include Plotly.js -->
-        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <script src="${plotly_lib}"></script>   
     </head>
-    
-    <body>
-        <div id="plot_div">
-            <!-- Plotly chart will be drawn inside this DIV -->
-        </div>
-        <script>  
-            var fg = getComputedStyle(document.documentElement)
-            .getPropertyValue('--vscode-editor-foreground');
-            var bg = getComputedStyle(document.documentElement)
-                .getPropertyValue('--vscode-editor-background');
-            var fg2 = getComputedStyle(document.documentElement)
-                .getPropertyValue('--vscode-textBlockQuote-foreground');
-            var axis_layout = {
-                showgrid: true,
-                showline: true,
-                zeroline: false,
-                mirror: 'ticks',
-                gridcolor: fg2,
-                linecolor: fg,
-                gridwidth: 2,
-                linecolor: fg,
-                linewidth: 3,
-                tickcolor: fg,
-                tickangle: 'auto',
-                tickfont: {
-                    size: 14,
-                    color: fg
-                }
-            };
-            var layout = {
-                width: window.innerWidth,
-                height: window.innerHeight,
-                paper_bgcolor: "rgba(255,255,255,0)",
-                plot_bgcolor: "rgba(255,255,255,0)",
-                xaxis: axis_layout,
-                yaxis: axis_layout,
-                ${ax_ly}
-            };
-            var data = ${data};
-            Plotly.newPlot('plot_div', data, layout);
 
-            window.onresize = function () {
-                var update = {
-                    width: window.innerWidth,
-                    height: window.innerHeight
-                };
-                Plotly.relayout('plot_div', update);
-            }
-        </script>
-    </body> 
+    <body>
+        <button type="button" id="button1">Open Lammps Log File</button>
+        <button type="button" id="button2">Open Lammps Dump File</button>
+        <div id="plot_div">
+        <!-- Plotly chart will be drawn inside this DIV -->
+        </div>
+        <script src="${script}"></script>
+    </body>   
+
     </html>`;
     return html
 }
