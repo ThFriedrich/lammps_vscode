@@ -192,8 +192,8 @@ class CMD:
                     3: argument has choices
 
             Args:
-                arg (str): [description]
-                dscps (str): [description]
+                arg (str): Argument of the Command
+                dscps (str): All Argument descriptions
 
             Returns:
                 list: [description]

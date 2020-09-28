@@ -6,7 +6,7 @@
 ![SYNC](https://img.shields.io/github/workflow/status/thfriedrich/lammps_vscode/SYNC?logo=github)
 ![GitHub](https://img.shields.io/github/license/thfriedrich/lammps_vscode?color=brightgreen)
 ![Updated](https://img.shields.io/github/release-date/thfriedrich/lammps_vscode?label=last%20update%20)
-[![Plant Tree](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=Plant%20Tree&query=%24.total&url=https%3A%2F%2Fpublic.offset.earth%2Fusers%2Ftreeware%2Ftrees&logo=gumtree&logoColor=white)](https://plant.treeware.earth/thfriedrich/lammps_vscode)
+[![Plant Tree](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=Plant%20Tree&query=%24.total&url=https%3A%2F%2Fpublic.offset.earth%2Fusers%2Ftreeware%2Ftrees&&logoColor=white)](https://plant.treeware.earth/thfriedrich/lammps_vscode)
 [![Gitter](https://img.shields.io/gitter/room/thfriedrich/lammps_vscode?logo=gitter)](https://gitter.im/lammps_vscode/community)
 
 This extension for Visual Studio Code provides language support for LAMMPS (Molecular dynamics Software) Scripts.

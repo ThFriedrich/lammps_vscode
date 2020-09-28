@@ -1,4 +1,4 @@
-import { workspace, ShellExecution, Task, TaskScope, TaskDefinition, window } from 'vscode'
+import { workspace, ShellExecution, Task, TaskScope, TaskDefinition, window, WorkspaceFolder } from 'vscode'
 
 let type = "lmps";
 
@@ -54,9 +54,13 @@ export function resolve_task(tsk: Task): Task | undefined {
         default:
             return undefined
     }
-    return new Task(
-        tdf,
-        tdf.task,
-        'lmps',
-        execution);
+    const wsf: WorkspaceFolder | undefined = workspace.getWorkspaceFolder(window.activeTextEditor!.document?.uri)
+    if (wsf) {
+        return new Task(
+            tdf,
+            wsf,
+            tdf.task,
+            'lmps',
+            execution);
+    }
 }

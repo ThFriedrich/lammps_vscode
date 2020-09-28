@@ -1,7 +1,19 @@
 import re
 import numpy as np
 
+
 def tr_section(section_rst: str, DOC) -> str:
+    """Catches and translates rst markup into markdown
+
+    Args:
+        section_rst (str): rst text, typically a Section 
+        of the command documentation (e.g. Description or Restrictions, etc)
+        DOC (CMD): Instance of the CMD class, essentially the 
+        Documentation object for one command
+
+    Returns:
+        str: Markdown compatible string
+    """
     references = DOC.references
     section_md = tr_inline_math(section_rst)
     section_md = tr_inline_doc(section_md)
@@ -16,12 +28,55 @@ def tr_section(section_rst: str, DOC) -> str:
     return section_md
 
 
+def tr_blocks(block: str) -> str:
+    """Translates a number of rst-directives into Markdown compatible blocks
+
+    Args:
+        block (str): directive block to parse 
+
+    Returns:
+        str: Markdown compatible string
+    """
+    sp = block.split("\n", 1)
+    if len(sp) > 1:
+        line1, rest = sp
+    else:
+        line1 = block
+        rest = block
+    if line1.__contains__("code-block::"):
+        md = tr_code(line1, rest)
+    elif line1.__contains__("math::"):
+        md = tr_math(rest)
+    elif line1.__contains__("parsed-literal::"):
+        md = tr_code("", rest)
+    elif line1.__contains__("note::"):
+        md = tr_note(rest)
+    elif line1.__contains__("warning::"):
+        md = tr_warning(rest)
+    elif line1.__contains__("seealso::"):
+        md = tr_warning(rest)
+    elif line1.__contains__(".. image::"):  # single image
+        md = tr_image(line1)
+    elif line1.__contains__("include::"):
+        md = tr_include(line1)
+    elif line1.__contains__("table_from_list::"):
+        md = tr_table_from_list(line1, rest)
+    elif line1.__contains__("list-table::"):
+        md = tr_list_table(line1, rest)
+    elif line1.__contains__("raw::"):
+        md = ""
+    elif line1.__contains__("::"):
+        md = block
+    else:
+        md = tr_plain(block)
+    return md
+
+
 def tr_inline_math(txt: str) -> str:
     inleq = re.findall(r"(\:math\:\`?)([\s\S\r]*?)(\`)", txt, 8)
     for eq in inleq:
         txt = txt.replace("".join(eq), "\("+eq[1]+"\)")
     return txt
-
 
 
 def tr_references(section: str, references: dict) -> str:
@@ -121,7 +176,8 @@ def tr_inline_link(txt: str) -> str:
             d[0], "[" + d[1].replace("\n", "") + "](" + d[2].replace("\n", "") + ")")
     return txt
 
-def tr_seperated_link(txt: str, rst_txt:str) -> str:
+
+def tr_seperated_link(txt: str, rst_txt: str) -> str:
     # `PPM (aka NETPBM) format <ppm_format_>`_
     tags = re.findall(
         r"(\`(.*?)\<([\S\r]*?)\_\>\`\_)", txt, 8)
@@ -133,8 +189,8 @@ def tr_seperated_link(txt: str, rst_txt:str) -> str:
         for t in tags:
             if t[2] == l[1]:
                 md_link = '['+t[1]+']('+l[2]+')'
-                txt = txt.replace(t[0],md_link)
-                txt = txt.replace(l[0],"")
+                txt = txt.replace(t[0], md_link)
+                txt = txt.replace(l[0], "")
     return txt
 
 
@@ -198,42 +254,6 @@ def tr_include(txt: str) -> str:
         incl_txt = f.read()
     incl_txt = tr_blocks(incl_txt)
     return "\n " + incl_txt + "\n"
-
-
-def tr_blocks(block: str) -> str:
-    sp = block.split("\n", 1)
-    if len(sp) > 1:
-        line1, rest = sp
-    else:
-        line1 = block
-        rest = block
-    if line1.__contains__("code-block::"):
-        md = tr_code(line1, rest)
-    elif line1.__contains__("math::"):
-        md = tr_math(rest)
-    elif line1.__contains__("parsed-literal::"):
-        md = tr_code("", rest)
-    elif line1.__contains__("note::"):
-        md = tr_note(rest)
-    elif line1.__contains__("warning::"):
-        md = tr_warning(rest)
-    elif line1.__contains__("seealso::"):
-        md = tr_warning(rest)
-    elif line1.__contains__(".. image::"):  # single image
-        md = tr_image(line1)
-    elif line1.__contains__("include::"):
-        md = tr_include(line1)
-    elif line1.__contains__("table_from_list::"):
-        md = tr_table_from_list(line1, rest)
-    elif line1.__contains__("list-table::"):
-        md = tr_list_table(line1, rest)
-    elif line1.__contains__("raw::"):
-        md = ""
-    elif line1.__contains__("::"):
-        md = block
-    else:
-        md = tr_plain(block)
-    return md
 
 
 def rm_markup(txt: str) -> str:

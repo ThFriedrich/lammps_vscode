@@ -1,14 +1,15 @@
 import { doc_entry, getCompletionList, getDocumentation, doc_completion_item } from "./doc_fcns";
 import { DocPanel, manage_doc_panel, set_doc_panel_content, create_doc_page } from './doc_panel_fcns';
-import { PlotPanel, manage_plot_panel, set_plot_panel_content } from './plot_fcns';
+import { PlotPanel, manage_plot_panel, set_plot_panel_content } from './dashboard_fcns';
 import { createHover, getRangeFromPosition } from './hover_fcns';
 import { updateDiagnostics } from './lint_fcns';
 import { get_tasks, resolve_task } from './task_fcns'
 import * as vscode from 'vscode';
 import { get_markdown_it } from './highlight_fcns';
+import { join } from 'path';
+
 export async function activate(context: vscode.ExtensionContext) {
 
-	// plot('x')
 	check_versions(context)
 	const md = await get_markdown_it(context)
 
@@ -17,9 +18,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	let actCol: number = 2;
 	let commandUnderCursor: string | undefined = undefined;
 
-	// Initialize Panel and ViewColumn for Documentation WebView
+	// Initialize Panel and ViewColumn for Dashboard WebView
 	let plot_panel: PlotPanel | undefined = undefined;
-	let plot_actCol: number = 3;
+	let plot_actCol: number = 2;
 
 	// Register Command to show Command documentation in WebView
 	context.subscriptions.push(
@@ -46,7 +47,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			);
 		}));
 
-	// Redraw active Webview Panel in new Color (for math)
+	// Redraw active Webview Panels in new Color
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveColorTheme(async () => {
 			if (panel && panel.command) {
@@ -146,7 +147,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 // Function to display update notification
 function check_versions(context: vscode.ExtensionContext) {
-	const v: string = vscode.extensions.getExtension('ThFriedrich.lammps')!.packageJSON.version
+	const meta = require(join(context.extensionPath, 'package.json'))
+	const v: string = meta.version
 	const v_stored: string | undefined = context.globalState.get('lmps_version')
 	if (!v_stored || v != v_stored) {
 		context.globalState.update('lmps_version', v)
