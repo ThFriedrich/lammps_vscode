@@ -1,7 +1,25 @@
 window.onload = function() {
     var vscode = acquireVsCodeApi();
+
     var button1 = document.getElementById('button1')
     var button2 = document.getElementById('button2')
+
+    var log_layout
+    var dump_layout
+
+    document.getElementById("default_tab").click();
+
+    setInterval(() => {
+        vscode.postMessage({
+            command: 'get_sys_info'
+        });
+    }, 500);
+
+    setInterval(() => {
+        vscode.postMessage({
+            command: 'update_log'
+        });
+    }, 3000);
 
     button1.addEventListener('click', () => {
         vscode.postMessage({
@@ -9,18 +27,45 @@ window.onload = function() {
         });
     })
 
-    button1.addEventListener('click', () => {
+    button2.addEventListener('click', () => {
         vscode.postMessage({
             command: 'load_dump'
         });
     })
 
+    window.onresize = function() {
+        var update = {
+            width: document.getElementById('logs').clientWidth - 10,
+            height: window.innerHeight,
+        };
+        Plotly.relayout(document.getElementById("plot_div"), update);
+        Plotly.relayout(document.getElementById("dump_div"), update);
+    }
+
     window.addEventListener('message', event => {
-        plot_log("plot_div", event.data.data, event.data.layout)
-    });;
+        switch (event.data.type) {
+            case 'plot_log':
+                log_layout = get_layout(event.data.layout)
+                plot_log("plot_div", event.data.data, log_layout)
+                break;
+            case 'plot_dump':
+                dump_layout = get_layout()
+                plot_log("dump_div", event.data.data, dump_layout)
+                break;
+            case 'update_log':
+                update_plot("plot_div", event.data.data, log_layout)
+                break;
+            case 'sys_info':
+                document.getElementById('memory').value = event.data.data['memory'];
+                document.getElementById('cpu').value = event.data.data['cpu'];
+                break;
+            default:
+                break;
+        }
+    });
 }
 
-function plot_log(plot_div, data, grid_layout) {
+function get_layout(grid_layout = undefined) {
 
     var fg = getComputedStyle(document.documentElement)
         .getPropertyValue('--vscode-editor-foreground');
@@ -47,23 +92,58 @@ function plot_log(plot_div, data, grid_layout) {
     };
 
     var layout = {
-        width: window.innerWidth,
+        width: document.getElementById('logs').clientWidth - 10,
         height: window.innerHeight,
         paper_bgcolor: "rgba(255,255,255,0)",
         plot_bgcolor: "rgba(255,255,255,0)",
+        legend: {
+            x: 0,
+            xanchor: 'left',
+            y: 1,
+            orientation: 'h'
+        },
+        margin: {
+            l: 60,
+            r: 25,
+            b: 35,
+            t: 50
+        },
+        font: {
+            size: 14,
+            color: fg
+        }
     };
+    if (grid_layout) {
+        Object.keys(grid_layout).forEach((ax) => {
+            Object.assign(grid_layout[ax], axis_layout)
+        });
 
-    Object.keys(grid_layout).forEach((ax) => {
-        Object.assign(grid_layout[ax], axis_layout)
-    });
-
-    Plotly.newPlot(document.getElementById(plot_div), data, {...layout, ...grid_layout }, { scrollZoom: true });
-
-    window.onresize = function() {
-        var update = {
-            width: window.innerWidth,
-            height: window.innerHeight
-        };
-        Plotly.relayout(document.getElementById(plot_div), update);
+        return {...layout, ...grid_layout }
+    } else {
+        return layout
     }
+}
+
+function plot_log(plot_div, data, layout) {
+
+    Plotly.newPlot(document.getElementById(plot_div), data, layout, { scrollZoom: true });
+
+}
+
+function update_plot(plot_div, data, layout) {
+    Plotly.react(document.getElementById(plot_div), data, layout);
+}
+
+function openTab(evt, cont_type) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    document.getElementById(cont_type).style.display = "block";
+    evt.currentTarget.className += " active";
 }
