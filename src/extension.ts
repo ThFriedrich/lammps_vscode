@@ -1,6 +1,6 @@
 import { doc_entry, getCompletionList, getDocumentation, doc_completion_item } from "./doc_fcns";
 import { DocPanel, manage_doc_panel, set_doc_panel_content, create_doc_page } from './doc_panel_fcns';
-import { PlotPanel, manage_plot_panel, set_plot_panel_content } from './dashboard_fcns';
+import { PlotPanel, manage_plot_panel, draw_panel } from './dashboard_fcns';
 import { createHover, getRangeFromPosition } from './hover_fcns';
 import { updateDiagnostics } from './lint_fcns';
 import { get_tasks, resolve_task } from './task_fcns'
@@ -37,7 +37,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Register Command to show Plots in WebView
 	context.subscriptions.push(
-		vscode.commands.registerCommand('extension.show_plots', async () => {
+		vscode.commands.registerCommand('extension.show_dash', async () => {
 			plot_panel = await manage_plot_panel(context, plot_panel, plot_actCol)
 			plot_panel?.onDidDispose(() => {
 				plot_panel = undefined;
@@ -57,7 +57,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 			}
 			if (plot_panel) {
-				set_plot_panel_content(plot_panel, context)
+				draw_panel(plot_panel, context)
 			}
 		}))
 
