@@ -17,6 +17,7 @@ class CMD:
         self.__sections__ = []
         self.__ix_syntax__ = ix_syntax
         self.cmd_list = []
+        self.cmd_acc_var = []
         self.valid = False
         self.syntax = ""
         self.n_syntax = 1
@@ -59,20 +60,27 @@ class CMD:
     def __validate__(self) -> bool:
         txt_block = re.sub(r"(`)|(\s+\<.*\>)",
                            "", self.__sections__[0])
-        self.cmd_list = re.findall(
-            r"(?<=\n\n)([ \t\S]*?)(?=\s+command(?:\n+\=+))", txt_block)
-        temp_list = copy(self.cmd_list)
-        for ic, c in enumerate(temp_list):
-            ref = re.search(r"(\:ref\:\`?\(?(.*?)\)?\s*\<(.*?)\>\`?)", c)
-            if ref:
-                self.cmd_list.remove(c)
-                self.cmd_list.append(ref[2])
-            lnk = re.search(r":doc:", c)
-            if lnk:
-                self.cmd_list.remove(c)
+        txt_block = re.sub(r"\.\.\ index::.*\n","",txt_block)
+        cmds = re.findall(r"((?:\n+)([ \t\S\n]*?)\s+command\n+\=+\n*(.*)(?=\n+.*\n+\=+\n*))",txt_block + '\n=\n')
+        if cmds:
+            b_commands = True
+            for ic, cmd in enumerate(cmds):
+                cmd = list(filter(None, cmd))
+                self.cmd_list.append(cmd[1])
+                if len(cmd) >= 3: #Accelerator styles
+                    if cmd[2].__contains__("Accelerator Variants"):
+                        acc_var = re.split(r",\s*",cmd[2].replace("Accelerator Variants: ",""))
+                        for a in acc_var:
+                            a = a.replace('*','')
+                            cmd_acc_var = cmd[1].replace(a[0:a.rfind("/")],a)
+                            self.cmd_list.append(cmd_acc_var)
+                            self.cmd_acc_var.append(a)
+                
+        else:
+            b_commands = False    
 
-        b_commands = len(self.cmd_list) > 0
         b_complete = len(self.__sections__) >= 5
+
         self.valid = b_commands and b_complete
 
     def __get_html_link__(self):
@@ -198,7 +206,7 @@ class CMD:
             Returns:
                 list: [description]
             """
-            choices: string = []
+            choices: str = []
             a_type = 2
             arg_clean = re.sub(r"[\[\]\*\<\>]", "", arg)
 
@@ -225,25 +233,41 @@ class CMD:
             return a_type, choices
 
         def args_standard_commands(self, args, dscps):
-            idx_cmd = 0
-            com_words = self.cmd_list[idx_cmd].strip().split(' ')
+            def app_choices(a,choices):
+                b_acc = False
+                for ac in self.cmd_acc_var:
+                    base_cmd = ac[0:ac.rfind("/")]
+                    if base_cmd == a:
+                        b_acc = True
+                        choices.append(a.replace(ac[0:ac.rfind("/")],ac))
+                return choices, b_acc
+
+            com_words = self.cmd_list[0].strip().split(' ')
 
             arg_ar = []
             for a in args:
+                choices = []
                 a_clean = re.sub(r"[\[\]\*\<\>]", "", a, 8)
                 # Append Command-Keyword as plain string
                 if com_words.__contains__(a):
-                    arg_ar.append({"arg": a, "type": 1, "choices": []})
+                    choices, b_acc = app_choices(a,choices)
+                    if b_acc:
+                        choices.insert(0,a)
+                        arg_ar.append({"arg": a, "type": 3, "choices": choices})
+                    else:
+                        arg_ar.append({"arg": a, "type": 1, "choices": choices})
                 else:  # No command word -> check for choices or Placeholders
                     # Must return list, to expand arg_ar for cases of x,y,z = ...
                     a_type, choices = getChoices(a, dscps)
+                    for a in choices:
+                        choices, b_acc = app_choices(a,choices)
                     arg_ar.append(
                         {"arg": a, "type": a_type, "choices": choices})
             return arg_ar
 
         def args_AtC_commands(self, args, dscps):
             arg_ar = []
-            choices: string = []
+            choices: str = []
 
             for a in args:
                 a_clean = re.sub(r"[\[\]\*\<\>]", "", a, 8)
@@ -259,6 +283,7 @@ class CMD:
                 arg_ar.append(
                         {"arg": a, "type": a_type, "choices": choices})
             return arg_ar
+
 
         for s in self.syntax:
             args = re.split(r"(?<!AtC)\s", s.strip())
@@ -306,37 +331,38 @@ def dbg_print(Doc):
         print('\n------------------\n')
         # sleep(2)
 
+if __name__ == "__main__":
 
-rst_path = "rst"
-rst_files = [f for f in os.listdir(rst_path) if (
-    f.endswith('.rst'))]
-groups = rst2JSON_groups.init_group_dict()
-cmd_count = 0
-with open('./src/doc_obj.ts', 'w', encoding='utf-8') as f:
-    f.write("export const command_docs = [\n")
-    for rst in rst_files:
-        Doc = CMD(os.path.join(rst_path, rst))
-        if Doc.valid:
-            # dbg_print(Doc)
-            groups = rst2JSON_groups.cmds_by_group(Doc.cmd_list, groups)
-            cmd_count += len(Doc.cmd_list)
-            json.dump({'command': Doc.cmd_list,
-                        'syntax': Doc.syntax,
-                        'args': Doc.args,
-                        'parameters': Doc.parameters,
-                        'examples': Doc.examples,
-                        'html_filename': Doc.html_filename,
-                        'short_description': Doc.short_description,
-                        'description': Doc.description,
-                        'restrictions': Doc.restrictions,
-                        'related': Doc.related},
-                        f, ensure_ascii=False, indent=4)
-            f.write(",\n")
-            print("passed: " + rst)
-        else:
-            pass
-            # print("failed: " + rst)
-    f.write("];\n")
-    print('\n' + str(cmd_count) + ' commands processed\n')
-    groups = rst2JSON_groups.remove_duplicates_group_dict(groups)
-    rst2JSON_groups.update_syntax('./syntaxes/lmps.tmLanguage.json', groups)
+    rst_path = "rst"
+    rst_files = [f for f in os.listdir(rst_path) if (
+        f.endswith('.rst'))]
+    groups = rst2JSON_groups.init_group_dict()
+    cmd_count = 0
+    with open('./src/doc_obj.ts', 'w', encoding='utf-8') as f:
+        f.write("export const command_docs = [\n")
+        for rst in rst_files:
+            Doc = CMD(os.path.join(rst_path, rst))
+            if Doc.valid:
+                # dbg_print(Doc)
+                groups = rst2JSON_groups.cmds_by_group(Doc.cmd_list, groups)
+                cmd_count += len(Doc.cmd_list)
+                json.dump({'command': Doc.cmd_list,
+                            'syntax': Doc.syntax,
+                            'args': Doc.args,
+                            'parameters': Doc.parameters,
+                            'examples': Doc.examples,
+                            'html_filename': Doc.html_filename,
+                            'short_description': Doc.short_description,
+                            'description': Doc.description,
+                            'restrictions': Doc.restrictions,
+                            'related': Doc.related},
+                            f, ensure_ascii=False, indent=4)
+                f.write(",\n")
+                print("passed: " + rst)
+            else:
+                pass
+                # print("failed: " + rst)
+        f.write("];\n")
+        print('\n' + str(cmd_count) + ' commands processed\n')
+        groups = rst2JSON_groups.remove_duplicates_group_dict(groups)
+        rst2JSON_groups.update_syntax('./syntaxes/lmps.tmLanguage.json', groups)
