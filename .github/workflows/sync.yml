@@ -5,7 +5,7 @@ name: SYNC
 
 on:
   schedule:
-    - cron: '30 9 9 * *'
+    - cron: '30 9 16 * *'
 
 jobs:
   build:
@@ -45,12 +45,12 @@ jobs:
         if ! [[ $(git status) == *"nothing to commit, working tree clean"* ]]; then
           git commit -m "Scheduled sync of lammps_vscode with Lammps documentation $(date +'%Y-%m-%d')"
           git push 
-          echo "::set-env name=b_update::true" 
+          echo "b_update=true" >> $GITHUB_ENV
         else
           # Check if vscode-Lammps master branch had commits since last tag
           n_com=$(git rev-list $(git describe --tags --abbrev=0 @^)..master --count)
           if [ "$n_com" -gt "0" ];then
-            echo "::set-env name=b_update::true"
+            echo "b_update=true" >> $GITHUB_ENV
           fi
         fi
         
