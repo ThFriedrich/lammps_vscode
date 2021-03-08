@@ -7,7 +7,7 @@ import { get_tasks, resolve_task } from './task_fcns'
 import * as vscode from 'vscode';
 import { get_markdown_it } from './highlight_fcns';
 import { join } from 'path';
-
+import { readFileSync } from 'fs'
 export async function activate(context: vscode.ExtensionContext) {
 
 	check_versions(context)
@@ -147,7 +147,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 // Function to display update notification
 function check_versions(context: vscode.ExtensionContext) {
-	const meta = require(join(context.extensionPath, 'package.json'))
+
+
+    const meta = JSON.parse(readFileSync(join(context.extensionPath, 'package.json'), 'utf8'));
 	const v: string = meta.version
 	const v_stored: string | undefined = context.globalState.get('lmps_version')
 	if (!v_stored || v != v_stored) {
