@@ -1,9 +1,8 @@
-import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions } from 'vscode';
-import { join, dirname } from 'path'
+import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions, workspace } from 'vscode';
+import { join } from 'path'
 import { readFileSync, statSync } from 'fs';
 import { get_css } from './doc_panel_fcns'
-
-const osu = require('node-os-utils')
+import { get_cpu_info, get_cpu_stat, get_gpu_info, get_gpu_stat } from './os_util_fcns'
 
 export interface PlotPanel extends WebviewPanel {
     log?: string
@@ -13,11 +12,13 @@ export interface PlotPanel extends WebviewPanel {
 }
 
 const re_log_data: RegExp = RegExp('^\\s*((-?[0-9]*(\\.[0-9]*)?([eE][-]?)?[0-9]+)\\s+)+(-?[0-9]*(\\.[0-9]*)?([eE][-]?)?[0-9]+)?', 'gm')
+const re_dump_data: RegExp = RegExp('ITEM: ATOMS[\\s\\S\\n]*?(?=ITEM:)', 'gm')
 
 interface plot_data {
     x: number[] | string[],
     y: number[] | string[],
     mode?: string,
+    visible?: boolean | string,
     name?: string,
     xaxis?: string,
     yaxis?: string,
@@ -33,9 +34,10 @@ interface dump_data {
     x: number[] | string[],
     y: number[] | string[],
     z: number[] | string[],
-    mode?: string,
+    mode: string,
+    visible: boolean | string,
     name?: string,
-    marker?: {
+    marker: {
         color?: any
         size?: number,
         line?: {
@@ -67,6 +69,7 @@ enum file_type {
     log,
     dump
 }
+
 export async function manage_plot_panel(context: ExtensionContext, panel: PlotPanel | undefined, actCol: number): Promise<PlotPanel | undefined> {
 
     const img_path_light = Uri.file(join(context.extensionPath, 'imgs', 'logo_sq_l.gif'))
@@ -104,9 +107,24 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
                         case 'update_log':
                             get_update(panel)
                             break;
-                        case 'get_sys_info':
-                            get_system_info().then((s: any) => {
-                                panel?.webview.postMessage({ type: 'sys_info', data: s })
+                        case 'get_gpu_info':
+                            get_gpu_info().then((s: any) => {
+                                panel?.webview.postMessage({ type: 'gpu_info', data: s })
+                            });
+                            break;
+                        case 'get_cpu_info':
+                            get_cpu_info().then((s: any) => {
+                                panel?.webview.postMessage({ type: 'cpu_info', data: s })
+                            });
+                            break;
+                        case 'get_gpu_stat':
+                            get_gpu_stat().then((s: any) => {
+                                panel?.webview.postMessage({ type: 'gpu_stat', data: s })
+                            });
+                            break;
+                        case 'get_cpu_stat':
+                            get_cpu_stat().then((s: any) => {
+                                panel?.webview.postMessage({ type: 'cpu_stat', data: s })
                             });
                             break;
                     }
@@ -137,9 +155,9 @@ function get_update(panel: PlotPanel | undefined) {
     if (panel?.dump) {
         const last_write: number = statSync(panel.dump).mtime.getTime()
         if (last_write > panel.dump_last_read!) {
-            const dump_data = get_dump_data(panel.dump)
-            if (dump_data) {
-                panel.webview.postMessage({ type: 'update_dump', data: dump_data.data });
+            const dump: dump_data[] | undefined = get_dump_data(panel.dump)
+            if (dump) {
+                panel.webview.postMessage({ type: 'plot_dump', data: dump });
                 panel.last_read = Date.now()
             }
         }
@@ -147,7 +165,7 @@ function get_update(panel: PlotPanel | undefined) {
 }
 export function draw_panel(panel: PlotPanel, context: ExtensionContext) {
     const script_lib: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'node_modules', 'plotly.js-dist-min', 'plotly.min.js')))
-    const script: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'src', 'dashboard.js')))
+    const script: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'dist', 'dashboard.js')))
     const css = get_css(panel, context)
     panel.webview.html = css + build_plot_html(script_lib, script)
     if (panel.log) {
@@ -197,33 +215,32 @@ function get_log_data(path: string): { data: plot_data[], layout: ax_layout } | 
     }
 }
 
-function get_dump_data(path: string): { data: dump_data[] } | undefined {
-    let dat_log = read_log_data(path)
+function get_dump_data(path: string): dump_data[] | undefined {
+    let dat_log = read_dump_data(path)
     if (dat_log) {
         let dat: dump_data[] = []
         for (let iy = 0; iy < dat_log.length; iy++) {
-            for (let ix = 1; ix < dat_log[iy].data[0].length; ix++) {
-                let ty: number[] = dat_log[iy].data.map(data => parseInt(data[1]))
-                let col: string[] = ty.map(c => colors[c])
-                dat.push({
-                    x: dat_log[iy].data.map(data => data[2]),
-                    y: dat_log[iy].data.map(data => data[3]),
-                    z: dat_log[iy].data.map(data => data[4]),
-                    mode: 'markers',
-                    marker: {
-                        color: col,
-                        size: 10,
-                        line: {
-                            color: 'black',
-                            width: 0.25
-                        },
-                        opacity: 0.8
+            let ty: number[] = dat_log[iy].data.map(data => parseInt(data[1]))
+            let col: string[] = ty.map(c => colors[c])
+            dat.push({
+                x: dat_log[iy].data.map(data => data[2]),
+                y: dat_log[iy].data.map(data => data[3]),
+                z: dat_log[iy].data.map(data => data[4]),
+                mode: 'markers',
+                visible: true,
+                marker: {
+                    color: col,
+                    size: 10,
+                    line: {
+                        color: 'black',
+                        width: 0.25
                     },
-                    type: 'scatter3d'
-                })
-            }
+                    opacity: 0.8
+                },
+                type: 'scatter3d'
+            })
         }
-        return { data: dat }
+        return dat
     }
 }
 
@@ -247,9 +264,9 @@ export async function set_plot_panel_content(panel: PlotPanel | undefined, conte
                     panel.dump = await get_log_path('Open Lammps Dump File') // Let user select a dump file
                 }
                 if (panel.dump) {
-                    const dump_data = get_dump_data(panel.dump)
+                    const dump_data: dump_data[] | undefined = get_dump_data(panel.dump)
                     if (dump_data) {
-                        panel.webview.postMessage({ type: 'plot_dump', data: dump_data.data });
+                        panel.webview.postMessage({ type: 'plot_dump', data: dump_data });
                         panel.last_read = Date.now()
                     }
                 }
@@ -259,21 +276,6 @@ export async function set_plot_panel_content(panel: PlotPanel | undefined, conte
                 break;
         }
     }
-}
-
-
-function get_system_info(): Promise<{ memory: number, cpu: number } | void> {
-    const p_mem: Promise<number> = osu.mem.info().then((info: any): number => {
-        return 100 - info.freeMemPercentage
-    })
-    const p_cpu: Promise<number> = osu.cpu.usage().then((cpuPercentage: any): number => {
-        return cpuPercentage
-    })
-    return p_mem.then(function (mem_prct) {
-        return p_cpu.then((cpu_prct) => {
-            return { memory: mem_prct, cpu: cpu_prct };
-        })
-    })
 }
 
 function read_log_data(log_path: string) {
@@ -298,6 +300,29 @@ function read_log_data(log_path: string) {
     }
 }
 
+function read_dump_data(dump_path: string) {
+    if (dump_path) {
+        const dump_file = readFileSync(dump_path).toString()      // Read entire Log_file
+        let data_block                                           // Find Data Blocks
+        let dump_ds: {                                           // Initialize Array of Datablocks
+            header: string[],
+            data: string[][]
+        }[] = []
+
+        while ((data_block = re_dump_data.exec(dump_file)) != null) {
+            const idx_head = data_block[0].indexOf('\n')
+            let header = data_block[0].slice(0, idx_head).trim().split(RegExp('\\s+'))
+            header = header.filter(e => e !== 'ITEM:' && e !== 'ATOMS')
+            const dat_l = data_block[0].slice(idx_head + 1).toString().trim().split(RegExp("\\n+", "g"))
+            const dat_n: string[][] = dat_l.map((value) => value.trim().split(RegExp('\\s+')))
+            if (header.length == dat_n[0].length) {
+                dump_ds.push({ header: header, data: dat_n })
+            }
+        }
+        return dump_ds
+    }
+}
+
 
 async function get_log_path(title: string): Promise<string | undefined> {
     const options: OpenDialogOptions = {
@@ -305,9 +330,9 @@ async function get_log_path(title: string): Promise<string | undefined> {
         title: title,
         canSelectFolders: false
     };
-    const cwd = window.activeTextEditor?.document.uri
+    const cwd = workspace.workspaceFolders
     if (cwd) {
-        options.defaultUri = Uri.parse(dirname(cwd.toString()))
+        options.defaultUri = cwd[0].uri
     }
     let log_path: string | undefined = undefined
     const fileUri = await window.showOpenDialog(options)
@@ -316,6 +341,7 @@ async function get_log_path(title: string): Promise<string | undefined> {
     }
     return log_path
 }
+
 
 function build_plot_html(plotly_lib: Uri, script: Uri) {
 
@@ -341,23 +367,11 @@ function build_plot_html(plotly_lib: Uri, script: Uri) {
         
         <!-- Tab content -->
         <div id="sys" class="tabcontent">
-          <h3>System Information</h3>
-          <div>
-          <table>
-            <tr>
-                <td><label for="memory">Memory usage:</label></td>
-                <td><progress id="memory" value="0" max="100" style="width:100%; padding: 2px 4px;"></progress> </td>
-            </tr>
-            <tr>
-                <td><label for="cpu">CPU load:</label></td>
-                <td><progress id="cpu" value="0" max="100" style="width:100%; padding: 2px 4px;"></progress> </td>
-            </tr>
-            </table>
+          <div id="sys_bars">
           </div>
         </div>
         
         <div id="dump" class="tabcontent">
-          <h3>Dumps</h3>
           <div>
             <button type="button" id="button2">Open Lammps Dump File</button>
             <div id="dump_div" align="center">
@@ -367,15 +381,18 @@ function build_plot_html(plotly_lib: Uri, script: Uri) {
         </div>
         
         <div id="logs" class="tabcontent">
-          <h3>Logs</h3>
-          <div>
             <button type="button" id="button1">Open Lammps Log File</button>
-          </div>
+            <div class="radio-toolbar">
+                <input type="radio" id="radioData" name="radioLog" value="data" checked>
+                <label for="radioData">Show Log Data</label>
+
+                <input type="radio" id="radioTiming" name="radioLog" value="timing">
+                <label for="radioTiming">Show Timing Breakdown</label>
+            </div>
           <div id="plot_div">
            <!-- Plotly chart will be drawn inside this DIV -->
           </div>
         </div> 
-    
         <script src="${script}"></script>
     </body>   
 

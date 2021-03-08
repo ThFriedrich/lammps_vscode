@@ -1,52 +1,10 @@
-body {
-    text-align: justify;
-}
+/*--------------------------/
+/                           /
+/    SYNTAX HIGHLIGHTING    /
+/                           /
+/--------------------------*/
 
-table {
-    width: 100%;
-    text-align: left;
-    border-collapse: collapse;
-}
-
-svg {
-    color: var(--vscode-editor-foreground);
-}
-
-table {
-    width: 100%;
-    text-align: left;
-    border-collapse: collapse;
-}
-
-table th {
-    border: var(--vscode-editor-background);
-}
-
-table td {
-    border: 1px solid var(--vscode-editor-foreground);
-    padding: 2px 4px;
-}
-
-table tr:nth-child(even) {
-    background: var(--vscode-editor-lineHighlightBackground);
-}
-
-table td:first-child {
-    width: 1%;
-    white-space: nowrap;
-    padding: 2px 4px;
-}
-
-blockquote {
-    color: var(--vscode-editor-foreground);
-    background-color: var(--vscode-editor-background);
-    margin-top: 5px;
-    margin-bottom: 5px;
-    margin-left: 10px;
-    padding-left: 15px;
-    border-left: 2px solid var(--vscode-editor-lineHighlightBackground);
-}
-
+@import url("lmps_generic.css");
 .comment {
     color: #008000;
 }
@@ -77,74 +35,4 @@ blockquote {
 
 .support.function {
     color: #0451a5;
-}
-
-button {
-    display: inline-block;
-    background-color: var(--vscode-button-background);
-    border: 2px var(--vscode-button-foreground);
-    color: var(--vscode-button-foreground);
-    text-align: center;
-    padding: 10px 20px;
-    margin: 14px 7px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: var(--vscode-button-hoverBackground);
-    color: var(--vscode-button-foreground);
-}
-
-
-/* Style the tab */
-
-.tab {
-    overflow: hidden;
-    border: 1px solid var(--vscode-editor-lineHighlightBackground);
-    background-color: var(--vscode-editor-lineHighlightBackground);
-    margin: 0px 10px 0px 0px;
-}
-
-
-/* Style the buttons that are used to open the tab content */
-
-.tab button {
-    background-color: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
-    float: left;
-    border: none;
-    outline: none;
-    cursor: pointer;
-    margin: 1px;
-    transition: 0.5s;
-}
-
-
-/* Change background color of buttons on hover */
-
-.tab button:hover {
-    background-color: var(--vscode-button-hoverBackground);
-}
-
-
-/* Create an active/current tablink class */
-
-.tab button.active {
-    color: var(--vscode-button-secondaryForeground);
-    background-color: var(--vscode-button-secondaryBackground);
-}
-
-
-/* Style the tab content */
-
-.tabcontent {
-    display: none;
-    padding: 5px 15px 15px 5px;
-    border: 1px solid var(--vscode-editor-lineHighlightBackground);
-    margin: 0px 10px 10px 0px;
-}
-
-.js-plotly-plot .plotly .modebar {
-    left: 50%;
-    transform: translateX(-50%);
 }
