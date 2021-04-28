@@ -26,34 +26,40 @@ window.onload = function() {
                 }
                 break;
             case 'gpu_stat':
-                document.getElementById('gpu_mem').value = event.data.data['gpu_mem'];
-                document.getElementById('gpu_util').value = event.data.data['gpu_util'];
+                for (let n = 0; n < event.data.data['gpu_util'].length; n++) {
+                    document.getElementById('gpu_mem' + n).value = event.data.data['gpu_mem'][n];
+                    document.getElementById('gpu_util' + n).value = event.data.data['gpu_util'][n];
+                }
+
                 break;
             case 'gpu_info':
                 var gpu_info = event.data.data;
                 var sys_bars = document.getElementById('sys_bars');
 
-                var header = document.createElement('h4')
-                header.appendChild(document.createTextNode(gpu_info['gpu']))
-                header.style.marginBottom = '6px';
-                sys_bars.appendChild(header)
+                for (let n = 0; n < gpu_info['gpu'].length; n++) {
+                    var header = document.createElement('h4')
+                    header.appendChild(document.createTextNode(gpu_info['gpu'][n]))
+                    header.style.marginBottom = '6px';
+                    sys_bars.appendChild(header)
 
-                var cuda_etc = document.createElement('p')
-                cuda_etc.appendChild(document.createTextNode(
-                    'Driver: ' + gpu_info['driver'] + Array(6).fill('\xa0').join('') + 'CUDA: ' + gpu_info['cuda']))
-                cuda_etc.style.marginTop = 0;
-                sys_bars.appendChild(cuda_etc)
+                    var cuda_etc = document.createElement('p')
+                    cuda_etc.appendChild(document.createTextNode(
+                        'Driver: ' + gpu_info['driver'] + Array(6).fill('\xa0').join('') + 'CUDA: ' + gpu_info['cuda']))
+                    cuda_etc.style.marginTop = 0;
+                    sys_bars.appendChild(cuda_etc)
 
-                var tbl = document.createElement("table");
-                var tblBody = document.createElement("tbody");
+                    var tbl = document.createElement("table");
+                    var tblBody = document.createElement("tbody");
 
-                var util_row = gen_info_row("gpu_util", "GPU load:")
-                tblBody.appendChild(util_row)
-                var mem_row = gen_info_row("gpu_mem", "Memory usage:")
-                tblBody.appendChild(mem_row)
+                    var util_row = gen_info_row("gpu_util" + n, "GPU load:")
+                    tblBody.appendChild(util_row)
+                    var mem_row = gen_info_row("gpu_mem" + n, "Memory usage:")
+                    tblBody.appendChild(mem_row)
 
-                tbl.appendChild(tblBody);
-                sys_bars.appendChild(tbl)
+                    tbl.appendChild(tblBody);
+                    sys_bars.appendChild(tbl)
+
+                }
 
                 setInterval(() => {
                     vscode.postMessage({

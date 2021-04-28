@@ -2,7 +2,7 @@ const smi = require('node-nvidia-smi');
 const osu = require('node-os-utils');
 const cpuStats = require('cpu-stats')
 
-export function get_gpu_info(): Promise<{ n_gpus: number, cuda: string, driver: string, gpu: string }> {
+export function get_gpu_info(): Promise<{ n_gpus: number, cuda: string, driver: string, gpu: string[] }> {
     return new Promise((resolve, reject) => {
         smi(function (err: any, data: any) {
             // handle errors
@@ -12,7 +12,10 @@ export function get_gpu_info(): Promise<{ n_gpus: number, cuda: string, driver: 
                 const n_gpus: number = Number(data.nvidia_smi_log.attached_gpus)
                 const cuda: string = data.nvidia_smi_log.cuda_version
                 const driver: string = data.nvidia_smi_log.driver_version
-                const gpu: string = data.nvidia_smi_log.gpu.product_name
+                let gpu: string[] = []
+                for (let n = 0; n < n_gpus; n++) {
+                    gpu.push(data.nvidia_smi_log.gpu[n].product_name)                
+                }
                 resolve({ n_gpus: n_gpus, cuda: cuda, driver: driver, gpu: gpu })
             }
         }
@@ -20,15 +23,22 @@ export function get_gpu_info(): Promise<{ n_gpus: number, cuda: string, driver: 
     })
 }
 
-export function get_gpu_stat(): Promise<{ gpu_util: number, gpu_mem: number }> {
+export function get_gpu_stat(): Promise<{ gpu_util: number[], gpu_mem: number[] }> {
     return new Promise((resolve, reject) => {
         smi(function (err: any, data: any) {
             // handle errors
             if (err) {
                 reject(err);
             } else {
-                const util: number = Number(data.nvidia_smi_log.gpu.utilization.gpu_util.slice(0, -2))
-                const mem: number = Number(data.nvidia_smi_log.gpu.utilization.memory_util.slice(0, -2))
+                const n_gpus: number = Number(data.nvidia_smi_log.attached_gpus)
+                let util: number[] = []
+                let mem: number[] = []
+                for (let n = 0; n < n_gpus; n++) {
+                    util.push(Number(data.nvidia_smi_log.gpu[n].utilization.gpu_util.slice(0, -2)))
+                    const mem_vals = data.nvidia_smi_log.gpu[n].fb_memory_usage
+                    const mem_prct = Number(mem_vals['used'].slice(0, -4))/Number(mem_vals['total'].slice(0, -4))*100
+                    mem.push(mem_prct)                
+                }
                 resolve({ gpu_util: util, gpu_mem: mem })
             }
         }
