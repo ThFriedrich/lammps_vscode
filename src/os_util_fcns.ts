@@ -13,9 +13,13 @@ export function get_gpu_info(): Promise<{ n_gpus: number, cuda: string, driver: 
                 const cuda: string = data.nvidia_smi_log.cuda_version
                 const driver: string = data.nvidia_smi_log.driver_version
                 let gpu: string[] = []
-                for (let n = 0; n < n_gpus; n++) {
-                    gpu.push(data.nvidia_smi_log.gpu[n].product_name)                
+                let gpus = data.nvidia_smi_log.gpu
+                if (n_gpus <= 1) {
+                    gpus = Array(data.nvidia_smi_log.gpu)
                 }
+                gpus.forEach((gpu_i: { product_name: string; }) => {
+                    gpu.push(gpu_i.product_name)
+                });
                 resolve({ n_gpus: n_gpus, cuda: cuda, driver: driver, gpu: gpu })
             }
         }
@@ -33,12 +37,16 @@ export function get_gpu_stat(): Promise<{ gpu_util: number[], gpu_mem: number[] 
                 const n_gpus: number = Number(data.nvidia_smi_log.attached_gpus)
                 let util: number[] = []
                 let mem: number[] = []
-                for (let n = 0; n < n_gpus; n++) {
-                    util.push(Number(data.nvidia_smi_log.gpu[n].utilization.gpu_util.slice(0, -2)))
-                    const mem_vals = data.nvidia_smi_log.gpu[n].fb_memory_usage
-                    const mem_prct = Number(mem_vals['used'].slice(0, -4))/Number(mem_vals['total'].slice(0, -4))*100
-                    mem.push(mem_prct)                
+                let gpus = data.nvidia_smi_log.gpu
+                if (n_gpus == 1) {
+                    gpus = Array(data.nvidia_smi_log.gpu)
                 }
+                gpus.forEach((gpu_i: { fb_memory_usage: any; utilization: { gpu_util: string | any[]; }; }) => {
+                    const mem_vals = gpu_i.fb_memory_usage
+                    const mem_prct = Number(mem_vals['used'].slice(0, -4)) / Number(mem_vals['total'].slice(0, -4)) * 100
+                    mem.push(mem_prct)
+                    util.push(Number(gpu_i.utilization.gpu_util.slice(0, -2)))
+                });
                 resolve({ gpu_util: util, gpu_mem: mem })
             }
         }
