@@ -6,7 +6,7 @@ name: SYNC
 on:
   schedule:
     - cron: '45 11 16 * *'
-
+    
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -62,9 +62,9 @@ jobs:
         npm install
         npm install -g vsce
         npm audit fix
-        git pull
         git add .
         git commit -m "Scheduled sync of lammps_vscode with Lammps documentation $(date +'%Y-%m-%d')"
+        git pull origin master
         npm version patch
         vsce package
         git push
