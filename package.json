@@ -7,7 +7,7 @@
     ],
     "icon": "imgs/logo.png",
     "description": "Keyword/Syntax highlighting extension for Molecular Dynamics Software LAMMPS",
-    "version": "1.4.9",
+    "version": "1.4.10",
     "license": "GNU General Public License v2.0",
     "publisher": "ThFriedrich",
     "repository": {
@@ -26,32 +26,27 @@
     ],
     "main": "./dist/extension.js",
     "contributes": {
-        "languages": [
-            {
-                "id": "lmps",
-                "aliases": [
-                    "Lammps",
-                    "lmps"
-                ],
-                "filenamePatterns": [
-                    "in.*"
-                ],
-                "extensions": [
-                    ".lmp",
-                    ".lmps",
-                    ".lammps"
-                ],
-                "configuration": "./language-configuration.json"
-            }
-        ],
-        "snippets": [
-            {
-                "language": "lmps",
-                "path": "./snippets/lmps.json"
-            }
-        ],
-        "grammars": [
-            {
+        "languages": [{
+            "id": "lmps",
+            "aliases": [
+                "Lammps",
+                "lmps"
+            ],
+            "filenamePatterns": [
+                "in.*"
+            ],
+            "extensions": [
+                ".lmp",
+                ".lmps",
+                ".lammps"
+            ],
+            "configuration": "./language-configuration.json"
+        }],
+        "snippets": [{
+            "language": "lmps",
+            "path": "./snippets/lmps.json"
+        }],
+        "grammars": [{
                 "language": "lmps",
                 "scopeName": "source.lmps",
                 "path": "./syntaxes/lmps.tmLanguage.json"
@@ -67,20 +62,16 @@
                 }
             }
         ],
-        "commands": [
-            {
-                "command": "extension.show_docs",
-                "title": "Show Documentation for this Command"
-            }
-        ],
+        "commands": [{
+            "command": "extension.show_docs",
+            "title": "Show Documentation for this Command"
+        }],
         "menus": {
-            "editor/context": [
-                {
-                    "command": "extension.show_docs",
-                    "when": "editorLangId == lmps&&commandOnCursor",
-                    "group": "Navigation"
-                }
-            ]
+            "editor/context": [{
+                "command": "extension.show_docs",
+                "when": "editorLangId == lmps&&commandOnCursor",
+                "group": "Navigation"
+            }]
         },
         "configuration": {
             "title": "Lammps",
@@ -147,39 +138,37 @@
                 }
             }
         },
-        "taskDefinitions": [
-            {
-                "type": "lmps",
-                "required": [
-                    "task",
-                    "binary",
-                    "mpi_tasks",
-                    "gpu_nodes"
-                ],
-                "properties": {
-                    "binary": {
-                        "type": "string",
-                        "default": "/bin/lmp",
-                        "description": "Path to the Lammps executable"
-                    },
-                    "task": {
-                        "type": "string",
-                        "default": "Run Multi-Task",
-                        "description": "Run Single-Task | Run Multi-Task | Run Single-Task GPU | Run Multi-Task GPU"
-                    },
-                    "mpi_tasks": {
-                        "type": "integer",
-                        "default": 4,
-                        "description": "Number of tasks to run with MPI."
-                    },
-                    "gpu_nodes": {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "GPU nodes to use."
-                    }
+        "taskDefinitions": [{
+            "type": "lmps",
+            "required": [
+                "task",
+                "binary",
+                "mpi_tasks",
+                "gpu_nodes"
+            ],
+            "properties": {
+                "binary": {
+                    "type": "string",
+                    "default": "/bin/lmp",
+                    "description": "Path to the Lammps executable"
+                },
+                "task": {
+                    "type": "string",
+                    "default": "Run Multi-Task",
+                    "description": "Run Single-Task | Run Multi-Task | Run Single-Task GPU | Run Multi-Task GPU"
+                },
+                "mpi_tasks": {
+                    "type": "integer",
+                    "default": 4,
+                    "description": "Number of tasks to run with MPI."
+                },
+                "gpu_nodes": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "GPU nodes to use."
                 }
             }
-        ]
+        }]
     },
     "scripts": {
         "compile": "tsc -p ./",
@@ -212,7 +201,7 @@
         "mathjax-node": "^2.1.1",
         "plist": "^3.0.2",
         "request": "^2.88.2",
-        "vscode-oniguruma": "^1.3.1",
-        "vscode-textmate": "^5.2.0"
+        "vscode-oniguruma": ">=1.3.1",
+        "vscode-textmate": ">=5.2.0"
     }
 }
