@@ -12,7 +12,7 @@ export interface PlotPanel extends WebviewPanel {
 }
 
 const re_log_data: RegExp = RegExp('^\\s*((-?[0-9]*(\\.[0-9]*)?([eE][-]?)?[0-9]+)\\s+)+(-?[0-9]*(\\.[0-9]*)?([eE][-]?)?[0-9]+)?', 'gm')
-const re_dump_data: RegExp = RegExp('ITEM: ATOMS[\\s\\S\\n]*?(?=ITEM:)', 'gm')
+const re_dump_data: RegExp = RegExp('ITEM: ATOMS[\\s\\S\\n]*?(?=ITEM:|$)', 'g')
 
 interface plot_data {
     x: number[] | string[],
@@ -102,6 +102,9 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
                             break;
                         case 'load_dump':
                             panel.dump = undefined;
+                            set_plot_panel_content(panel, context, file_type.dump)
+                            break;
+                        case 'update_dump':
                             set_plot_panel_content(panel, context, file_type.dump)
                             break;
                         case 'update_log':
@@ -373,7 +376,8 @@ function build_plot_html(plotly_lib: Uri, script: Uri) {
         
         <div id="dump" class="tabcontent">
           <div>
-            <button type="button" id="button2">Open Lammps Dump File</button>
+            <button type="button" id="button2">📂 Open Lammps Dump File</button>
+            <button type="button" id="button3">🔄 Refresh</button>
             <div id="dump_div" align="center">
             <!-- Plotly chart will be drawn inside this DIV -->
             </div>
@@ -381,13 +385,13 @@ function build_plot_html(plotly_lib: Uri, script: Uri) {
         </div>
         
         <div id="logs" class="tabcontent">
-            <button type="button" id="button1">Open Lammps Log File</button>
+            <button type="button" id="button1">📂 Open Lammps Log File</button>
             <div class="radio-toolbar">
                 <input type="radio" id="radioData" name="radioLog" value="data" checked>
-                <label for="radioData">Show Log Data</label>
+                <label for="radioData">📉 Show Log Data</label>
 
                 <input type="radio" id="radioTiming" name="radioLog" value="timing">
-                <label for="radioTiming">Show Timing Breakdown</label>
+                <label for="radioTiming">⏱️ Show Timing Breakdown</label>
             </div>
           <div id="plot_div">
            <!-- Plotly chart will be drawn inside this DIV -->

@@ -4,6 +4,7 @@ window.onload = function() {
 
     var button1 = document.getElementById('button1')
     var button2 = document.getElementById('button2')
+    var button3 = document.getElementById('button3')
 
     document.getElementById("default_tab").click();
 
@@ -133,6 +134,12 @@ window.onload = function() {
     button2.addEventListener('click', () => {
         vscode.postMessage({
             command: 'load_dump'
+        });
+    })
+
+    button3.addEventListener('click', () => {
+        vscode.postMessage({
+            command: 'update_dump'
         });
     })
 
