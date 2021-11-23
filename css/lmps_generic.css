@@ -139,9 +139,10 @@ button:active {
 /                           /
 /--------------------------*/
 
-.js-plotly-plot .plotly .modebar {
-    left: 50%;
-    transform: translateX(-50%);
+.log_div {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column
 }
 
 
@@ -181,4 +182,56 @@ button:active {
     color: var(--vscode-button-secondaryForeground);
     border: 2px dashed var(--vscode-button-hoverBackground);
     background-color: var(--vscode-button-secondaryBackground);
+}
+
+
+/*--------------------------/
+/                           /
+/     Accordion/Panels      /
+/                           /
+/--------------------------*/
+
+.accordion {
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: 2px var(--vscode-button-foreground);
+    cursor: pointer;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    transition: 0.5s;
+    padding: 6px 10px 6px 10px;
+    margin: 0 10px 4px 10px;
+}
+
+.active,
+.accordion:hover {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+.active,
+.accordion:after {
+    content: '\02795';
+    /* Unicode character for "plus" sign (+) */
+    font-size: 13px;
+    color: var(--vscode-editor-foreground);
+    float: right;
+    margin-left: 5px;
+}
+
+.accordion.active:after {
+    content: "\2796";
+    font-size: 13px;
+    color: var(--vscode-editor-foreground);
+    float: right;
+    margin-left: 5px;
+    /* Unicode character for "minus" sign (-) */
+}
+
+.panel {
+    background-color: var(--vscode-editor-background);
+    overflow: hidden;
+    display: none;
+    transition: 0.5s ease-out;
 }

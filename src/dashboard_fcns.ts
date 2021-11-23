@@ -1,4 +1,4 @@
-import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions, workspace } from 'vscode';
+import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions, workspace, Webview } from 'vscode';
 import { join } from 'path'
 import { readFileSync, statSync } from 'fs';
 import { get_css } from './doc_panel_fcns'
@@ -11,10 +11,8 @@ export interface PlotPanel extends WebviewPanel {
     dump_last_read?: number
 }
 
-const re_log_data: RegExp = RegExp('^\\s*((-?[0-9]*(\\.[0-9]*)?([eE][-]?)?[0-9]+)\\s+)+(-?[0-9]*(\\.[0-9]*)?([eE][-]?)?[0-9]+)?', 'gm')
-const re_dump_data: RegExp = RegExp('ITEM: ATOMS[\\s\\S\\n]*?(?=ITEM:|$)', 'g')
-
 interface plot_data {
+    plot_type?: string,
     x: number[] | string[],
     y: number[] | string[],
     mode?: string,
@@ -49,8 +47,24 @@ interface dump_data {
     type: string
 }
 
+interface Meta {
+    [key: string]: string
+}
+
+interface plot_data_ds {
+    meta: Meta,
+    data: plot_data[][]
+    
+}
+
+interface dump_data_ds {
+    meta: Meta,
+    data: dump_data[]
+    
+}
+
 const colors =
-    ['#1f77b4',  // muted blue
+    ['#1f77b4', // muted blue
     '#ff7f0e',  // safety orange
     '#2ca02c',  // cooked asparagus green
     '#d62728',  // brick red
@@ -59,16 +73,51 @@ const colors =
     '#e377c2',  // raspberry yogurt pink
     '#7f7f7f',  // middle gray
     '#bcbd22',  // curry yellow-green
-    '#17becf']   // blue-teal
+    '#17becf']  // blue-teal
 
-interface ax_layout {
-    [key: string]: any
-}
 
 enum file_type {
     log,
-    dump
+    dump,
 }
+
+//Regular Expression to find tabulated blocks of numerical data for log data and atomic dump files
+const re_log_data: RegExp = RegExp('^\\s*((-?[0-9]*(\\.[0-9]*)?([eE][-]?)?[0-9]+)\\s+)+(-?[0-9]*(\\.[0-9]*)?([eE][-]?)?[0-9]+)?', 'gm')
+const re_dump_data: RegExp = RegExp('ITEM: ATOMS[\\s\\S\\n]*?(?=ITEM:|$)', 'g')
+const re_comments: RegExp = RegExp('^\\s*#.*$\\n?', 'gm')
+
+const patterns_config = [
+    {
+        "name": "lmp_version",
+        "value": null,
+        "regex": RegExp("^\\s*LAMMPS[\\s]+\\((.+)\\)")
+    },
+    {
+        "name": "dimension",
+        "value": null,
+        "regex": RegExp("^\\s*dimension[\\s]+(\\d+)")
+    },
+    {
+        "name": "boundaries",
+        "value": null,
+        "regex": RegExp("^\\s*boundary[\\s]+(.+)")
+    },
+    {
+        "name": "pair_style",
+        "value": null,
+        "regex": RegExp("^\\s*pair_style[\\s]+(.+)")
+    },
+    {
+        "name": "omp_per_mpi",
+        "value": null,
+        "regex": RegExp("using (\\d)+ OpenMP thread\\(s\\) per MPI task")
+    },
+    {
+        "name": "min_style",
+        "value": null,
+        "regex": RegExp("min_style[\\s\\t]+([\\w\\d]+)")
+    }
+]
 
 export async function manage_plot_panel(context: ExtensionContext, panel: PlotPanel | undefined, actCol: number): Promise<PlotPanel | undefined> {
 
@@ -82,7 +131,7 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
         // Otherwise, create a new panel
         panel = window.createWebviewPanel(
             'lmpsPlot',
-            'Lammps Dashboard', actCol, { retainContextWhenHidden: true, enableScripts: true }
+            'Lammps Dashboard', actCol, { retainContextWhenHidden: true, enableScripts: true, localResourceRoots: [Uri.file(context.extensionPath)] }
         );
         panel.iconPath = { light: img_path_light, dark: img_path_dark }
         panel.onDidChangeViewState(
@@ -100,15 +149,15 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
                             panel.log = undefined;
                             set_plot_panel_content(panel, context, file_type.log)
                             break;
+                        case 'update_log':
+                            get_update(panel)
+                            break;
                         case 'load_dump':
                             panel.dump = undefined;
                             set_plot_panel_content(panel, context, file_type.dump)
                             break;
                         case 'update_dump':
                             set_plot_panel_content(panel, context, file_type.dump)
-                            break;
-                        case 'update_log':
-                            get_update(panel)
                             break;
                         case 'get_gpu_info':
                             get_gpu_info().then((s: any) => {
@@ -148,9 +197,9 @@ function get_update(panel: PlotPanel | undefined) {
     if (panel?.log) {
         const last_write: number = statSync(panel.log).mtime.getTime()
         if (last_write > panel.last_read!) {
-            const log_data = get_log_data(panel.log)
+            const log_data: plot_data_ds | undefined = get_log_data(panel.log)
             if (log_data) {
-                panel.webview.postMessage({ type: 'update_log', data: log_data.data, layout: log_data.layout });
+                panel.webview.postMessage({ type: 'update_log', data: log_data.data, meta: log_data.meta});
                 panel.last_read = Date.now()
             }
         }
@@ -158,19 +207,20 @@ function get_update(panel: PlotPanel | undefined) {
     if (panel?.dump) {
         const last_write: number = statSync(panel.dump).mtime.getTime()
         if (last_write > panel.dump_last_read!) {
-            const dump: dump_data[] | undefined = get_dump_data(panel.dump)
-            if (dump) {
-                panel.webview.postMessage({ type: 'plot_dump', data: dump });
+            const dump_data: dump_data_ds | undefined = get_dump_data(panel.dump)
+            if (dump_data) {
+                panel.webview.postMessage({ type: 'plot_dump', data: dump_data.data, meta: dump_data.meta });
                 panel.last_read = Date.now()
             }
         }
     }
 }
 export function draw_panel(panel: PlotPanel, context: ExtensionContext) {
+    const node_lib_path: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'node_modules')))
     const script_lib: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'node_modules', 'plotly.js-dist-min', 'plotly.min.js')))
     const script: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'dist', 'dashboard.js')))
     const css = get_css(panel, context)
-    panel.webview.html = css + build_plot_html(script_lib, script)
+    panel.webview.html = css + build_plot_html(panel, node_lib_path, script_lib, script)
     if (panel.log) {
         set_plot_panel_content(panel, context, file_type.log)
     }
@@ -179,56 +229,115 @@ export function draw_panel(panel: PlotPanel, context: ExtensionContext) {
     }
 }
 
-
-function get_log_data(path: string): { data: plot_data[], layout: ax_layout } | undefined {
-    let ax_layouts: ax_layout = {}
-    let dat_log = read_log_data(path)
-    if (dat_log) {
-        let dat: plot_data[] = []
-        for (let iy = 0; iy < dat_log.length; iy++) {
-            let x_axis_lab: string = 'xaxis'
-            let x_axis_lab_short: string = 'x'
-            let y_axis_lab: string = 'yaxis'
-            let y_axis_lab_short: string = 'y'
-            if (iy > 0) {
-                x_axis_lab = 'xaxis' + (iy + 1).toString()
-                x_axis_lab_short = 'x' + (iy + 1).toString()
-                y_axis_lab = 'yaxis' + (iy + 1).toString()
-                y_axis_lab_short = 'y' + (iy + 1).toString()
-
-            }
-
-            for (let ix = 1; ix < dat_log[iy].data[0].length; ix++) {
-                dat.push({
-                    x: dat_log[iy].data.map(data => data[0]),
-                    y: dat_log[iy].data.map(data => data[ix]),
-                    xaxis: x_axis_lab_short,
-                    yaxis: y_axis_lab_short,
-                    name: dat_log[iy].header[ix],
+function get_log_data(path: string): plot_data_ds | undefined {
+    let log = read_log(path)
+    if (log) {
+        let plot_ser: plot_data[][] = []
+        for (let iy = 0; iy < log.data.length; iy++) {
+            let ser: plot_data[] = []
+            for (let ix = 1; ix < log.data[iy].data[0].length; ix++) {
+                ser.push({
+                    plot_type: log.data[iy].type,
+                    visible: true,
+                    x: log.data[iy].data.map(data => data[0]),
+                    y: log.data[iy].data.map(data => data[ix]),
+                    name: log.data[iy].header[ix],
                     mode: 'line',
                     line: {
                         width: 2,
                     }
                 })
-                ax_layouts[x_axis_lab] = { domain: [0, 1], anchor: y_axis_lab_short }
-                ax_layouts[y_axis_lab] = { domain: [iy / dat_log.length, (iy + 1) / dat_log.length - 0.1] }
             }
+            plot_ser.push(ser)
         }
-        return { data: dat, layout: ax_layouts }
+        return {'data': plot_ser, 'meta': log.meta}
     }
 }
 
-function get_dump_data(path: string): dump_data[] | undefined {
-    let dat_log = read_dump_data(path)
-    if (dat_log) {
-        let dat: dump_data[] = []
-        for (let iy = 0; iy < dat_log.length; iy++) {
-            let ty: number[] = dat_log[iy].data.map(data => parseInt(data[1]))
+interface log_block {
+    index: number,
+    match: string
+}
+
+function locate_blocks(log: string) {
+    const work_kw = [
+        RegExp("\\brun\\b[\\s\\S]*?(\\bDangerous\\sbuilds\\b|$)", 'g'),
+        RegExp("\\bminimize\\b[\\s\\S]*?(\\bDangerous\\sbuilds\\b|$)", 'g'),
+        RegExp("\\bneb\\b[\\s\\S]*?(\\bDangerous\\sbuilds\\b|$)", 'g')]
+    let blocks: log_block[] = []
+
+    work_kw.forEach(kw => {
+        let match
+        while ((match = kw.exec(log)) != null) {
+            blocks.push({ 'index': match.index, 'match': match[0] })
+        }
+    });
+    return blocks
+}
+
+function locate_meta(log: string, log_path: string) {
+    let meta: Meta = {}
+    const log_lines = log.split('\n')
+    for (let p = 0; p < patterns_config.length; p++) {
+        for (let i = 0; i < log_lines.length; i++) {
+            let match = patterns_config[p].regex.exec(log_lines[i])
+            if (match) {
+                meta[patterns_config[p].name] = match[1]
+                break
+            }
+        }
+    }
+    meta['path'] = log_path
+    return meta
+}
+
+
+function read_log(log_path: string) {
+    if (log_path) {
+        const log_file = readFileSync(log_path).toString().replace(re_comments, '')  // Read entire Log_file
+        const meta = locate_meta(log_file, log_path)
+        const blocks = locate_blocks(log_file)
+        let log_ds: {
+            type: string,                                                              // Initialize Array of Datablocks
+            header: string[],
+            data: string[][]
+        }[] = []
+
+        if (blocks) {
+            blocks.sort((a, b) => a.index - b.index)
+            blocks.forEach(block => {
+                let data_block                                                              // Find Data Blocks
+                while ((data_block = re_log_data.exec(block.match)) != null) {
+                    let header = data_block.input.slice(data_block.input.slice(0, data_block.index - 1).lastIndexOf('\n'), data_block.index).trim().split(RegExp('\\s+', 'g'))
+                    const dat_l = data_block.toString().split(RegExp("\\n+", "g"))
+                    let dat_n: string[][] = dat_l.map((value) => value.trim().split(RegExp('\\s+')))
+                    if (header.length == dat_n[0].length) {
+                        let dl = []
+                        for (let nd = 0; nd < dat_n.length; nd++) {
+                            if (header.length == dat_n[nd].length) {
+                                dl.push(dat_n[nd])
+                            }
+                        }
+                        log_ds.push({ type: block.match.split("\n")[0], header: header, data: dl })
+                    }
+                }
+            });
+        }
+        return {'data': log_ds, 'meta': meta}
+    }
+}
+
+function get_dump_data(path: string): dump_data_ds | undefined {
+    let dmp_ds: dump_data_ds = {'data': [], 'meta': {'path': path}}
+    let dmp = read_dump(path)
+    if (dmp) {
+        for (let iy = 0; iy < dmp.length; iy++) {
+            let ty: number[] = dmp[iy].data.map(data => parseInt(data[1]))
             let col: string[] = ty.map(c => colors[c])
-            dat.push({
-                x: dat_log[iy].data.map(data => data[2]),
-                y: dat_log[iy].data.map(data => data[3]),
-                z: dat_log[iy].data.map(data => data[4]),
+            dmp_ds.data.push({
+                x: dmp[iy].data.map(data => data[2]),
+                y: dmp[iy].data.map(data => data[3]),
+                z: dmp[iy].data.map(data => data[4]),
                 mode: 'markers',
                 visible: true,
                 marker: {
@@ -243,69 +352,13 @@ function get_dump_data(path: string): dump_data[] | undefined {
                 type: 'scatter3d'
             })
         }
-        return dat
+        return dmp_ds
     }
 }
 
-export async function set_plot_panel_content(panel: PlotPanel | undefined, context: ExtensionContext, f_type: file_type) {
-    if (panel) {
-        switch (f_type) {
-            case 0:
-                if (panel.log == undefined) {
-                    panel.log = await get_log_path('Open Lammps Log File') // Let user select a log file
-                }
-                if (panel.log) {
-                    const log_data = get_log_data(panel.log)
-                    if (log_data) {
-                        panel.webview.postMessage({ type: 'plot_log', data: log_data.data, layout: log_data.layout });
-                        panel.last_read = Date.now()
-                    }
-                }
-                break;
-            case 1:
-                if (panel.dump == undefined) {
-                    panel.dump = await get_log_path('Open Lammps Dump File') // Let user select a dump file
-                }
-                if (panel.dump) {
-                    const dump_data: dump_data[] | undefined = get_dump_data(panel.dump)
-                    if (dump_data) {
-                        panel.webview.postMessage({ type: 'plot_dump', data: dump_data });
-                        panel.last_read = Date.now()
-                    }
-                }
-                break;
-
-            default:
-                break;
-        }
-    }
-}
-
-function read_log_data(log_path: string) {
-    if (log_path) {
-        const log_file = readFileSync(log_path).toString()       // Read entire Log_file
-        let data_block                                           // Find Data Blocks
-        let log_ds: {                                            // Initialize Array of Datablocks
-            header: string[],
-            data: string[][]
-        }[] = []
-
-        while ((data_block = re_log_data.exec(log_file)) != null) {
-            let header = data_block.input.slice(data_block.input.slice(0, data_block.index - 1).lastIndexOf('\n'), data_block.index).trim().split(RegExp('\\s+', 'g'))
-            header = header.filter(e => e !== 'ITEM:' && e !== 'ATOMS')
-            const dat_l = data_block.toString().split(RegExp("\\n+", "g"))
-            const dat_n: string[][] = dat_l.map((value) => value.trim().split(RegExp('\\s+')))
-            if (header.length == dat_n[0].length) {
-                log_ds.push({ header: header, data: dat_n })
-            }
-        }
-        return log_ds
-    }
-}
-
-function read_dump_data(dump_path: string) {
+function read_dump(dump_path: string) {
     if (dump_path) {
-        const dump_file = readFileSync(dump_path).toString()      // Read entire Log_file
+        const dump_file = readFileSync(dump_path).toString().replace(re_comments, '')      // Read entire Log_file
         let data_block                                           // Find Data Blocks
         let dump_ds: {                                           // Initialize Array of Datablocks
             header: string[],
@@ -323,6 +376,39 @@ function read_dump_data(dump_path: string) {
             }
         }
         return dump_ds
+    }
+}
+
+export async function set_plot_panel_content(panel: PlotPanel | undefined, context: ExtensionContext, f_type: file_type) {
+    if (panel) {
+        switch (f_type) {
+            case file_type.log:
+                if (panel.log == undefined) {
+                    panel.log = await get_log_path('Open Lammps Log File') // Let user select a log file
+                }
+                if (panel.log) {
+                    const log_data: plot_data_ds | undefined = get_log_data(panel.log)
+                    if (log_data) {
+                        panel.webview.postMessage({ type: 'plot_log', data: log_data.data, meta: log_data.meta })
+                        panel.last_read = Date.now()
+                    }
+                }
+                break;
+            case file_type.dump:
+                if (panel.dump == undefined) {
+                    panel.dump = await get_log_path('Open Lammps Dump File') // Let user select a dump file
+                }
+                if (panel.dump) {
+                    const dump_data: dump_data_ds | undefined = get_dump_data(panel.dump)
+                    if (dump_data) {
+                        panel.webview.postMessage({ type: 'plot_dump', data: dump_data.data, meta: dump_data.meta });
+                        panel.last_read = Date.now()
+                    }
+                }
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -345,9 +431,18 @@ async function get_log_path(title: string): Promise<string | undefined> {
     return log_path
 }
 
+function getNonce() {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 64; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+}
 
-function build_plot_html(plotly_lib: Uri, script: Uri) {
-
+function build_plot_html(panel: PlotPanel, node_lib_path: Uri, plotly_lib: Uri, script: Uri) {
+    // Use a nonce to only allow specific scripts to be run
+    const nonce = getNonce();
     const html: string =
         `<!DOCTYPE html>
     <html lang="en">
@@ -355,17 +450,25 @@ function build_plot_html(plotly_lib: Uri, script: Uri) {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <!-- Include Plotly.js -->
-        <script src="${plotly_lib}"></script>   
+
+        <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none';
+        img-src ${panel.webview.cspSource} data:;
+        script-src 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval';
+        style-src ${panel.webview.cspSource} 'strict-dynamic' 'unsafe-inline';
+        "/>
+
+        <script nonce="${nonce}" src="${script}"></script>
+        <script nonce="${nonce}" src="${plotly_lib}"></script>   
     </head>
 
     <body>
 
         <!-- Tab links -->
         <div class="tab">
-          <button class="tablinks" onclick="openTab(event, 'sys')" id="default_tab">System Information</button>
-          <button class="tablinks" onclick="openTab(event, 'dump')">Dumps</button>
-          <button class="tablinks" onclick="openTab(event, 'logs')">Logs</button>
+          <button class="tablinks" id="sys_tab">System Information</button>
+          <button class="tablinks" id="dump_tab">Dumps</button>
+          <button class="tablinks" id="logs_tab">Logs</button>
         </div>
         
         <!-- Tab content -->
@@ -376,30 +479,22 @@ function build_plot_html(plotly_lib: Uri, script: Uri) {
         
         <div id="dump" class="tabcontent">
           <div>
-            <button type="button" id="button2">📂 Open Lammps Dump File</button>
-            <button type="button" id="button3">🔄 Refresh</button>
-            <div id="dump_div" align="center">
+            <button type="button" id="load_dump_btn">📂 Open Lammps Dump File</button>
+            <button type="button" id="update_dump_btn">🔄 Refresh</button>
+            <div id="dump_path_div"></div><br>
+            <div id="dump_div" class="dump_div" align="center">
             <!-- Plotly chart will be drawn inside this DIV -->
             </div>
           </div>
         </div>
         
         <div id="logs" class="tabcontent">
-            <button type="button" id="button1">📂 Open Lammps Log File</button>
-            <div class="radio-toolbar">
-                <input type="radio" id="radioData" name="radioLog" value="data" checked>
-                <label for="radioData">📉 Show Log Data</label>
-
-                <input type="radio" id="radioTiming" name="radioLog" value="timing">
-                <label for="radioTiming">⏱️ Show Timing Breakdown</label>
+            <button type="button" id="load_log_btn">📂 Open Lammps Log File</button>
+            <div id="plot_div" class="log_div">
+            <!-- Plotly chart will be drawn inside this DIV -->
             </div>
-          <div id="plot_div">
-           <!-- Plotly chart will be drawn inside this DIV -->
-          </div>
-        </div> 
-        <script src="${script}"></script>
+        </div>
     </body>   
-
     </html>`;
     return html
 }
