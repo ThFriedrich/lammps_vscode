@@ -8,7 +8,7 @@
     "icon": "imgs/logo.png",
     "description": "Keyword/Syntax highlighting extension for Molecular Dynamics Software LAMMPS",
     "version": "1.5.0",
-    "license": "GNU General Public License v2.0",
+    "license": "GPL-2.0-or-later",
     "publisher": "ThFriedrich",
     "repository": {
         "type": "git",
@@ -74,7 +74,11 @@
             },
             {
                 "command": "extension.show_dash",
-                "title": "Open Lammps Simulation Dashboard"
+                "title": "Open Lammps Simulation Dashboard",
+                "icon": {
+                    "light": "./imgs/logo_sq_l.gif",
+                    "dark": "./imgs/logo_sq_d.gif"
+                }
             }
         ],
         "menus": {
@@ -82,7 +86,14 @@
                 {
                     "command": "extension.show_docs",
                     "when": "editorLangId == lmps&&commandOnCursor",
-                    "group": "Navigation"
+                    "group": "navigation"
+                }
+            ],
+            "editor/title": [
+                {
+                    "when": "resourceLangId == lmps",
+                    "command": "extension.show_dash",
+                    "group": "navigation"
                 }
             ]
         },
@@ -220,9 +231,10 @@
         "node-nvidia-smi": "^1.0.0",
         "node-os-utils": "^1.3.2",
         "plist": "^3.0.2",
-        "plotly.js-dist-min": "^1.55.2",
+        "plotly.js-dist-min": "^2.6.0",
         "request": "^2.88.2",
         "vscode-oniguruma": "^1.3.1",
-        "vscode-textmate": "^5.2.0"
+        "vscode-textmate": "^5.2.0",
+        "acorn": "^7.0.0"
     }
 }
