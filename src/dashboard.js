@@ -48,7 +48,7 @@ window.onload = function () {
 
         function mousemove(e) {
             fired++;
-            if (!(fired % 5) || fired == 1) {
+            if (!(fired % 3) || fired == 1) {
                 resize_plots_sub()
             }
         }
@@ -76,10 +76,10 @@ window.onload = function () {
 
         table.appendChild(thead);
         table.appendChild(tbody);
-        plot_div.appendChild(table);  
+        plot_div.appendChild(table);
 
         for (let i = 0; i < n_meta; i++) {
-            
+
             var th = document.createElement('th');
             var td = document.createElement('td');
             td.setAttribute('style', 'padding: 2px; overflow: auto;');
@@ -146,8 +146,8 @@ window.onload = function () {
                     }
                     break;
                 case 'update_log':
-                    var n_plots_update = ev_data[0].length
-                    if (n_plots_update > n_plots) {
+                    var n_plots_update = ev_data?.length
+                    if (n_plots_update && n_plots_update > n_plots) {
                         redraw_log_panel(ev_data, ev_meta)
                     } else {
                         for (i = 0; i < n_plots; i++) {
@@ -155,6 +155,7 @@ window.onload = function () {
                             update_log(div_id, ev_data[i])
                         }
                     }
+
                     break;
                 case 'plot_dump':
                     dump_path_div.textContent = ev_meta.path;
@@ -307,165 +308,178 @@ window.onload = function () {
             command: 'update_dump'
         });
     })
-}
-var modbar_config = {
-    displayModeBar: true,
-    responsive: true,
-    displaylogo: false,
-    modeBarButtonsToRemove: ["toImage", "lasso2d", "select2d", "toggleHover", "toggleSpikelines", "togglehover"],
-    modeBarButtonsToAdd: ["hoverclosest", "hovercompare"],
-    scrollZoom: true,
-}
-
-var fg = getComputedStyle(document.documentElement)
-    .getPropertyValue('--vscode-editor-foreground');
-
-var bg = getComputedStyle(document.documentElement)
-    .getPropertyValue('--vscode-editor-background');
-
-var fg2 = getComputedStyle(document.documentElement)
-    .getPropertyValue('--vscode-textBlockQuote-foreground');
-
-var hl_col = getComputedStyle(document.documentElement)
-    .getPropertyValue('--vscode-editor-lineHighlightBackground');
-
-function gen_info_row(bar_id, label_str) {
-    var util_row = document.createElement("tr");
-    var util_label_cell = document.createElement("td");
-    util_label_cell.appendChild(document.createTextNode(label_str))
-    var util_bar_cell = document.createElement("td");
-    var util_bar = document.createElement("progress")
-    util_bar.id = bar_id
-    util_bar.value = "0"
-    util_bar.min = "0"
-    util_bar.max = "100"
-    util_bar.style = "width:100%; padding: 2px 4px;"
-    util_bar_cell.appendChild(util_bar)
-    util_row.appendChild(util_label_cell)
-    util_row.appendChild(util_bar_cell)
-    return util_row
-}
-
-function get_layout() {
-
-    var layout = {
-        width: document.getElementById('logs').clientWidth - 10,
-        height: window.innerHeight - 40,
-        paper_bgcolor: "rgba(255,255,255,0)",
-        plot_bgcolor: "rgba(255,255,255,0)",
-        legend: {
-            x: 0,
-            xanchor: 'left',
-            y: 80,
-            orientation: 'h'
-        },
-        margin: {
-            l: 60,
-            r: 50,
-            b: 35,
-            t: 15
-        },
-        font: {
-            size: 14,
-            color: fg
-        },
-        scene: {
-            camera: {
-                projection: {
-                    type: "orthographic"
+    var modbar_config = {
+        displayModeBar: true,
+        responsive: true,
+        displaylogo: false,
+        modeBarButtonsToRemove: ["toImage", "lasso2d", "select2d", "toggleHover", "toggleSpikelines", "togglehover"],
+        modeBarButtonsToAdd: ["hoverclosest", "hovercompare",
+            {
+                name: 'download',
+                attr: 'download',
+                title: 'Save as Image (png)',
+                icon: Plotly.Icons.camera,
+                click: function (gd) {
+                    Plotly.Snapshot.toImage(gd, {format: 'png'}).once('success', function(url) {
+                        vscode.postMessage('<img src="' + url + '"/>')
+                      });
                 }
             }
-        },
-        modebar: {
-            orientation: 'v',
-            bgcolor: "rgba(255,255,255,0)",
-            color: fg,
-            activecolor: fg2
-        }
-    }
-    return layout
-}
-
-function plot_log(plot_div, data) {
-    var layout = get_layout()
-    layout.height = 300;
-    Plotly.newPlot(document.getElementById(plot_div), data, layout, modbar_config);
-
-    // Overriding plotly modebar style to fix inactive button shifting
-    var modebar_groups = document.getElementsByClassName("modebar-group");
-    for (let i = 0; i < modebar_groups.length; i++) {
-        modebar_groups[i].style.display = "grid";
-    }
-}
-
-function update_log(plot_div, data) {
-    var plotly_div = document.getElementById(plot_div)
-    for (let d = 0; d < data.length; d++) {
-        data[d].visible = plotly_div.data[d].visible;
-    }
-    Plotly.react(plotly_div, data, plotly_div.layout);
-}
-
-function plot_dump(plot_div, data) {
-
-    var layout = get_layout()
-
-    var sliderSteps = [];
-    var bools = []
-    for (let i = 0; i < data.length; i++) {
-        for (let ix = 0; ix < data.length; ix++) {
-            if (ix == i) {
-                bools[ix] = true
-            } else { bools[ix] = false }
-        }
-
-        sliderSteps.push({
-            label: String(i),
-            method: 'update',
-            args: [{
-                'x': [data[i].x],
-                'y': [data[i].y],
-                'z': [data[i].z],
-                'marker': [data[i].marker]
-            }]
-        })
+        ],
+        scrollZoom: true,
     }
 
-    layout['sliders'] = [{
-        pad: { t: 30 },
-        currentvalue: {
-            xanchor: 'right',
-            prefix: 'Timestep: ',
+    var fg = getComputedStyle(document.documentElement)
+        .getPropertyValue('--vscode-editor-foreground');
+
+    var bg = getComputedStyle(document.documentElement)
+        .getPropertyValue('--vscode-editor-background');
+
+    var fg2 = getComputedStyle(document.documentElement)
+        .getPropertyValue('--vscode-textBlockQuote-foreground');
+
+    var hl_col = getComputedStyle(document.documentElement)
+        .getPropertyValue('--vscode-editor-lineHighlightBackground');
+
+    function gen_info_row(bar_id, label_str) {
+        var util_row = document.createElement("tr");
+        var util_label_cell = document.createElement("td");
+        util_label_cell.appendChild(document.createTextNode(label_str))
+        var util_bar_cell = document.createElement("td");
+        var util_bar = document.createElement("progress")
+        util_bar.id = bar_id
+        util_bar.value = "0"
+        util_bar.min = "0"
+        util_bar.max = "100"
+        util_bar.style = "width:100%; padding: 2px 4px;"
+        util_bar_cell.appendChild(util_bar)
+        util_row.appendChild(util_label_cell)
+        util_row.appendChild(util_bar_cell)
+        return util_row
+    }
+
+    function get_layout() {
+
+        var layout = {
+            width: document.getElementById('logs').clientWidth - 10,
+            height: window.innerHeight - 40,
+            paper_bgcolor: "rgba(255,255,255,0)",
+            plot_bgcolor: "rgba(255,255,255,0)",
+            legend: {
+                x: 0,
+                xanchor: 'left',
+                y: 80,
+                orientation: 'h'
+            },
+            margin: {
+                l: 60,
+                r: 50,
+                b: 35,
+                t: 15
+            },
             font: {
+                size: 14,
+                color: fg
+            },
+            scene: {
+                camera: {
+                    projection: {
+                        type: "orthographic"
+                    }
+                }
+            },
+            modebar: {
+                orientation: 'v',
+                bgcolor: "rgba(255,255,255,0)",
                 color: fg,
-                size: 14
+                activecolor: fg2
             }
-        },
-        steps: sliderSteps
-    }]
-    // Create the plot:
-    Plotly.newPlot(document.getElementById(plot_div),
-        [data[0]], layout, modbar_config);
+        }
+        return layout
+    }
 
-    // Overriding plotly modebar style to fix inactive button shifting
-    var modebar_groups = document.getElementsByClassName("modebar-group");
-    for (let i = 0; i < modebar_groups.length; i++) {
-        modebar_groups[i].style.display = "grid";
-    }
-    document.getElementById(plot_div).style.border = '1px solid'
-    document.getElementById(plot_div).style.borderColor = hl_col
-}
+    function plot_log(plot_div, data) {
+        var layout = get_layout()
+        layout.height = 300;
+        Plotly.newPlot(document.getElementById(plot_div), data, layout, modbar_config);
 
-function openTab(evt, cont_type) {
-    var i, tabcontent, tablinks;
-    tabcontent = document.getElementsByClassName("tabcontent");
-    for (i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].style.display = "none";
+        // Overriding plotly modebar style to fix inactive button shifting
+        var modebar_groups = document.getElementsByClassName("modebar-group");
+        for (let i = 0; i < modebar_groups.length; i++) {
+            modebar_groups[i].style.display = "grid";
+        }
     }
-    tablinks = document.getElementsByClassName("tablinks");
-    for (i = 0; i < tablinks.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" active", "");
+
+    function update_log(plot_div, data) {
+        var plotly_div = document.getElementById(plot_div)
+        for (let d = 0; d < data.length; d++) {
+            data[d].visible = plotly_div.data[d].visible;
+        }
+        Plotly.react(plotly_div, data, plotly_div.layout);
     }
-    document.getElementById(cont_type).style.display = "block";
-    evt.currentTarget.className += " active";
+
+    function plot_dump(plot_div, data) {
+
+        var layout = get_layout()
+
+        var sliderSteps = [];
+        var bools = []
+        for (let i = 0; i < data.length; i++) {
+            for (let ix = 0; ix < data.length; ix++) {
+                if (ix == i) {
+                    bools[ix] = true
+                } else { bools[ix] = false }
+            }
+
+            sliderSteps.push({
+                label: String(i),
+                method: 'update',
+                args: [{
+                    'x': [data[i].x],
+                    'y': [data[i].y],
+                    'z': [data[i].z],
+                    'marker': [data[i].marker]
+                }]
+            })
+        }
+
+        layout['sliders'] = [{
+            pad: { t: 30 },
+            currentvalue: {
+                xanchor: 'right',
+                prefix: 'Timestep: ',
+                font: {
+                    color: fg,
+                    size: 14
+                }
+            },
+            steps: sliderSteps
+        }]
+        // Create the plot:
+        Plotly.newPlot(document.getElementById(plot_div),
+            [data[0]], layout, modbar_config);
+
+        // Overriding plotly modebar style to fix inactive button shifting
+        var modebar_groups = document.getElementsByClassName("modebar-group");
+        for (let i = 0; i < modebar_groups.length; i++) {
+            modebar_groups[i].style.display = "grid";
+        }
+        document.getElementById(plot_div).style.border = '1px solid'
+        document.getElementById(plot_div).style.borderColor = hl_col
+    }
+
+    function openTab(evt, cont_type) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tabcontent");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tablinks");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(cont_type).style.display = "block";
+        evt.currentTarget.className += " active";
+        resize_plots_sub()
+    }
 }

@@ -1,6 +1,6 @@
-import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions, workspace, Webview } from 'vscode';
+import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions, workspace, SaveDialogOptions } from 'vscode';
 import { join } from 'path'
-import { readFileSync, statSync } from 'fs';
+import { readFileSync, statSync, writeFileSync } from 'fs';
 import { get_css } from './doc_panel_fcns'
 import { get_cpu_info, get_cpu_stat, get_gpu_info, get_gpu_stat } from './os_util_fcns'
 
@@ -54,26 +54,26 @@ interface Meta {
 interface plot_data_ds {
     meta: Meta,
     data: plot_data[][]
-    
+
 }
 
 interface dump_data_ds {
     meta: Meta,
     data: dump_data[]
-    
+
 }
 
 const colors =
     ['#1f77b4', // muted blue
-    '#ff7f0e',  // safety orange
-    '#2ca02c',  // cooked asparagus green
-    '#d62728',  // brick red
-    '#9467bd',  // muted purple
-    '#8c564b',  // chestnut brown
-    '#e377c2',  // raspberry yogurt pink
-    '#7f7f7f',  // middle gray
-    '#bcbd22',  // curry yellow-green
-    '#17becf']  // blue-teal
+        '#ff7f0e',  // safety orange
+        '#2ca02c',  // cooked asparagus green
+        '#d62728',  // brick red
+        '#9467bd',  // muted purple
+        '#8c564b',  // chestnut brown
+        '#e377c2',  // raspberry yogurt pink
+        '#7f7f7f',  // middle gray
+        '#bcbd22',  // curry yellow-green
+        '#17becf']  // blue-teal
 
 
 enum file_type {
@@ -179,9 +179,24 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
                                 panel?.webview.postMessage({ type: 'cpu_stat', data: s })
                             });
                             break;
+                        default:
+                            if (message.startsWith('<img src=')) {
+                                const img_data = message.match(RegExp('<img src="data:image\\/(\\w+);base64,(.*)"'));
+                                const buf = Buffer.from(img_data[2], 'base64');
+                                get_save_img_path('Save Image as...').then((img_path: string | undefined) => {
+                                    if (img_path) {
+                                        if (!img_path.endsWith('.png')) {
+                                            img_path += '.png'
+                                        }
+                                        writeFileSync(img_path, buf);
+                                    }
+                                });
+                            };
+                            break;
                     }
-                    return;
+
                 }
+                return;
             },
             null,
             context.subscriptions
@@ -199,7 +214,7 @@ function get_update(panel: PlotPanel | undefined) {
         if (last_write > panel.last_read!) {
             const log_data: plot_data_ds | undefined = get_log_data(panel.log)
             if (log_data) {
-                panel.webview.postMessage({ type: 'update_log', data: log_data.data, meta: log_data.meta});
+                panel.webview.postMessage({ type: 'update_log', data: log_data.data, meta: log_data.meta });
                 panel.last_read = Date.now()
             }
         }
@@ -250,7 +265,7 @@ function get_log_data(path: string): plot_data_ds | undefined {
             }
             plot_ser.push(ser)
         }
-        return {'data': plot_ser, 'meta': log.meta}
+        return { 'data': plot_ser, 'meta': log.meta }
     }
 }
 
@@ -323,12 +338,12 @@ function read_log(log_path: string) {
                 }
             });
         }
-        return {'data': log_ds, 'meta': meta}
+        return { 'data': log_ds, 'meta': meta }
     }
 }
 
 function get_dump_data(path: string): dump_data_ds | undefined {
-    let dmp_ds: dump_data_ds = {'data': [], 'meta': {'path': path}}
+    let dmp_ds: dump_data_ds = { 'data': [], 'meta': { 'path': path } }
     let dmp = read_dump(path)
     if (dmp) {
         for (let iy = 0; iy < dmp.length; iy++) {
@@ -414,21 +429,36 @@ export async function set_plot_panel_content(panel: PlotPanel | undefined, conte
 
 
 async function get_log_path(title: string): Promise<string | undefined> {
+    const cwd = workspace.workspaceFolders
     const options: OpenDialogOptions = {
         canSelectMany: false,
         title: title,
-        canSelectFolders: false
+        canSelectFolders: false,
+        canSelectFiles: true,
+        defaultUri: cwd ? cwd[0].uri : undefined,
     };
-    const cwd = workspace.workspaceFolders
-    if (cwd) {
-        options.defaultUri = cwd[0].uri
-    }
     let log_path: string | undefined = undefined
     const fileUri = await window.showOpenDialog(options)
     if (fileUri && fileUri[0]) {
         log_path = fileUri[0].fsPath
     }
     return log_path
+}
+
+async function get_save_img_path(title: string): Promise<string | undefined> {
+    const cwd = workspace.workspaceFolders
+    const options: SaveDialogOptions = {
+        title: title,
+        filters: { 'Images (.png)': ['png'] },
+        defaultUri: cwd ? cwd[0].uri : undefined
+    };
+
+    let img_path: string | undefined = undefined
+    const fileUri = await window.showSaveDialog(options)
+    if (fileUri) {
+        img_path = fileUri.fsPath
+    }
+    return img_path
 }
 
 function getNonce() {
@@ -453,7 +483,7 @@ function build_plot_html(panel: PlotPanel, node_lib_path: Uri, plotly_lib: Uri, 
 
         <meta http-equiv="Content-Security-Policy"
         content="default-src 'none';
-        img-src ${panel.webview.cspSource} data:;
+        img-src ${panel.webview.cspSource} data: blob:;
         script-src 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval';
         style-src ${panel.webview.cspSource} 'strict-dynamic' 'unsafe-inline';
         "/>
