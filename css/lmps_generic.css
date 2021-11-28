@@ -32,7 +32,6 @@ table tr:nth-child(even) {
 }
 
 table td:first-child {
-    width: 1%;
     white-space: nowrap;
 }
 
@@ -46,6 +45,9 @@ blockquote {
     border-left: 2px solid var(--vscode-editor-lineHighlightBackground);
 }
 
+ul {
+    padding-inline-start: 2em;
+}
 
 /*--------------------------/
 /                           /

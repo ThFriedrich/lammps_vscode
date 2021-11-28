@@ -116,11 +116,11 @@ def tr_table_imgs(txt: str) -> str:
         label_img = re.findall(
             r"\.\.\s(\|\S+\|)\s+image::([\s\S\r]*?)\n", it)
         n_cols = len(label_img)
-        md_tab = "\n  "+"| "*n_cols+"|"+" \n  "+"|---" * \
-            n_cols+"|  \n  |"  # avoids highlighting first row
+        md_tab = " \n  "+"| "*n_cols+"|"+" \n  "+"|---" * \
+            n_cols+"|  \n  | "  # avoids highlighting first row
         for li in label_img:
             md_tab += "![Image]("+li[1].strip()+") | "
-        md_tab += "/n  "
+        md_tab += " \n"
         txt = txt.replace(it, md_tab)
 
     return txt
@@ -211,10 +211,10 @@ def tr_code(code_id: str, code_block: str) -> str:
     elif lang.__contains__("LAMMPS"):
         lang = ["lmps"]
     code_block_fmt = ""
-    code_block_spl = code_block.lstrip("\n").splitlines()
+    code_block_spl = code_block.strip("\n").splitlines()
     for l in code_block_spl:
         code_block_fmt += l.strip() + '\n'
-    return "\n```"+lang[0]+"\n" + code_block_fmt + "\n```\n"
+    return "\n```"+lang[0]+"\n" + code_block_fmt + "```"
 
 
 def tr_math(math_block: str) -> str:

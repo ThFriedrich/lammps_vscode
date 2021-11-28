@@ -138,13 +138,14 @@ export async function create_doc_page(snippet: string, panel: WebviewPanel | und
         if (docs.syntax) {
             content.appendMarkdown("### Syntax: \n")
             content.appendCodeblock(docs.syntax.join('\n'), "lmps")
-            content.appendMarkdown(await getMathMarkdown(docs.parameters, color, false) + "\n\n")
+            docs.parameters = docs.parameters.replace(RegExp('(&#160;)+','g'), '&#160;') // Remove &nbsp;
+            content.appendMarkdown(await getMathMarkdown(docs.parameters, color, false))
         }
         if (docs.examples) {
             let exmpl: string = fix_img_path(docs.examples, true, panel, context)
             exmpl = await getMathMarkdown(exmpl, color, false)
             content.appendMarkdown("### Examples: \n")
-            content.appendMarkdown(exmpl + '\n')
+            content.appendMarkdown(exmpl)
         }
         if (docs.description) {
             let full_desc: string = fix_img_path(docs.description, true, panel, context)
