@@ -27,7 +27,7 @@ jobs:
           
     - name: Download updated Docs
       run:
-        svn export https://github.com/lammps/lammps/trunk/doc/src rst --force
+        svn export https://github.com/lammps/lammps/branches/release/doc/src rst --force
 
     - name: Build Docs TS-Object
       run: |
@@ -40,11 +40,12 @@ jobs:
       run: |
         git config --global user.name 'thfriedrich'
         git config --global user.email 'thfriedrich@users.noreply.github.com'
+        git config --global pull.ff only
         git add .
         # Check if Lammps Docs were updated
         if ! [[ $(git status) == *"nothing to commit, working tree clean"* ]]; then
           git commit -m "Scheduled sync of lammps_vscode with Lammps documentation $(date +'%Y-%m-%d')"
-          git push 
+          git push
           echo "::set-env name=b_update::true" 
         else
           # Check if vscode-Lammps master branch had commits since last tag
@@ -75,6 +76,7 @@ jobs:
         echo "::set-output name=date::$(date +'%Y-%m-%d')"
         echo "::set-output name=vsix_file::$(find *.vsix)"
         echo "::set-output name=tag::$(find *.vsix | cut -d'.' -f1-3 | cut -d'-' -f2-3)"
+        echo "::set-output name=lmp_version::$(curl --silent "https://api.github.com/repos/lammps/lammps/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')"
     
     - name: Create Release
       if: env.b_update == 'true'
@@ -85,7 +87,7 @@ jobs:
       with:
         tag_name: v${{ steps.date_tag.outputs.tag }}-sync${{ steps.date_tag.outputs.date }}
         release_name: v${{ steps.date_tag.outputs.tag }} Sync Release - ${{ steps.date_tag.outputs.date }}
-        body: Scheduled synchronisation of lammps_vscode with Lammps documentation from ${{ steps.date_tag.outputs.date }} 
+        body: Scheduled synchronisation of lammps_vscode with Lammps documentation from ${{ steps.date_tag.outputs.date }}. This version corresponds to lammps release ${{ steps.date_tag.outputs.lmp_version }}.
         draft: false
         prerelease: false   
           
