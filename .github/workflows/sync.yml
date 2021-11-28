@@ -34,7 +34,19 @@ jobs:
         python3 -m pip install --upgrade pip
         pip3 install numpy
         python3 ./rst2json/rst2JSON.py
-    
+
+    - name: Build package
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      run: |
+        apt install imagemagick -sync
+        bash ./scripts/resize256.sh
+        npm install
+        npm install -g vsce
+        npm audit fix
+        npm version patch
+        vsce package
+
     - name: Push2Git
       if: ${{ success() }}
       run: |
@@ -54,23 +66,9 @@ jobs:
             echo "::set-env name=b_update::true"
           fi
         fi
-        
-    - name: Build package
-      if: env.b_update == 'true'
-      env:
-        VSCE_PAT: ${{ secrets.VSCE_PAT }}
-      run: |
-        apt install imagemagick -sync
-        bash ./scripts/resize256.sh
-        npm install
-        npm install -g vsce
-        npm audit fix
-        npm version patch
-        vsce package
-        git push
-        
+              
     - name: Get Tag and Date
-      if: env.b_update == 'true'
+      if: env.b_update == 'true' && ${{ success() }}
       id: date_tag
       run: | 
         echo "::set-output name=date::$(date +'%Y-%m-%d')"
@@ -79,7 +77,7 @@ jobs:
         echo "::set-output name=lmp_version::$(curl --silent "https://api.github.com/repos/lammps/lammps/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')"
     
     - name: Create Release
-      if: env.b_update == 'true'
+      if: env.b_update == 'true' && ${{ success() }}
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -92,7 +90,7 @@ jobs:
         prerelease: false   
           
     - name: Publish2GitHub
-      if: env.b_update == 'true'
+      if: env.b_update == 'true' && ${{ success() }}
       uses: skx/github-action-publish-binaries@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -101,7 +99,7 @@ jobs:
         args: ${{ steps.date_tag.outputs.vsix_file }}
 
     - name: Publish2Marketplace
-      if: env.b_update == 'true'
+      if: env.b_update == 'true' && ${{ success() }}
       run: vsce publish
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
