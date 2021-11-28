@@ -234,7 +234,7 @@ window.onload = function () {
                     sys_bars.appendChild(tbl)
 
                     var headerM = document.createElement('h4')
-                    headerM.appendChild(document.createTextNode('Memory'))
+                    headerM.appendChild(document.createTextNode('Memory ' + ev_data['tot_mem'].toFixed(2) + 'GB'))
                     sys_bars.appendChild(headerM)
 
                     var tblM = document.createElement("table");
@@ -345,6 +345,7 @@ window.onload = function () {
         var util_row = document.createElement("tr");
         var util_label_cell = document.createElement("td");
         util_label_cell.appendChild(document.createTextNode(label_str))
+        util_label_cell.style.width = '1%'
         var util_bar_cell = document.createElement("td");
         var util_bar = document.createElement("progress")
         util_bar.id = bar_id

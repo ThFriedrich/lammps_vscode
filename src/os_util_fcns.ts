@@ -54,12 +54,13 @@ export function get_gpu_stat(): Promise<{ gpu_util: number[], gpu_mem: number[] 
     })
 }
 
-export async function get_cpu_info(): Promise<{ n_cpu: number, mod_cpu: string } | void> {
+export async function get_cpu_info(): Promise<{ n_cpu: number, mod_cpu: string, tot_mem: number } | void> {
 
     const n_cpu: number = osu.cpu.count()
     const mod_cpu: string = osu.cpu.model()
+    const tot_mem: number = osu.mem.totalMem()/(1024**3) // convert to GB
 
-    return { n_cpu: n_cpu, mod_cpu: mod_cpu };
+    return { n_cpu: n_cpu, mod_cpu: mod_cpu, tot_mem: tot_mem };
 
 }
 
