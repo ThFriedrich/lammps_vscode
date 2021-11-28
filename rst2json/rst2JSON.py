@@ -114,7 +114,7 @@ class CMD:
             cmd_word = lines[0].split(" ")[0].strip()
             for l in lines:
                 if l.strip().split(" ")[0].strip() == cmd_word:
-                        syntaxes.append(l.strip())
+                    syntaxes.append(l.strip())
             return syntaxes
 
         blocks = self.__section2blocks__(self.__sections__[1])
@@ -198,7 +198,7 @@ class CMD:
             Returns:
                 list: [description]
             """
-            choices: string = []
+            choices: str = []
             a_type = 2
             arg_clean = re.sub(r"[\[\]\*\<\>]", "", arg)
 
@@ -206,10 +206,11 @@ class CMD:
                 # Is it the correct description for the given argument?
                 # And: Is it a level 1 argument?
                 if dscp[0].strip().split(" ")[0] == arg_clean and dscp[2] == 1:
-                    dscp_fil = re.sub(r"(one|zero)\sor\smore(\sof)?\s*","", dscp[1])
+                    dscp_fil = re.sub(
+                        r"(one|zero)\sor\smore(\sof)?\s*", "", dscp[1])
                     b_choices = re.search(  # The description contains choices?
                         r".*\s(or)\s", dscp_fil) != None
-                    if b_choices:     
+                    if b_choices:
                         choices = dscp_fil.split(' or ')
                         choices = [x.strip()  # Allow only single words and erase whitespaces
                                    # Filter out some funky cases
@@ -217,7 +218,8 @@ class CMD:
                                    if not x.__contains__("=")
                                    and not x.__contains__(" ")]
                         a_type = 3
-                        if len(choices)<=1: # Only one choice doesn't make sense...
+                        # Only one choice doesn't make sense...
+                        if len(choices) <= 1:
                             a_type = 2
                             choices = []
                     else:
@@ -243,11 +245,11 @@ class CMD:
 
         def args_AtC_commands(self, args, dscps):
             arg_ar = []
-            choices: string = []
+            choices: str = []
 
             for a in args:
                 a_clean = re.sub(r"[\[\]\*\<\>]", "", a, 8)
-                if a.startswith(('<','[')) and a.endswith((']','>')):
+                if a.startswith(('<', '[')) and a.endswith((']', '>')):
                     if a.__contains__("|"):  # Takes care of AtC commands
                         choices = a_clean.split("|")
                         a_type = 3
@@ -257,7 +259,7 @@ class CMD:
                     a_type = 1
                     choices = []
                 arg_ar.append(
-                        {"arg": a, "type": a_type, "choices": choices})
+                    {"arg": a, "type": a_type, "choices": choices})
             return arg_ar
 
         for s in self.syntax:
@@ -321,16 +323,16 @@ with open('./src/doc_obj.ts', 'w', encoding='utf-8') as f:
             groups = rst2JSON_groups.cmds_by_group(Doc.cmd_list, groups)
             cmd_count += len(Doc.cmd_list)
             json.dump({'command': Doc.cmd_list,
-                        'syntax': Doc.syntax,
-                        'args': Doc.args,
-                        'parameters': Doc.parameters,
-                        'examples': Doc.examples,
-                        'html_filename': Doc.html_filename,
-                        'short_description': Doc.short_description,
-                        'description': Doc.description,
-                        'restrictions': Doc.restrictions,
-                        'related': Doc.related},
-                        f, ensure_ascii=False, indent=4)
+                       'syntax': Doc.syntax,
+                       'args': Doc.args,
+                       'parameters': Doc.parameters,
+                       'examples': Doc.examples,
+                       'html_filename': Doc.html_filename,
+                       'short_description': Doc.short_description,
+                       'description': Doc.description,
+                       'restrictions': Doc.restrictions,
+                       'related': Doc.related},
+                      f, ensure_ascii=False, indent=4)
             f.write(",\n")
             print("passed: " + rst)
         else:
