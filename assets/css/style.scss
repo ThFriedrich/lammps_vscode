@@ -6,13 +6,23 @@
 .inner {
     position: relative;
     max-width: 1200px;
-    padding: 20px 10px;
+    padding: 5px 5px;
     margin: 0 auto;
 }
 
+#header_table {
+    padding: 20px;
+    margin: 0 auto;
+}
+
+// Hide logo on small screens
+@media screen and (max-width: 500px) { 
+    #header_left img { display: none; }  
+    }
+
 #main_content img[src$='.gif'] {
     position: relative;
-    margin: 0 auto;
+    margin: auto;
     width: 100%;
     max-width: 1200px;
     padding: 0px;
