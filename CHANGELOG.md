@@ -115,5 +115,5 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
    - node-nvidia-smi
    - node-os-utils
    - plotly.js-dist-min
-   - acorn"
+   - acorn
  - Changed documentation source in official lammps repo from 'master' to 'release'

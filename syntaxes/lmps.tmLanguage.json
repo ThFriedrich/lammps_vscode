@@ -1,7 +1,8 @@
 {
     "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     "name": "Lammps",
-    "patterns": [{
+    "patterns": [
+        {
             "include": "#comments"
         },
         {
@@ -39,7 +40,8 @@
             "name": "constant.character.escape.lmps"
         },
         "functions": {
-            "patterns": [{
+            "patterns": [
+                {
                     "name": "support.function.math_functions.lmps",
                     "match": "\\b(sqrt|exp|ln|log|abs|sin|cos|tan|asin|acos|atan|atan2|random|normal|ceil|floor|round|ramp|stagger|logfreq|logfreq2|logfreq3|stride|stride2|vdisplace|swiggle|cwiggle)(?=\\()"
                 },
@@ -62,7 +64,8 @@
             ]
         },
         "operators": {
-            "patterns": [{
+            "patterns": [
+                {
                     "name": "keyword.operator.arithmetic.lmps",
                     "match": "\\+|\\-(?![aA-zZ])|\\*|\\/|\\^|\\%|\\=\\=?|\\!\\=?|\\<[\\=\\>]?|\\>\\=?|\\&\\&|\\|[\\|\\^]"
                 },
@@ -72,7 +75,8 @@
             ]
         },
         "keywords": {
-            "patterns": [{
+            "patterns": [
+                {
                     "begin": "^\\s*compute\\s",
                     "end": "$",
                     "beginCaptures": {
@@ -80,9 +84,10 @@
                             "name": "keyword.command.general.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.command.compute.lmps",
-                            "match": "\\b(voronoi/atom|fep|force/tally|heat/flux/tally|heat/flux/virial/tally|pe/tally|pe/mol/tally|dilatation/atom|smd/plastic/strain/rate|angle/local|reduce/chunk|pe/atom|reduce|property/atom|torque/chunk|hma|smd/contact/radius|pressure/uef|pressure|temp/drude|dihedral|angle|erotate/sphere|temp/asphere|hexorder/atom|temp/uef|temp/deform|temp/deform/kk|cna/atom|heat/flux|temp/chunk|gyration/shape|dpd/atom|temp/partial|tdpd/cc/atom|improper/local|basal/atom|mliap|erotate/rigid|edpd/temp/atom|gyration|temp/com|dpd|smd/ulsph/strain/rate|sna/atom|snad/atom|snav/atom|slice|msd|smd/triangle/vertices|pe|property/local|smd/tlsph/stress|smd/tlsph/dt|smd/ulsph/stress|smd/hourglass/error|smd/tlsph/strain|sph/e/atom|stress/atom|smd/tlsph/strain/rate|ke|global/atom|temp/region/eff|body/local|erotate/sphere/atom|efield/atom|sph/t/atom|msd/chunk|xrd|chunk/spread/atom|improper|temp/body|cnp/atom|temp/region|vacf|ke/eff|smd/ulsph/num/neighs|group/group|pressure/cylinder|temp/profile|dipole/chunk|bond|pair|spin|sph/rho/atom|smd/internal/energy|chunk/atom|temp/rotate|contact/atom|ptm/atom|ke/atom|smd/ulsph/strain|displace/atom|bond/local|temp/eff|viscosity/cos|smd/ulsph/effm|temp/cs|rigid/local|ti|property/chunk|compute|coord/atom|coord/atom/kk|event/displace|fabric|temp/sphere|pair/local|plasticity/atom|ackland/atom|stress/mop|angmom/chunk|omega/chunk|centro/atom|msd/nongauss|cluster/atom|fragment/atom|smd/damage|ke/atom/eff|com|smd/plastic/strain|smd/rho|dipole|rdf|com/chunk|gyration/shape/chunk|orientorder/atom|orientorder/atom/kk|momentum|smd/tlsph/defgrad|adf|damage/atom|smd/tlsph/shape|temp/ramp|smd/vol|erotate/asphere|vcm/chunk|temp|temp/kk|temp/deform/eff|gyration/chunk|mesont|entropy/atom|smd/tlsph/num/neighs|saed|dihedral/local|ke/rigid|inertia/chunk)(?=[\\t\\s])"
+                            "match": "\\b(dpd|temp/deform/eff|smd/tlsph/dt|temp/region|ke/atom|inertia/chunk|smd/ulsph/strain|vacf|orientorder/atom|orientorder/atom/kk|angle/local|spin|mliap|temp/body|dpd/atom|cluster/atom|fragment/atom|temp/eff|efield/atom|group/group|adf|stress/atom|slice|basal/atom|gyration/shape/chunk|sph/e/atom|smd/tlsph/stress|property/atom|global/atom|sph/rho/atom|smd/tlsph/strain/rate|sph/t/atom|chunk/spread/atom|temp/com|omega/chunk|temp|temp/kk|pressure|reduce|gyration/chunk|body/local|temp/sphere|pe|damage/atom|pressure/cylinder|bond/local|temp/partial|temp/uef|entropy/atom|dilatation/atom|temp/profile|contact/atom|xrd|smd/contact/radius|smd/triangle/vertices|plasticity/atom|chunk/atom|reduce/chunk|cnp/atom|smd/ulsph/effm|centro/atom|temp/chunk|ke/rigid|hexorder/atom|temp/drude|fabric|mesont|coord/atom|coord/atom/kk|angle|smd/rho|dihedral|temp/region/eff|temp/cs|pair/local|hma|property/chunk|smd/damage|displace/atom|dipole/chunk|ackland/atom|ke|smd/vol|saed|temp/asphere|smd/plastic/strain|improper/local|gyration|fep|dipole|erotate/sphere/atom|tdpd/cc/atom|stress/mop|dihedral/local|event/displace|smd/tlsph/shape|smd/tlsph/defgrad|smd/ulsph/strain/rate|bond|smd/plastic/strain/rate|pressure/uef|viscosity/cos|rdf|smd/tlsph/strain|msd/chunk|smd/hourglass/error|temp/ramp|cna/atom|erotate/asphere|smd/ulsph/stress|voronoi/atom|heat/flux|improper|smd/internal/energy|gyration/shape|edpd/temp/atom|ke/eff|smd/tlsph/num/neighs|com/chunk|angmom/chunk|com|pe/atom|erotate/sphere|pair|smd/ulsph/num/neighs|momentum|erotate/rigid|property/local|rigid/local|torque/chunk|msd|temp/deform|temp/deform/kk|sna/atom|snad/atom|snav/atom|compute|ke/atom/eff|ti|ptm/atom|vcm/chunk|msd/nongauss|temp/rotate|force/tally|heat/flux/tally|heat/flux/virial/tally|pe/tally|pe/mol/tally)(?=[\\t\\s])"
                         },
                         {
                             "include": "$self"
@@ -97,9 +102,10 @@
                             "name": "keyword.command.general.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.style.pair_style.lmps",
-                            "match": "\\b(python|meam/sw/spline|nb3b/harmonic|eam|eam/gpu|eam/intel|eam/kk|eam/omp|eam/opt|eam/alloy|eam/alloy/gpu|eam/alloy/intel|eam/alloy/kk|eam/alloy/omp|eam/alloy/opt|eam/cd|eam/cd/old|eam/fs|eam/he|gw|lj/class2|lj/class2/gpu|lj/class2/kk|lj/class2/omp|lj/class2/coul/cut|lj/class2/coul/cut/kk|lj/class2/coul/cut/omp|lj/class2/coul/long|lj/class2/coul/long/gpu|lj/class2/coul/long/kk|lj/class2/coul/long/omp|adp|adp/omp|buck|buck/gpu|buck/intel|buck/kk|buck/omp|buck/coul/cut|buck/coul/cut/gpu|buck/coul/cut/intel|buck/coul/cut/kk|buck/coul/cut/omp|buck/coul/long|buck/coul/long/gpu|buck/coul/long/intel|buck/coul/long/kk|buck/coul/long/omp|buck/coul/msm|buck/coul/msm/omp|none|agni|agni/omp|smd/tri_surface|momb|eim|eim/omp|oxdna2/excv|oxdna2/stk|oxdna2/hbond|oxdna2/xstk|oxdna2/coaxstk|beck|beck/gpu|beck/omp|reaxff|reaxff/kk|reaxff/omp|sw|sw/gpu|sw/intel|sw/kk|sw/omp|hybrid|hybrid/kk|hybrid/overlay|hybrid/overlay/kk|hybrid/scaled|tersoff|tersoff/gpu|tersoff/intel|tersoff/kk|tersoff/omp|tersoff/table|tersoff/table/omp|lj96/cut|lj96/cut/gpu|lj96/cut/omp|soft|soft/gpu|soft/omp|smd/tlsph|mliap|coul/cut/dielectric|coul/long/dielectric|lj/cut/coul/cut/dielectric|lj/cut/coul/cut/dielectric/omp|lj/cut/coul/debye/dielectric|lj/cut/coul/long/dielectric|lj/cut/coul/long/dielectric/omp|lj/cut/coul/msm/dielectric|pair_style|dpd/ext|drip|polymorphic|sph/idealgas|kolmogorov/crespi/full|zbl|zbl/gpu|zbl/kk|zbl/omp|coul/slater|coul/slater/cut|smd/ulsph|lj/cubic|lj/cubic/gpu|lj/cubic/omp|table|table/gpu|table/kk|table/omp|awpmd/cut|spin/neel|tersoff/mod|tersoff/mod/gpu|tersoff/mod/kk|tersoff/mod/omp|tersoff/mod/c|tersoff/mod/c/omp|multi/lucy/rx|multi/lucy/rx/kk|lebedeva/z|kolmogorov/crespi/z|local/density|multi/lucy|tracker|born/coul/dsf/cs|born/coul/long/cs|born/coul/long/cs/gpu|born/coul/wolf/cs|born/coul/wolf/cs/gpu|buck/coul/long/cs|coul/long/cs|coul/long/cs/gpu|coul/wolf/cs|lj/cut/coul/long/cs|mie/cut|mie/cut/gpu|coul/cut|coul/cut/gpu|coul/cut/kk|coul/cut/omp|coul/debye|coul/debye/gpu|coul/debye/kk|coul/debye/omp|coul/dsf|coul/dsf/gpu|coul/dsf/kk|coul/dsf/omp|coul/exclude|coul/cut/global|coul/cut/omp/global|coul/long|coul/long/omp|coul/long/kk|coul/long/gpu|coul/msm|coul/msm/omp|coul/streitz|coul/wolf|coul/wolf/kk|coul/wolf/omp|tip4p/cut|tip4p/cut/omp|tip4p/long|tip4p/long/omp|lj/sdk|lj/sdk/gpu|lj/sdk/kk|lj/sdk/omp|lj/sdk/coul/long|lj/sdk/coul/long/gpu|lj/sdk/coul/long/omp|lj/sdk/coul/msm|lj/sdk/coul/msm/omp|sph/rhosum|edip|edip/omp|edip/multi|nm/cut|nm/cut/omp|nm/cut/coul/cut|nm/cut/coul/cut/omp|nm/cut/coul/long|nm/cut/coul/long/omp|table/rx|table/rx/kk|coul/shield|sdpd/taitwater/isothermal|smd/hertz|dpd|dpd/gpu|dpd/intel|dpd/omp|dpd/tstat|dpd/tstat/gpu|dpd/tstat/omp|gran/hooke|gran/hooke/omp|gran/hooke/history|gran/hooke/history/omp|gran/hooke/history/kk|gran/hertz/history|gran/hertz/history/omp|peri/pmb|peri/pmb/omp|peri/lps|peri/lps/omp|peri/ves|hbond/dreiding/lj|hbond/dreiding/lj/omp|hbond/dreiding/morse|hbond/dreiding/morse/omp|hdnnp|mesont/tpm|edpd|mdpd|mdpd/rhosum|morse|morse/gpu|morse/omp|morse/opt|morse/kk|morse/smooth/linear|morse/smooth/linear/omp|srp|spin/dmi|cosine/squared|oxrna2/excv|oxrna2/stk|oxrna2/hbond|oxrna2/xstk|oxrna2/coaxstk|eff/cut|gauss|gauss/gpu|gauss/omp|gauss/cut|gauss/cut/omp|wf/cut|extep|lj/gromacs|lj/gromacs/gpu|lj/gromacs/kk|lj/gromacs/omp|lj/gromacs/coul/gromacs|lj/gromacs/coul/gromacs/kk|lj/gromacs/coul/gromacs/omp|lj/smooth/linear|lj/smooth/linear/omp|atm|buck6d/coul/gauss/dsf|snap|snap/kk|vashishta|vashishta/gpu|vashishta/omp|vashishta/kk|vashishta/table|vashishta/table/omp|lj/cut/tip4p/cut|lj/cut/tip4p/cut/omp|lj/cut/tip4p/long|lj/cut/tip4p/long/gpu|lj/cut/tip4p/long/omp|lj/cut/tip4p/long/opt|line/lj|lubricateU|gayberne|gayberne/gpu|gayberne/intel|gayberne/omp|lj/cut/soft|lj/cut/soft/omp|lj/cut/coul/cut/soft|lj/cut/coul/cut/soft/omp|lj/cut/coul/long/soft|lj/cut/coul/long/soft/omp|lj/cut/tip4p/long/soft|lj/cut/tip4p/long/soft/omp|lj/charmm/coul/long/soft|lj/charmm/coul/long/soft/omp|lj/class2/soft|lj/class2/coul/cut/soft|lj/class2/coul/long/soft|coul/cut/soft|coul/cut/soft/omp|coul/long/soft|coul/long/soft/omp|tip4p/long/soft|tip4p/long/soft/omp|morse/soft|lj/cut|lj/cut/gpu|lj/cut/intel|lj/cut/kk|lj/cut/opt|lj/cut/omp|coul/tt|lj/mdf|buck/mdf|yukawa|yukawa/gpu|yukawa/omp|yukawa/kk|tersoff/zbl|tersoff/zbl/gpu|tersoff/zbl/kk|tersoff/zbl/omp|lj/switch3/coulgauss/long|colloid|colloid/gpu|colloid/omp|airebo|airebo/intel|airebo/omp|airebo/morse|airebo/morse/intel|airebo/morse/omp|rebo|rebo/intel|rebo/omp|tri/lj|resquared|resquared/gpu|resquared/omp|sph/taitwater/morris|meam|lj/charmm/coul/charmm|lj/charmm/coul/charmm/gpu|lj/charmm/coul/charmm/intel|lj/charmm/coul/charmm/kk|lj/charmm/coul/charmm/omp|lj/charmm/coul/charmm/implicit|lj/charmm/coul/charmm/implicit/kk|lj/charmm/coul/charmm/implicit/omp|lj/charmm/coul/long|lj/charmm/coul/long/gpu|lj/charmm/coul/long/intel|lj/charmm/coul/long/kk|lj/charmm/coul/long/opt|lj/charmm/coul/long/omp|lj/charmm/coul/msm|lj/charmm/coul/msm/omp|lj/charmmfsw/coul/charmmfsh|rann|comb|comb/omp|comb3|spin/dipole/cut|spin/exchange|born|born/omp|born/gpu|born/coul/long|born/coul/long/gpu|born/coul/long/omp|born/coul/msm|born/coul/msm/omp|born/coul/wolf|born/coul/wolf/gpu|born/coul/wolf/omp|born/coul/dsf|oxdna/excv|oxdna/stk|oxdna/hbond|oxdna/xstk|dsmc|kim|thole|lj/cut/thole/long|lj/cut/thole/long/omp|lj/long/coul/long|lj/long/coul/long/intel|lj/long/coul/long/omp|lj/long/coul/long/opt|lj/long/tip4p/long|lj/long/tip4p/long/omp|exp6/rx|exp6/rx/kk|body/nparticle|e3b|lcbop|lj/cut/coul/cut|lj/cut/coul/cut/gpu|lj/cut/coul/cut/kk|lj/cut/coul/cut/omp|lj/cut/coul/debye|lj/cut/coul/debye/gpu|lj/cut/coul/debye/kk|lj/cut/coul/debye/omp|lj/cut/coul/dsf|lj/cut/coul/dsf/gpu|lj/cut/coul/dsf/kk|lj/cut/coul/dsf/omp|lj/cut/coul/long|lj/cut/coul/long/gpu|lj/cut/coul/long/kk|lj/cut/coul/long/intel|lj/cut/coul/long/opt|lj/cut/coul/long/omp|lj/cut/coul/msm|lj/cut/coul/msm/gpu|lj/cut/coul/msm/omp|lj/cut/coul/wolf|lj/cut/coul/wolf/omp|list|body/rounded/polygon|zero|brownian|brownian/omp|brownian/poly|brownian/poly/omp|granular|mesocnt|lubricate|lubricate/omp|lubricate/poly|lubricate/poly/omp|quip|ilp/graphene/hbn|sph/taitwater|smtbq|meam/spline|meam/spline/omp|spin/magelec|ufm|ufm/gpu|ufm/omp|ufm/opt|pace|bop|sph/lj|coul/diel|coul/diel/omp|lj/expand|lj/expand/gpu|lj/expand/kk|lj/expand/omp|lj/expand/coul/long|lj/expand/coul/long/gpu|lj/cut/dipole/cut|lj/cut/dipole/cut/gpu|lj/cut/dipole/cut/omp|lj/sf/dipole/sf|lj/sf/dipole/sf/gpu|lj/sf/dipole/sf/omp|lj/cut/dipole/long|lj/cut/dipole/long/gpu|lj/long/dipole/long|mgpt|sph/heatconduction|yukawa/colloid|yukawa/colloid/gpu|yukawa/colloid/omp|lj/relres|lj/relres/omp|buck/long/coul/long|buck/long/coul/long/omp|lj/smooth|lj/smooth/gpu|lj/smooth/omp|body/rounded/polyhedron|dpd/fdt|dpd/fdt/energy|dpd/fdt/energy/kk)(?=[\\t\\s])"
+                            "match": "\\b(zbl|zbl/gpu|zbl/kk|zbl/omp|tersoff/zbl|tersoff/zbl/gpu|tersoff/zbl/kk|tersoff/zbl/omp|edip|edip/omp|edip/multi|dsmc|lj/cut/soft|lj/cut/soft/omp|lj/cut/coul/cut/soft|lj/cut/coul/cut/soft/omp|lj/cut/coul/long/soft|lj/cut/coul/long/soft/omp|lj/cut/tip4p/long/soft|lj/cut/tip4p/long/soft/omp|lj/charmm/coul/long/soft|lj/charmm/coul/long/soft/omp|lj/class2/soft|lj/class2/coul/cut/soft|lj/class2/coul/long/soft|coul/cut/soft|coul/cut/soft/omp|coul/long/soft|coul/long/soft/omp|tip4p/long/soft|tip4p/long/soft/omp|morse/soft|meam|brownian|brownian/omp|brownian/poly|brownian/poly/omp|sph/heatconduction|smd/ulsph|kolmogorov/crespi/z|sph/taitwater|peri/pmb|peri/pmb/omp|peri/lps|peri/lps/omp|peri/ves|lj/mdf|buck/mdf|smd/tlsph|lj/charmm/coul/charmm|lj/charmm/coul/charmm/gpu|lj/charmm/coul/charmm/intel|lj/charmm/coul/charmm/kk|lj/charmm/coul/charmm/omp|lj/charmm/coul/charmm/implicit|lj/charmm/coul/charmm/implicit/kk|lj/charmm/coul/charmm/implicit/omp|lj/charmm/coul/long|lj/charmm/coul/long/gpu|lj/charmm/coul/long/intel|lj/charmm/coul/long/kk|lj/charmm/coul/long/opt|lj/charmm/coul/long/omp|lj/charmm/coul/msm|lj/charmm/coul/msm/omp|lj/charmmfsw/coul/charmmfsh|ufm|ufm/gpu|ufm/omp|ufm/opt|snap|snap/kk|sph/rhosum|oxdna2/excv|oxdna2/stk|oxdna2/hbond|oxdna2/xstk|oxdna2/coaxstk|tri/lj|quip|multi/lucy/rx|multi/lucy/rx/kk|body/nparticle|colloid|colloid/gpu|colloid/omp|beck|beck/gpu|beck/omp|kolmogorov/crespi/full|meam/sw/spline|table|table/gpu|table/kk|table/omp|wf/cut|edpd|mdpd|mdpd/rhosum|lj/switch3/coulgauss/long|mesocnt|lj/smooth|lj/smooth/gpu|lj/smooth/omp|reaxff|reaxff/kk|reaxff/omp|none|polymorphic|mliap|coul/tt|lj/cut|lj/cut/gpu|lj/cut/intel|lj/cut/kk|lj/cut/opt|lj/cut/omp|awpmd/cut|sph/lj|yukawa/colloid|yukawa/colloid/gpu|yukawa/colloid/omp|lj/gromacs|lj/gromacs/gpu|lj/gromacs/kk|lj/gromacs/omp|lj/gromacs/coul/gromacs|lj/gromacs/coul/gromacs/kk|lj/gromacs/coul/gromacs/omp|buck|buck/gpu|buck/intel|buck/kk|buck/omp|buck/coul/cut|buck/coul/cut/gpu|buck/coul/cut/intel|buck/coul/cut/kk|buck/coul/cut/omp|buck/coul/long|buck/coul/long/gpu|buck/coul/long/intel|buck/coul/long/kk|buck/coul/long/omp|buck/coul/msm|buck/coul/msm/omp|spin/exchange|tracker|lj/expand|lj/expand/gpu|lj/expand/kk|lj/expand/omp|lj/expand/coul/long|lj/expand/coul/long/gpu|yukawa|yukawa/gpu|yukawa/omp|yukawa/kk|gw|gran/hooke|gran/hooke/omp|gran/hooke/history|gran/hooke/history/omp|gran/hooke/history/kk|gran/hertz/history|gran/hertz/history/omp|lj/smooth/linear|lj/smooth/linear/omp|coul/diel|coul/diel/omp|vashishta|vashishta/gpu|vashishta/omp|vashishta/kk|vashishta/table|vashishta/table/omp|bop|coul/cut/dielectric|coul/long/dielectric|lj/cut/coul/cut/dielectric|lj/cut/coul/cut/dielectric/omp|lj/cut/coul/debye/dielectric|lj/cut/coul/long/dielectric|lj/cut/coul/long/dielectric/omp|lj/cut/coul/msm/dielectric|lj/relres|lj/relres/omp|drip|eim|eim/omp|table/rx|table/rx/kk|rann|list|buck6d/coul/gauss/dsf|lj/sdk|lj/sdk/gpu|lj/sdk/kk|lj/sdk/omp|lj/sdk/coul/long|lj/sdk/coul/long/gpu|lj/sdk/coul/long/omp|lj/sdk/coul/msm|lj/sdk/coul/msm/omp|lubricate|lubricate/omp|lubricate/poly|lubricate/poly/omp|cosine/squared|mesont/tpm|resquared|resquared/gpu|resquared/omp|spin/neel|coul/shield|airebo|airebo/intel|airebo/omp|airebo/morse|airebo/morse/intel|airebo/morse/omp|rebo|rebo/intel|rebo/omp|local/density|lubricateU|sw|sw/gpu|sw/intel|sw/kk|sw/omp|eam|eam/gpu|eam/intel|eam/kk|eam/omp|eam/opt|eam/alloy|eam/alloy/gpu|eam/alloy/intel|eam/alloy/kk|eam/alloy/omp|eam/alloy/opt|eam/cd|eam/cd/old|eam/fs|eam/he|oxrna2/excv|oxrna2/stk|oxrna2/hbond|oxrna2/xstk|oxrna2/coaxstk|comb|comb/omp|comb3|e3b|atm|sph/idealgas|lj/cubic|lj/cubic/gpu|lj/cubic/omp|soft|soft/gpu|soft/omp|agni|agni/omp|pace|nb3b/harmonic|tersoff|tersoff/gpu|tersoff/intel|tersoff/kk|tersoff/omp|tersoff/table|tersoff/table/omp|spin/dipole/cut|lj/class2|lj/class2/gpu|lj/class2/kk|lj/class2/omp|lj/class2/coul/cut|lj/class2/coul/cut/kk|lj/class2/coul/cut/omp|lj/class2/coul/long|lj/class2/coul/long/gpu|lj/class2/coul/long/kk|lj/class2/coul/long/omp|oxdna/excv|oxdna/stk|oxdna/hbond|oxdna/xstk|pair_style|body/rounded/polygon|eff/cut|hbond/dreiding/lj|hbond/dreiding/lj/omp|hbond/dreiding/morse|hbond/dreiding/morse/omp|smtbq|granular|body/rounded/polyhedron|born|born/omp|born/gpu|born/coul/long|born/coul/long/gpu|born/coul/long/omp|born/coul/msm|born/coul/msm/omp|born/coul/wolf|born/coul/wolf/gpu|born/coul/wolf/omp|born/coul/dsf|born/coul/dsf/cs|born/coul/long/cs|born/coul/long/cs/gpu|born/coul/wolf/cs|born/coul/wolf/cs/gpu|buck/coul/long/cs|coul/long/cs|coul/long/cs/gpu|coul/wolf/cs|lj/cut/coul/long/cs|dpd|dpd/gpu|dpd/intel|dpd/omp|dpd/tstat|dpd/tstat/gpu|dpd/tstat/omp|gauss|gauss/gpu|gauss/omp|gauss/cut|gauss/cut/omp|extep|ilp/graphene/hbn|nm/cut|nm/cut/omp|nm/cut/coul/cut|nm/cut/coul/cut/omp|nm/cut/coul/long|nm/cut/coul/long/omp|spin/dmi|lj/long/coul/long|lj/long/coul/long/intel|lj/long/coul/long/omp|lj/long/coul/long/opt|lj/long/tip4p/long|lj/long/tip4p/long/omp|meam/spline|meam/spline/omp|python|smd/hertz|thole|lj/cut/thole/long|lj/cut/thole/long/omp|lj/cut/tip4p/cut|lj/cut/tip4p/cut/omp|lj/cut/tip4p/long|lj/cut/tip4p/long/gpu|lj/cut/tip4p/long/omp|lj/cut/tip4p/long/opt|exp6/rx|exp6/rx/kk|smd/tri_surface|buck/long/coul/long|buck/long/coul/long/omp|lj96/cut|lj96/cut/gpu|lj96/cut/omp|mie/cut|mie/cut/gpu|adp|adp/omp|mgpt|lcbop|morse|morse/gpu|morse/omp|morse/opt|morse/kk|morse/smooth/linear|morse/smooth/linear/omp|coul/slater|coul/slater/cut|momb|lebedeva/z|zero|lj/cut/coul/cut|lj/cut/coul/cut/gpu|lj/cut/coul/cut/kk|lj/cut/coul/cut/omp|lj/cut/coul/debye|lj/cut/coul/debye/gpu|lj/cut/coul/debye/kk|lj/cut/coul/debye/omp|lj/cut/coul/dsf|lj/cut/coul/dsf/gpu|lj/cut/coul/dsf/kk|lj/cut/coul/dsf/omp|lj/cut/coul/long|lj/cut/coul/long/gpu|lj/cut/coul/long/kk|lj/cut/coul/long/intel|lj/cut/coul/long/opt|lj/cut/coul/long/omp|lj/cut/coul/msm|lj/cut/coul/msm/gpu|lj/cut/coul/msm/omp|lj/cut/coul/wolf|lj/cut/coul/wolf/omp|hdnnp|spin/magelec|kim|sdpd/taitwater/isothermal|srp|sph/taitwater/morris|lj/cut/dipole/cut|lj/cut/dipole/cut/gpu|lj/cut/dipole/cut/omp|lj/sf/dipole/sf|lj/sf/dipole/sf/gpu|lj/sf/dipole/sf/omp|lj/cut/dipole/long|lj/cut/dipole/long/gpu|lj/long/dipole/long|tersoff/mod|tersoff/mod/gpu|tersoff/mod/kk|tersoff/mod/omp|tersoff/mod/c|tersoff/mod/c/omp|dpd/fdt|dpd/fdt/energy|dpd/fdt/energy/kk|dpd/ext|coul/cut|coul/cut/gpu|coul/cut/kk|coul/cut/omp|coul/debye|coul/debye/gpu|coul/debye/kk|coul/debye/omp|coul/dsf|coul/dsf/gpu|coul/dsf/kk|coul/dsf/omp|coul/exclude|coul/cut/global|coul/cut/omp/global|coul/long|coul/long/omp|coul/long/kk|coul/long/gpu|coul/msm|coul/msm/omp|coul/streitz|coul/wolf|coul/wolf/kk|coul/wolf/omp|tip4p/cut|tip4p/cut/omp|tip4p/long|tip4p/long/omp|multi/lucy|line/lj|gayberne|gayberne/gpu|gayberne/intel|gayberne/omp|hybrid|hybrid/kk|hybrid/overlay|hybrid/overlay/kk|hybrid/scaled)(?=[\\t\\s])"
                         },
                         {
                             "include": "$self"
@@ -114,9 +120,10 @@
                             "name": "keyword.command.general.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.style.bond_style.lmps",
-                            "match": "\\b(quartic|quartic/omp|none|zero|harmonic|harmonic/intel|harmonic/kk|harmonic/omp|oxdna/fene|oxdna2/fene|gromos|gromos/omp|hybrid|special|fene/expand|fene/expand/omp|morse|morse/omp|harmonic/shift/cut|harmonic/shift/cut/omp|gaussian|table|table/omp|fene|fene/intel|fene/kk|fene/omp|harmonic/shift|harmonic/shift/omp|mm3|class2|class2/omp|class2/kk|bond_style|nonlinear|nonlinear/omp)(?=[\\t\\s])"
+                            "match": "\\b(table|table/omp|class2|class2/omp|class2/kk|bond_style|mm3|harmonic|harmonic/intel|harmonic/kk|harmonic/omp|harmonic/shift|harmonic/shift/omp|fene/expand|fene/expand/omp|zero|gaussian|nonlinear|nonlinear/omp|hybrid|gromos|gromos/omp|morse|morse/omp|quartic|quartic/omp|none|fene|fene/intel|fene/kk|fene/omp|special|harmonic/shift/cut|harmonic/shift/cut/omp|oxdna/fene|oxdna2/fene)(?=[\\t\\s])"
                         },
                         {
                             "include": "$self"
@@ -131,9 +138,10 @@
                             "name": "keyword.command.general.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.style.angle_style.lmps",
-                            "match": "\\b(cross|fourier/simple|fourier/simple/omp|hybrid|angle_style|dipole|dipole/omp|quartic|quartic/omp|sdk|sdk/omp|fourier|fourier/omp|zero|cosine/squared|cosine/squared/omp|cosine/buck6d|cosine/shift|cosine/shift/omp|cosine/periodic|cosine/periodic/omp|mm3|class2|class2/kk|class2/omp|class2/p6|gaussian|cosine/shift/exp|cosine/shift/exp/omp|table|table/omp|cosine|cosine/omp|cosine/kk|none|cosine/delta|cosine/delta/omp|charmm|charmm/intel|charmm/kk|charmm/omp|harmonic|harmonic/intel|harmonic/kk|harmonic/omp)(?=[\\t\\s])"
+                            "match": "\\b(class2|class2/kk|class2/omp|class2/p6|angle_style|cosine/buck6d|quartic|quartic/omp|fourier/simple|fourier/simple/omp|cosine/periodic|cosine/periodic/omp|hybrid|dipole|dipole/omp|sdk|sdk/omp|cosine/delta|cosine/delta/omp|table|table/omp|charmm|charmm/intel|charmm/kk|charmm/omp|cosine/shift|cosine/shift/omp|cosine|cosine/omp|cosine/kk|gaussian|cosine/shift/exp|cosine/shift/exp/omp|harmonic|harmonic/intel|harmonic/kk|harmonic/omp|cosine/squared|cosine/squared/omp|none|cross|mm3|zero|fourier|fourier/omp)(?=[\\t\\s])"
                         },
                         {
                             "include": "$self"
@@ -148,9 +156,10 @@
                             "name": "keyword.command.general.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.style.dihedral_style.lmps",
-                            "match": "\\b(none|nharmonic|nharmonic/omp|hybrid|quadratic|quadratic/omp|zero|multi/harmonic|multi/harmonic/omp|fourier|fourier/intel|fourier/omp|spherical|dihedral_style|opls|opls/intel|opls/kk|opls/omp|harmonic|harmonic/intel|harmonic/kk|harmonic/omp|cosine/shift/exp|cosine/shift/exp/omp|table|table/omp|table/cut|class2|class2/omp|class2/kk|charmm|charmm/intel|charmm/kk|charmm/omp|charmmfsw|helix|helix/omp)(?=[\\t\\s])"
+                            "match": "\\b(spherical|dihedral_style|helix|helix/omp|charmm|charmm/intel|charmm/kk|charmm/omp|charmmfsw|cosine/shift/exp|cosine/shift/exp/omp|multi/harmonic|multi/harmonic/omp|hybrid|zero|harmonic|harmonic/intel|harmonic/kk|harmonic/omp|opls|opls/intel|opls/kk|opls/omp|none|class2|class2/omp|class2/kk|table|table/omp|table/cut|fourier|fourier/intel|fourier/omp|nharmonic|nharmonic/omp|quadratic|quadratic/omp)(?=[\\t\\s])"
                         },
                         {
                             "include": "$self"
@@ -165,9 +174,10 @@
                             "name": "keyword.command.general.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.style.improper_style.lmps",
-                            "match": "\\b(hybrid|none|cossq|cossq/omp|sqdistharm|harmonic|harmonic/intel|harmonic/kk|harmonic/omp|zero|improper_style|inversion/harmonic|distharm|cvff|cvff/intel|cvff/omp|umbrella|umbrella/omp|distance|fourier|fourier/omp|class2|class2/omp|class2/kk|ring|ring/omp)(?=[\\t\\s])"
+                            "match": "\\b(zero|ring|ring/omp|improper_style|cvff|cvff/intel|cvff/omp|harmonic|harmonic/intel|harmonic/kk|harmonic/omp|distharm|sqdistharm|class2|class2/omp|class2/kk|inversion/harmonic|hybrid|umbrella|umbrella/omp|distance|fourier|fourier/omp|none|cossq|cossq/omp)(?=[\\t\\s])"
                         },
                         {
                             "include": "$self"
@@ -182,9 +192,10 @@
                             "name": "keyword.command.general.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.command.dump.lmps",
-                            "match": "\\b(image|vtk|dump|netcdf|atom/adios|cfg/uef|h5md|molfile)(?=[\\t\\s])"
+                            "match": "\\b(h5md|cfg/uef|netcdf|atom/adios|image|molfile|dump|vtk)(?=[\\t\\s])"
                         },
                         {
                             "include": "$self"
@@ -199,9 +210,10 @@
                             "name": "keyword.command.general.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.command.fix.lmps",
-                            "match": "\\b(rx|rx/kk|lb/pc|ave/correlate/long|filter/corotate|mdi/engine|ave/histo|npt/asphere|npt/asphere/omp|msst|controller|nve/body|dt/reset|hyper/global|ave/time|shardlow|shardlow/kk|polarize/bem/gmres|polarize/bem/icc|smd/integrate_ulsph|npt/sphere|npt/sphere/omp|bond/create|recenter|qeq/reaxff|qeq/reaxff/kk|qeq/reaxff/omp|heat|charge/regulation|press/berendsen|pair/tracker|nve/spin|langevin/drude|colvars|python/invoke|nvt/eff|npt/eff|manifoldforce|smd|ipi|viscosity|smd/setvel|wall/reflect/stochastic|setforce|setforce/kk|setforce/spin|plumed|freeze|freeze/kk|tune/kspace|dpd/energy|dpd/energy/kk|precession/spin|nvt/sllod|nvt/sllod/intel|nvt/sllod/omp|nvt/sllod/kk|nvt/uef|smd/move_tri_surf|ti/spring|aveforce|grem|wall/body/polygon|spring|ave/atom|propel/self|reaxff/bonds|reaxff/bonds/kk|append/atoms|thermal/conductivity|adapt/fep|ttm|ttm/grid|nph/sphere|nph/sphere/omp|nvt/body|langevin|langevin/kk|wall/ees|balance|pimd|momentum|momentum/kk|momentum/chunk|lb/viscous|lb/momentum|lineforce|brownian|brownian/sphere|wall/lj93|wall/lj93/kk|wall/lj126|wall/lj1043|wall/colloid|wall/harmonic|store/state|vector|nve/limit|langevin/eff|temp/rescale|nvt|nvt/gpu|nvt/intel|nvt/kk|nvt/omp|npt|npt/gpu|npt/intel|npt/kk|npt/omp|nph|nph/kk|nph/omp|oneway|nph/body|spring/self|meso/move|wall/body/polyhedron|bocs|adapt|evaporate|acks2/reaxff|acks2/reaxff/kk|rigid|rigid/omp|rigid/nve|rigid/nve/omp|rigid/nvt|rigid/nvt/omp|rigid/npt|rigid/npt/omp|rigid/nph|rigid/nph/omp|rigid/small|rigid/small/omp|rigid/nve/small|rigid/nvt/small|rigid/npt/small|lb/fluid|imd|smd/integrate_tlsph|npt/body|edpd/source|planeforce|drude|cmap|enforce2d|enforce2d/kk|wall/gran/region|addforce|wall/gran|rhok|client/md|nvt/manifold/rattle|nve/dot|reaxff/species|reaxff/species/kk|qeq/point|qeq/shielded|qeq/slater|qeq/dynamic|tmd|mvv/dpd|mvv/edpd|lb/rigid/pc/sphere|nve/asphere/noforce|spring/chunk|property/atom|property/atom/kk|bond/break|wall/region|nve/line|viscous|gle|wall/piston|mscg|nvt/sllod/eff|shake|shake/kk|rattle|pour|move|nvt/asphere|nvt/asphere/omp|nve/tri|efield|sph/stationary|phonon|orient/fcc|eos/table|restrain|tgnvt/drude|qbmsst|temp/berendsen|npt/cauchy|nve/dotc/langevin|pafi|box/relax|halt|qtb|nve/awpmd|fix|gld|deposit|external|widom|langevin/spin|qeq/comb|qeq/comb/omp|deform|deform/kk|srd|nvt/sphere|nvt/sphere/omp|gcmc|electron/stopping|neb/spin|flow/gauss|temp/csvr|nve/eff|bond/react|numdiff|indent|drag|rigid/meso|ehex|print|spring/rg|smd/adjust_dt|sph|saed/vtk|qmmm|nphug|nphug/omp|ffl|ave/chunk|nve/manifold/rattle|accelerate/cos|wall/reflect|wall/reflect/kk|temp/rescale/eff|ave/correlate|store/force|nve/sphere|nve/sphere/omp|nve/sphere/kk|poems|python/move|nve|nve/gpu|nve/intel|nve/kk|nve/omp|nve/asphere|nve/asphere/gpu|nve/asphere/intel|eos/cv|neb|hyper/local|atom/swap|latte|atc|tfmc|nph/asphere|nph/asphere/omp|nve/noforce|bond/swap|drude/transform/direct|addtorque|gravity|gravity/omp|gravity/kk|smd/wall_surface|wall/srd|eos/table/rx|eos/table/rx/kk|mol/swap|nvk)(?=[\\t\\s])"
+                            "match": "\\b(smd/integrate_ulsph|smd/adjust_dt|saed/vtk|langevin/drude|sph|mol/swap|wall/piston|nvt/uef|imd|qmmm|nve/eff|recenter|drude|nph/sphere|nph/sphere/omp|atc|npt/cauchy|move|bond/react|ave/time|langevin|langevin/kk|nph/asphere|nph/asphere/omp|bocs|electron/stopping|brownian|brownian/sphere|lineforce|pair/tracker|ave/histo|rhok|pour|wall/ees|qeq/comb|qeq/comb/omp|eos/table/rx|eos/table/rx/kk|edpd/source|nve/body|qbmsst|nvk|nve/tri|lb/pc|lb/momentum|freeze|freeze/kk|hyper/local|tfmc|append/atoms|spring/rg|wall/body/polygon|precession/spin|nvt/eff|npt/eff|indent|planeforce|viscous|property/atom|property/atom/kk|langevin/spin|addtorque|python/move|aveforce|flow/gauss|vector|meso/move|spring|latte|viscosity|nve/asphere/noforce|nve/spin|smd/wall_surface|nve/asphere|nve/asphere/gpu|nve/asphere/intel|atom/swap|wall/srd|lb/fluid|qeq/reaxff|qeq/reaxff/kk|qeq/reaxff/omp|propel/self|rigid/meso|gcmc|temp/berendsen|ave/correlate/long|bond/create|nvt/manifold/rattle|press/berendsen|restrain|wall/gran|adapt|bond/swap|nve/manifold/rattle|shake|shake/kk|rattle|accelerate/cos|print|adapt/fep|spring/self|python/invoke|filter/corotate|ttm|ttm/grid|store/force|nve/sphere|nve/sphere/omp|nve/sphere/kk|nvt/asphere|nvt/asphere/omp|temp/rescale|nve/line|pafi|numdiff|enforce2d|enforce2d/kk|gravity|gravity/omp|gravity/kk|balance|polarize/bem/gmres|polarize/bem/icc|ave/chunk|nvt/body|wall/reflect/stochastic|widom|temp/csvr|nvt/sphere|nvt/sphere/omp|eos/table|grem|external|efield|sph/stationary|momentum|momentum/kk|momentum/chunk|wall/reflect|wall/reflect/kk|oneway|qeq/point|qeq/shielded|qeq/slater|qeq/dynamic|smd/move_tri_surf|manifoldforce|npt/body|msst|nve/noforce|mvv/dpd|mvv/edpd|client/md|neb|rx|rx/kk|ehex|store/state|spring/chunk|thermal/conductivity|deform|deform/kk|npt/asphere|npt/asphere/omp|ipi|nvt/sllod|nvt/sllod/intel|nvt/sllod/omp|nvt/sllod/kk|gle|nve/awpmd|gld|wall/gran/region|heat|ffl|wall/lj93|wall/lj93/kk|wall/lj126|wall/lj1043|wall/colloid|wall/harmonic|wall/region|cmap|nve/dotc/langevin|nph/body|lb/rigid/pc/sphere|qtb|pimd|temp/rescale/eff|controller|tmd|dt/reset|dpd/energy|dpd/energy/kk|langevin/eff|setforce|setforce/kk|setforce/spin|tgnvt/drude|addforce|drude/transform/direct|ave/atom|mdi/engine|bond/break|deposit|tune/kspace|ti/spring|rigid|rigid/omp|rigid/nve|rigid/nve/omp|rigid/nvt|rigid/nvt/omp|rigid/npt|rigid/npt/omp|rigid/nph|rigid/nph/omp|rigid/small|rigid/small/omp|rigid/nve/small|rigid/nvt/small|rigid/npt/small|smd|smd/integrate_tlsph|shardlow|shardlow/kk|eos/cv|acks2/reaxff|acks2/reaxff/kk|reaxff/species|reaxff/species/kk|plumed|nve/limit|charge/regulation|npt/sphere|npt/sphere/omp|poems|evaporate|nphug|nphug/omp|mscg|nve/dot|hyper/global|ave/correlate|fix|lb/viscous|orient/fcc|colvars|nvt/sllod/eff|reaxff/bonds|reaxff/bonds/kk|nve|nve/gpu|nve/intel|nve/kk|nve/omp|box/relax|wall/body/polyhedron|smd/setvel|halt|neb/spin|srd|phonon|drag|nvt|nvt/gpu|nvt/intel|nvt/kk|nvt/omp|npt|npt/gpu|npt/intel|npt/kk|npt/omp|nph|nph/kk|nph/omp)(?=[\\t\\s])"
                         },
                         {
                             "include": "$self"
@@ -216,9 +228,10 @@
                             "name": "keyword.command.general.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.command.fix_modify.lmps",
-                            "match": "\\b(scale|mass_matrix|fix_modify|atom_element_map|volume_integral|mask_direction|reset_time|source_integration|unfix_flux|remove_molecule|boundary_dynamics|write|fix_flux|read|time_integration|boundary_integral|write_restart|read_restart|exchange|create_elementset|electron_integration|contour_integral|nodeset|filter|reset_atomic_reference_positions|write_atom_weights|pair_interactions|nodeset_to_elementset|unfix|track_displacement|kernel_bandwidth|plane|localized_lambda|reference_potential_energy|momentum|remove_source|rates|decomposition|internal_element_set|create|create_nodeset|delete_elements|source|type|output|add_molecule|material|quadrature|fe_md_boundary|computes|poisson_solver|temperature_definition|equilibrium_start|sample_frequency|on_the_fly|kernel|box|fields|gradients|atom_weight|atomic_charge|thermal|internal_quadrature|remove_species|lumped_lambda_solve|initial|add_to_nodeset|fix|consistent_fe_initialization|boundary_faceset|add_species)(?=[\\t\\s])"
+                            "match": "\\b(scale|time_integration|nodeset_to_elementset|type|source_integration|boundary_integral|thermal|mass_matrix|contour_integral|sample_frequency|electron_integration|lumped_lambda_solve|boundary_dynamics|atomic_charge|fix_modify|fix|delete_elements|add_to_nodeset|create_elementset|add_species|on_the_fly|rates|write_restart|plane|fields|fix_flux|output|computes|create_nodeset|initial|reset_time|momentum|create|write|fe_md_boundary|add_molecule|kernel|track_displacement|mask_direction|temperature_definition|poisson_solver|unfix|read_restart|source|material|unfix_flux|consistent_fe_initialization|quadrature|kernel_bandwidth|localized_lambda|boundary_faceset|reference_potential_energy|filter|pair_interactions|decomposition|exchange|volume_integral|reset_atomic_reference_positions|equilibrium_start|write_atom_weights|internal_quadrature|atom_weight|gradients|read|remove_molecule|nodeset|atom_element_map|internal_element_set|remove_source|remove_species|box)(?=[\\t\\s])"
                         },
                         {
                             "include": "$self"
@@ -227,7 +240,7 @@
                 },
                 {
                     "name": "keyword.command.general.lmps",
-                    "match": "^\\s*\\b(reset_atom_ids|displace_atoms|dynamical_matrix|thermo_style|package|velocity|python|boundary|special_bonds|log|thermo|include|dump_modify|if|write_dump|tad|third_order|restart|plugin|balance|neighbor|region|kspace_style|print|bond_write|min_modify|echo|run_style|molecule|dihedral_coeff|variable|create_atoms|message|processors|atom_style|neb|temper/npt|reset_timestep|min_style spin|min_style spin/cg|pair_modify|change_box|:doc:dump vtk|:doc:dump h5md|:doc:dump molfile|:doc:dump netcdf|:doc:dump image|:doc:dump movie|:doc:dump atom/adios|dielectric|newton|box|mass|read_data|rerun|create_box|dimension|timestep|compute_modify|thermo_modify|uncompute|comm_style|info|delete_bonds|undump|run|server|hyper|atom_modify|partition|write_data|jump|timer|clear|kim|reset_mol_ids|neb/spin|angle_coeff|shell|group|prd|quit|min_style|read_dump|units|create_bonds|server md|set|unfix|server mc|delete_atoms|improper_coeff|next|label|temper|minimize|suffix|write_coeff|pair_write|pair_coeff|write_restart|group2ndx|comm_modify|replicate|read_restart|lattice|temper/grem|bond_coeff|mdi_engine|neigh_modify|kspace_modify)(?=[\\t\\s])"
+                    "match": "^\\s*\\b(info|change_box|improper_coeff|pair_coeff|variable|clear|compute_modify|log|timestep|label|special_bonds|read_data|delete_atoms|displace_atoms|create_box|timer|third_order|read_restart|print|dynamical_matrix|server mc|temper/npt|neb|write_dump|mass|neighbor|create_atoms|neb/spin|restart|read_dump|min_style spin|min_style spin/cg|package|pair_write|prd|minimize|temper|delete_bonds|reset_atom_ids|bond_write|lattice|region|python|boundary|bond_coeff|thermo_modify|min_modify|reset_timestep|include|kim|molecule|velocity|group2ndx|create_bonds|min_style|if|comm_style|pair_modify|partition|box|neigh_modify|unfix|atom_modify|dimension|dihedral_coeff|hyper|balance|set|message|rerun|units|undump|thermo_style|quit|newton|thermo|next|:doc:dump vtk|:doc:dump h5md|:doc:dump molfile|:doc:dump netcdf|:doc:dump image|:doc:dump movie|:doc:dump atom/adios|replicate|comm_modify|echo|temper/grem|shell|kspace_modify|reset_mol_ids|kspace_style|jump|run_style|server md|write_restart|run|processors|dielectric|write_coeff|atom_style|suffix|tad|plugin|uncompute|group|server|write_data|dump_modify|angle_coeff|mdi_engine)(?=[\\t\\s])"
                 },
                 {
                     "name": "keyword.k_space_solver.lmps",
@@ -257,7 +270,8 @@
                             "name": "keyword.command.general.liggghts.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.style.dump_styles.liggghts.lmps",
                             "match": "\\b(custom/vtk|image|local/gran/vtk|movie)(?=[\\t\\s])"
                         },
@@ -274,7 +288,8 @@
                             "name": "keyword.command.general.liggghts.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.command.compute.liggghts.lmps",
                             "match": "\\b(atom/molecule|bond/local|centro/atom|cluster/atom|cna/atom|com|com/molecule|contact/atom|contact/atom/gran|coord/atom|coord/gran|displace/atom|erotate|erotate/asphere|erotate/multisphere|erotate/sphere|erotate/sphere/atom|erotate/superquadric|group/group|gyration|gyration/molecule|inertia/molecule|ke|ke/atom|ke/multisphere|msd|msd/molecule|msd/nongauss|multisphere|multisphere/single|nparticles/tracer/region|pair/gran/local|pe|pe/atom|pressure|property/atom|property/local|property/molecule|rdf|reduce|reduce/region|rigid|slice|stress/atom|voronoi/atom|wall/gran/local)(?=[\\t\\s])"
                         },
@@ -291,7 +306,8 @@
                             "name": "keyword.command.general.liggghts.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.style.pair_style.liggghts.lmps",
                             "match": "\\b(bubble|gran|hybrid|hybrid/overlay|none|soft|sph/artVisc/tensCorr)(?=[\\t\\s])"
                         },
@@ -308,7 +324,8 @@
                             "name": "keyword.command.general.liggghts.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.style.bond_style.liggghts.lmps",
                             "match": "\\b(harmonic|hybrid|none)(?=[\\t\\s])"
                         },
@@ -325,7 +342,8 @@
                             "name": "keyword.command.general.liggghts.lmps"
                         }
                     },
-                    "patterns": [{
+                    "patterns": [
+                        {
                             "name": "keyword.command.fix.liggghts.lmps",
                             "match": "\\b(adapt|addforce|ave/atom|ave/correlate|ave/euler|ave/histo|ave/spatial|ave/time|aveforce|bond/break|bond/create|box/relax|buoyancy|check/timestep/gran|continuum/weighted|couple/cfd|deform|drag|dt/reset|efield|enforce2d|external|freeze|gravity|heat/gran|heat/gran/conduction|insert/pack|insert/rate/region|insert/stream|lineforce|massflow/mesh|massflow/mesh/sieve|mesh/surface|mesh/surface/planar|momentum|move|move/mesh|multicontact/halfspace|multisphere|multisphere/break|nve|nve/asphere|nve/asphere/noforce|nve/limit|nve/line|nve/noforce|nve/sphere|nve/superquadric|particledistribution/discrete|particledistribution/discrete/massbased|particledistribution/discrete/numberbased|particletemplate/multisphere|particletemplate/sphere|particletemplate/superquadric|planeforce|poems|print|property/atom|property/atom/regiontracer/time|property/atom/tracer|property/atom/tracer/stream|property/global|rigid|rigid/nph|rigid/npt|rigid/nve|rigid/nvt|rigid/small|setforce|sph/density/continuity|sph/density/corr|sph/density/summation|sph/pressure|spring|spring/rg|spring/self|store/force|store/state|viscous|wall/gran|wall/reflect|wall/region|wall/region/sph)(?=[\\t\\s])"
                         },
@@ -340,7 +358,8 @@
             "name": "string.quoted.single.lmps",
             "begin": "'",
             "end": "'",
-            "patterns": [{
+            "patterns": [
+                {
                     "name": "constant.character.escape.lmps",
                     "match": "\\\\."
                 },
@@ -359,7 +378,8 @@
             "name": "string.quoted.double.lmps",
             "begin": "\"",
             "end": "\"",
-            "patterns": [{
+            "patterns": [
+                {
                     "name": "constant.character.escape.lmps",
                     "match": "\\\\."
                 },
@@ -378,7 +398,8 @@
             ]
         },
         "strings": {
-            "patterns": [{
+            "patterns": [
+                {
                     "include": "#strings_single_quotes"
                 },
                 {
@@ -387,7 +408,8 @@
             ]
         },
         "numerics": {
-            "patterns": [{
+            "patterns": [
+                {
                     "name": "constant.numeric.lmps",
                     "match": "(?<![aA-zZ0-9])(-?[0-9]*(\\.[0-9]*)?([eE][-]?)?[0-9]+)\\b"
                 },
@@ -398,10 +420,12 @@
             ]
         },
         "variables": {
-            "patterns": [{
-                "name": "variable.parameter.lmps",
-                "match": "\\$\\w|\\${\\w+}|(\\b(v|f|c)_\\w+\\b)"
-            }]
+            "patterns": [
+                {
+                    "name": "variable.parameter.lmps",
+                    "match": "\\$\\w|\\${\\w+}|(\\b(v|f|c)_\\w+\\b)"
+                }
+            ]
         },
         "eq_brackets": {
             "begin": "\\(",
@@ -416,7 +440,8 @@
                     "name": "support.function.lmps"
                 }
             },
-            "patterns": [{
+            "patterns": [
+                {
                     "include": "#numerics"
                 },
                 {
@@ -446,7 +471,8 @@
                     "name": "variable.parameter.lmps"
                 }
             },
-            "patterns": [{
+            "patterns": [
+                {
                     "include": "#numerics"
                 },
                 {
@@ -461,7 +487,8 @@
             ]
         },
         "function_brackets": {
-            "patterns": [{
+            "patterns": [
+                {
                     "include": "#eq_brackets"
                 },
                 {
