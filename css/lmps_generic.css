@@ -1,0 +1,239 @@
+/*--------------------------/
+/                           /
+/ DOCUMENTATION TAB STYLING /
+/                           /
+/--------------------------*/
+
+body {
+    text-align: justify;
+}
+
+table {
+    width: 100%;
+    text-align: left;
+    border-collapse: collapse;
+}
+
+svg {
+    color: var(--vscode-editor-foreground);
+}
+
+table th {
+    border: var(--vscode-editor-background);
+}
+
+table td {
+    border: 1px solid var(--vscode-editor-foreground);
+    padding: 2px 4px;
+}
+
+table tr:nth-child(even) {
+    background: var(--vscode-editor-lineHighlightBackground);
+}
+
+table td:first-child {
+    white-space: nowrap;
+}
+
+blockquote {
+    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-editor-background);
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-left: 10px;
+    padding-left: 15px;
+    border-left: 2px solid var(--vscode-editor-lineHighlightBackground);
+}
+
+ul {
+    padding-inline-start: 2em;
+}
+
+/*--------------------------/
+/                           /
+/      GENERIC BUTTON       /
+/                           /
+/--------------------------*/
+
+button {
+    display: inline-block;
+    background-color: var(--vscode-button-background);
+    border: 2px var(--vscode-button-foreground);
+    color: var(--vscode-button-foreground);
+    text-align: center;
+    padding: 10px 20px;
+    margin: 14px 7px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: var(--vscode-button-hoverBackground);
+    color: var(--vscode-button-foreground);
+}
+
+button:active {
+    color: var(--vscode-button-foreground);
+    background-color: var(--vscode-button-background);
+    border: 2px dashed var(--vscode-button-hoverBackground);
+}
+
+
+/*--------------------------/
+/                           /
+/      TAB ENVIRONMENT      /
+/                           /
+/--------------------------*/
+
+
+/* Style the tab */
+
+.tab {
+    overflow: hidden;
+    border: 1px solid var(--vscode-editor-lineHighlightBackground);
+    background-color: var(--vscode-editor-lineHighlightBackground);
+    margin: 0px 10px 0px 0px;
+}
+
+
+/* Style the buttons that are used to open the tab content */
+
+.tab button {
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    margin: 1px;
+    transition: 0.5s;
+}
+
+
+/* Change background color of buttons on hover */
+
+.tab button:hover {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+
+/* Create an active/current tablink class */
+
+.tab button.active {
+    color: var(--vscode-button-secondaryForeground);
+    background-color: var(--vscode-button-secondaryBackground);
+    border: 2px dashed var(--vscode-button-hoverBackground);
+}
+
+
+/* Style the tab content */
+
+.tabcontent {
+    display: none;
+    padding: 5px 15px 15px 5px;
+    border: 1px solid var(--vscode-editor-lineHighlightBackground);
+    margin: 0px 10px 10px 0px;
+}
+
+
+/*--------------------------/
+/                           /
+/         Plot Areas        /
+/                           /
+/--------------------------*/
+
+.log_div {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column
+}
+
+
+/*--------------------------/
+/                           /
+/       Radio-Buttons       /
+/                           /
+/--------------------------*/
+
+.radio-toolbar {
+    margin: 1px 28px;
+    display: inline-block;
+}
+
+.radio-toolbar input[type="radio"] {
+    opacity: 0;
+    position: fixed;
+    width: 0;
+}
+
+.radio-toolbar label {
+    display: inline-block;
+    background-color: var(--vscode-button-background);
+    border: 2px var(--vscode-button-foreground);
+    color: var(--vscode-button-foreground);
+    text-align: center;
+    padding: 10px 20px;
+    margin: 1px 1px;
+    cursor: pointer;
+}
+
+.radio-toolbar label:hover {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+.radio-toolbar input[type="radio"]:checked+label {
+    color: var(--vscode-button-secondaryForeground);
+    border: 2px dashed var(--vscode-button-hoverBackground);
+    background-color: var(--vscode-button-secondaryBackground);
+}
+
+
+/*--------------------------/
+/                           /
+/     Accordion/Panels      /
+/                           /
+/--------------------------*/
+
+.accordion {
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: 2px var(--vscode-button-foreground);
+    cursor: pointer;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    transition: 0.5s;
+    padding: 6px 10px 6px 10px;
+    margin: 0 10px 4px 10px;
+}
+
+.active,
+.accordion:hover {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+.active,
+.accordion:after {
+    content: '\02795';
+    /* Unicode character for "plus" sign (+) */
+    font-size: 13px;
+    color: var(--vscode-editor-foreground);
+    float: right;
+    margin-left: 5px;
+}
+
+.accordion.active:after {
+    content: "\2796";
+    font-size: 13px;
+    color: var(--vscode-editor-foreground);
+    float: right;
+    margin-left: 5px;
+    /* Unicode character for "minus" sign (-) */
+}
+
+.panel {
+    background-color: var(--vscode-editor-background);
+    overflow: hidden;
+    display: none;
+    transition: 0.5s ease-out;
+}

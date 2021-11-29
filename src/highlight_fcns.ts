@@ -1,6 +1,6 @@
 import { readFileSync, readFile } from 'fs'
 import path from 'path';
-import { env, ExtensionContext } from 'vscode'
+import { ExtensionContext } from 'vscode'
 import * as vsctm from 'vscode-textmate'
 const plist = require('plist');
 const oniguruma = require('vscode-oniguruma')
@@ -25,10 +25,9 @@ function readJSON2plist(path: string): Promise<string> {
 
 export async function get_markdown_it(context: ExtensionContext) {
 	try {
-		
-		const oniguruma_root: string = path.join(env.appRoot, 'node_modules.asar', 'vscode-oniguruma')
-		const wasm = readFileSync(path.join(oniguruma_root, 'release', 'onig.wasm')).buffer;
-		const on_wasm = oniguruma.loadWASM(wasm);
+
+		const wasm = readFileSync(path.join(context.extensionPath, 'node_modules', 'vscode-oniguruma', 'release', 'onig.wasm')).buffer;
+		oniguruma.loadWASM(wasm);
 		const registry = new vsctm.Registry({
 			onigLib: Promise.resolve({
 				createOnigScanner: (sources) => new oniguruma.OnigScanner(sources),
@@ -41,9 +40,9 @@ export async function get_markdown_it(context: ExtensionContext) {
 					}).catch(null)
 			}
 		});
-	
+
 		const grammar = await registry.loadGrammar('source.lmps')
-	
+
 		const md = require('markdown-it')(
 			{
 				html: true,
@@ -67,10 +66,9 @@ export async function get_markdown_it(context: ExtensionContext) {
 			});
 		return md
 	}
-	
 }
 
-let scopeStack:string[] = [];
+let scopeStack: string[];
 
 function tokenize_lmps(text: string, grammar: vsctm.IGrammar) {
 

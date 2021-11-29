@@ -56,6 +56,7 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
 
 ## Version 1.3.0 08.08.2020
  - CI for Synchronisation with the Lammps documentation, Github publishing and automatic Marketplace publishing 
+ - All patch releases from now on are automated synchronisation releases unless further changes are specified
 
 ## Version 1.3.2 14.08.2020
  - Scheduled synchronisation of lammps_vscode with Lammps documentation
@@ -96,5 +97,23 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
    - Styling improvements for rendering of tables, generic text and *Note* blocks
    - Math rendering changed to html for webview, now allowing to use theme colors for equations in the documentation panel
 
+## Version 1.4.11 16.07.2021
+ - Linting
+   - Added checks for unbalanced parenthesis
+   - Added function to check for maximum number of group definitions
 
-
+## Version 1.5.0
+ - Added **Lammps dashboard** (beta) as discussed in [Issue #19](https://github.com/ThFriedrich/lammps_vscode/issues/19)
+   - Plotting of log file data
+   - Plotting of atomic dump data
+   - System Information display for Memory usage, CPU load and GPU load (Nvidia GPUs only)
+   - Added Editor command 'Open Lammps Simulation Dashboard'
+   - Added button to open dashboard in editor window
+ - Added dependencies:
+   - cpu-stats
+   - markdown-it
+   - node-nvidia-smi
+   - node-os-utils
+   - plotly.js-dist-min
+   - acorn"
+ - Changed documentation source in official lammps repo from 'master' to 'release'

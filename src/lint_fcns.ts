@@ -1,4 +1,4 @@
-import { Diagnostic, DiagnosticSeverity, TextDocument, Range, DiagnosticCollection, TextLine } from 'vscode'
+import { Diagnostic, DiagnosticSeverity, TextDocument, Range, DiagnosticCollection, workspace } from 'vscode'
 import { dirname, join, isAbsolute } from 'path'
 import { searchCommands, getArgIndex } from "./doc_fcns";
 import { existsSync } from 'fs'
@@ -211,14 +211,26 @@ function getDocDir(document: TextDocument): string {
 }
 
 /**
+* Returns the absolute path of the 
+* current working directory
+*/
+function getCWD(document: TextDocument): string | undefined {
+    return workspace.getWorkspaceFolder(document.uri)?.uri.fsPath
+}
+
+/**
 * Returns a boolean, indicating wether 
 * a given file exists. Path can be absolute or 
 * relative to the location of the TextDocument
 */
 function fileExists(document: TextDocument, file_path: string): boolean {
     if (!isAbsolute(file_path)) {
-        const docDir = getDocDir(document);
-        file_path = join(docDir, file_path)
+        const docDir = getCWD(document);
+        if (docDir) {
+            file_path = join(docDir, file_path)
+        } else {
+            file_path = join(getDocDir(document), file_path)
+        }
     }
     if (existsSync(file_path)) {
         return true
@@ -234,8 +246,12 @@ function fileExists(document: TextDocument, file_path: string): boolean {
 */
 function dirExists(document: TextDocument, file_path: string): boolean {
     if (!isAbsolute(file_path)) {
-        const docDir = getDocDir(document);
-        file_path = join(docDir, file_path)
+        const docDir = getCWD(document);
+        if (docDir) {
+            file_path = join(docDir, file_path)
+        } else {
+            file_path = join(getDocDir(document), file_path)
+        }
     }
     if (existsSync(dirname(file_path))) {
         return true

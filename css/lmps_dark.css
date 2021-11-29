@@ -1,40 +1,10 @@
-body {
-    text-align: justify;
-}
+/*--------------------------/
+/                           /
+/    SYNTAX HIGHLIGHTING    /
+/                           /
+/--------------------------*/
 
-table {
-    width: 100%;
-    text-align: left;
-    border-collapse: collapse;
-}
-
-svg {
-    color: var(--vscode-editor-foreground);
-}
-
-table th {
-    border: var(--vscode-editor-background);
-}
-
-table td {
-    border: 1px solid var(--vscode-editor-foreground);
-    padding: 2px 4px;
-}
-
-table tr:nth-child(even) {
-    background: var(--vscode-editor-lineHighlightBackground);
-}
-
-blockquote {
-    color: var(--vscode-editor-foreground);
-    background-color: var(--vscode-editor-background);
-    margin-top: 5px;
-    margin-bottom: 5px;
-    margin-left: 10px;
-    padding-left: 15px;
-    border-left: 2px solid var(--vscode-editor-lineHighlightBackground);
-}
-
+@import url("lmps_generic.css");
 .comment {
     color: #6A9955;
 }

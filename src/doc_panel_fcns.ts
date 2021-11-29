@@ -3,6 +3,7 @@ import { doc_entry, getColor, fix_img_path, getDocumentation } from './doc_fcns'
 import { getMathMarkdown } from './render_fcns'
 import { getRangeFromPosition } from './hover_fcns';
 import { join } from 'path'
+import { PlotPanel } from './dashboard_fcns';
 
 export interface DocPanel extends WebviewPanel {
     command?: string
@@ -15,12 +16,12 @@ export async function manage_doc_panel(context: ExtensionContext, panel: DocPane
 
     if (panel) {
         // If we already have a panel, show it in the target column
-        panel.reveal(actCol);
+        panel.reveal(panel.viewColumn);
     } else {
         // Otherwise, create a new panel
         panel = window.createWebviewPanel(
             'lmpsDoc',
-            'Lammps Documentation', actCol!, { retainContextWhenHidden: true }
+            'Lammps Documentation', actCol!, { retainContextWhenHidden: false, enableScripts: false, localResourceRoots: [Uri.file(context.extensionPath)] }
         );
         panel.iconPath = { light: img_path_light, dark: img_path_dark }
         panel.onDidChangeViewState(
@@ -65,19 +66,55 @@ function fix_base64_image_html(txt: string): string {
 export function set_doc_panel_content(panel: DocPanel | undefined, md_content: MarkdownString, context: ExtensionContext, md: { render: (arg0: string) => any; }) {
 
     if (panel) {
-        const css_lmps: Uri[] = [
-            Uri.file(join(context.extensionPath, 'css', 'lmps_light.css')),
-            Uri.file(join(context.extensionPath, 'css', 'lmps_dark.css')),
-            Uri.file(join(context.extensionPath, 'css', 'lmps_dark.css'))]
 
-        const style: Uri = css_lmps[window.activeColorTheme.kind - 1]
-        const style_panel_uri = panel.webview.asWebviewUri(style)
-        const incl_str: string = `<link rel="stylesheet" type="text/css" href="${style_panel_uri}">`
+        const incl_str: string = get_html_head(panel, context)
 
         let html = md.render(md_content.value)
         html = fix_base64_image_html(html)
         panel.webview.html = incl_str + html
     }
+}
+
+export function get_css(panel: DocPanel | PlotPanel, context: ExtensionContext) {
+    const css_lmps: Uri[] = [
+        Uri.file(join(context.extensionPath, 'css', 'lmps_light.css')),
+        Uri.file(join(context.extensionPath, 'css', 'lmps_dark.css')),
+        Uri.file(join(context.extensionPath, 'css', 'lmps_dark.css'))]
+
+    const style: Uri = css_lmps[window.activeColorTheme.kind - 1]
+    const style_panel_uri = panel.webview.asWebviewUri(style)
+    const incl_str: string = `<link rel="stylesheet" type="text/css" href="${style_panel_uri}">`
+    return incl_str
+}
+
+export function get_html_head(panel: DocPanel | PlotPanel, context: ExtensionContext) {
+
+    const css_lmps: Uri[] = [
+        Uri.file(join(context.extensionPath, 'css', 'lmps_light.css')),
+        Uri.file(join(context.extensionPath, 'css', 'lmps_dark.css')),
+        Uri.file(join(context.extensionPath, 'css', 'lmps_dark.css'))]
+
+    const style: Uri = css_lmps[window.activeColorTheme.kind - 1]
+    const style_panel_uri = panel.webview.asWebviewUri(style)
+
+    const incl_str: string =
+        `<!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none';
+        img-src ${panel.webview.cspSource} data:;
+        style-src ${panel.webview.cspSource};
+        "/>
+        
+        <link rel="stylesheet" type="text/css" href="${style_panel_uri}"> 
+    </head>`
+
+    return incl_str
 }
 
 export async function create_doc_page(snippet: string, panel: WebviewPanel | undefined, context: ExtensionContext): Promise<MarkdownString | undefined> {
@@ -87,8 +124,8 @@ export async function create_doc_page(snippet: string, panel: WebviewPanel | und
     if (docs) {
         // Constructing the Markdown String to show in the Hover window
         const content = new MarkdownString("", true)
-        if (docs?.command) {
-            content.appendMarkdown(`## ${docs?.command[0]} \n`)
+        if (docs.command) {
+            content.appendMarkdown(`## ${docs.command[0]} \n`)
             content.appendMarkdown("\n --- \n")
             if (docs.command.length > 1) {
                 for (let cx = 1; cx < docs.command.length; cx++) {
@@ -98,32 +135,33 @@ export async function create_doc_page(snippet: string, panel: WebviewPanel | und
                 content.appendMarkdown("\n --- \n")
             }
         }
-        if (docs?.syntax) {
+        if (docs.syntax) {
             content.appendMarkdown("### Syntax: \n")
-            content.appendCodeblock(docs?.syntax.join('\n'), "lmps")
-            content.appendMarkdown(await getMathMarkdown(docs?.parameters, color, false) + "\n\n")
+            content.appendCodeblock(docs.syntax.join('\n'), "lmps")
+            docs.parameters = docs.parameters.replace(RegExp('(&#160;)+','g'), '&#160;') // Remove &nbsp;
+            content.appendMarkdown(await getMathMarkdown(docs.parameters, color, false))
         }
-        if (docs?.examples) {
-            let exmpl: string = fix_img_path(docs?.examples, true, panel, context)
+        if (docs.examples) {
+            let exmpl: string = fix_img_path(docs.examples, true, panel, context)
             exmpl = await getMathMarkdown(exmpl, color, false)
             content.appendMarkdown("### Examples: \n")
-            content.appendMarkdown(exmpl + '\n')
+            content.appendMarkdown(exmpl)
         }
-        if (docs?.description) {
+        if (docs.description) {
             let full_desc: string = fix_img_path(docs.description, true, panel, context)
             full_desc = await getMathMarkdown(full_desc, color, false)
             content.appendMarkdown("### Description: \n")
             content.appendMarkdown(full_desc + "\n")
         }
-        if (docs?.restrictions) {
+        if (docs.restrictions) {
             content.appendMarkdown("### Restrictions: \n")
-            content.appendMarkdown(docs?.restrictions)
+            content.appendMarkdown(docs.restrictions)
         }
         // TODO: 
         // Related commands section has references in it. Needs fixing.
-        // if (docs?.related) {
+        // if (docs.related) {
         //     content.appendMarkdown("### Related commands: \n")
-        //     content.appendMarkdown(docs?.related)
+        //     content.appendMarkdown(docs.related)
         // }
         return content
     } else {
