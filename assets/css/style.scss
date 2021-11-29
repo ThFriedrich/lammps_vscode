@@ -10,16 +10,17 @@
     margin: 0 auto;
 }
 
-img {
+#main_content img[src$='.gif'] {
     position: relative;
     margin: 0 auto;
+    width: 100%;
     max-width: 1200px;
-    padding: 5px;
+    padding: 0px;
     margin: 10px 0 10px 0;
-    border: 1px solid #ebebeb;
-    box-shadow: 0 0 5px #ebebeb;
-    -webkit-box-shadow: 0 0 5px #ebebeb;
-    -moz-box-shadow: 0 0 5px #ebebeb;
-    -o-box-shadow: 0 0 5px #ebebeb;
-    -ms-box-shadow: 0 0 5px #ebebeb;
+    border: 0px solid #201e1e;
+    box-shadow: 0 0 5px #201e1e;
+    -webkit-box-shadow: 0 0 5px #201e1e;
+    -moz-box-shadow: 0 0 5px #201e1e;
+    -o-box-shadow: 0 0 5px #201e1e;
+    -ms-box-shadow: 0 0 5px #201e1e;
 }
