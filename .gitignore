@@ -16,3 +16,4 @@ rst2json/__pycache__
 *.vsix
 rst
 .eslintrc.json
+_site

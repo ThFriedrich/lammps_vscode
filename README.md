@@ -70,6 +70,7 @@ This package is being synchronised with the Lammps documentation through a conti
  - interactive 3D Visualisation of atomic dumps
  - interactive plots of lammps log file data
  - automatically updating plots for easy live observation of simulation status
+  
 --- 
 
 
