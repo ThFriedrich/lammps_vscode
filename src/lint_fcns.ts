@@ -1,4 +1,4 @@
-import { Diagnostic, DiagnosticSeverity, TextDocument, Range, DiagnosticCollection, workspace } from 'vscode'
+import { Diagnostic, DiagnosticSeverity, TextDocument, Range, DiagnosticCollection, workspace, TextLine } from 'vscode'
 import { dirname, join, isAbsolute } from 'path'
 import { searchCommands, getArgIndex } from "./doc_fcns";
 import { existsSync } from 'fs'
