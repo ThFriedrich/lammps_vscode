@@ -80,8 +80,12 @@ function tokenize_lmps(text: string, grammar: vsctm.IGrammar) {
 		html += '<div class="line">';
 		const line = lines[i];
 		// TODO: Provide previous state
-		const lineTokens = grammar.tokenizeLine(line, null)
-		html += lineToken2html(lineTokens, line)
+		try {
+			const lineTokens = grammar.tokenizeLine(line, null)
+			html += lineToken2html(lineTokens, line)	
+		} catch (error) {
+			html += line
+		}	
 	}
 	return html + '</pre>'
 }

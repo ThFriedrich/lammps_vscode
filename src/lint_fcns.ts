@@ -7,41 +7,129 @@ import { existsSync } from 'fs'
 // document checks/Linter functions //
 //////////////////////////////////////
 
+const par_reg_ex: RegExp = RegExp("[\\(\\[\\{\\)\\]\\}]", "g")
 
 export function updateDiagnostics(document: TextDocument, collection: DiagnosticCollection): void {
-	if (document) {
-		let errors: Diagnostic[] = []
-		for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
-			// check lines with a set of functions, which append Diagnostic entries to the errors array
-			errors = checkFilePaths(document, line_idx, errors)
-		}
-		collection.set(document.uri, errors)
-	} else {
-		collection.clear();
-	}
+
+    if (document) {
+
+        let errors: Diagnostic[] = []
+        for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
+            // check lines with a set of functions, which append Diagnostic entries to the errors array
+            const line_str: TextLine = document.lineAt(line_idx)
+
+            if (!line_str.text.startsWith('#')) {
+                errors = checkFilePaths(document, line_str, line_idx, errors)
+                errors = checkBrackets(document, line_str, line_idx, errors)
+
+            }
+        }
+        errors = group_command(document, errors)
+        collection.set(document.uri, errors)
+    } else {
+        collection.clear();
+    }
 }
 
-/**
+
+function group_command(document: TextDocument, errors: Diagnostic[]): Diagnostic[] {
+
+    let group_counter = 0
+    let par_reg_ex: RegExp = RegExp("^\\s*group\\s+\\S*\\s+[delete|clear|empty|region|type|id|molecule|variable|include|subtract|union|intersect|dynamic|static]")
+
+    for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
+        const line_str: TextLine = document.lineAt(line_idx)
+        const par = line_str.text.match(par_reg_ex);
+
+        if (par) {
+            group_counter += 1
+            if (group_counter > 32) {
+                const first_p = line_str.text.indexOf(par[0]);
+                const last_p = line_str.text.lastIndexOf(par[0][par[0].length - 1]);
+                const rng = new Range(line_idx, first_p, line_idx, last_p)
+                const msg = "There can be no more than 32 groups defined at one time, including “all”."
+
+                let Error: Diagnostic = new Diagnostic(
+                    rng, msg, DiagnosticSeverity.Error
+                )
+                errors.push(Error)
+            }
+        }
+    }
+    return errors
+}
+
+
+function checkBrackets(document: TextDocument, line_str: TextLine, line_idx: number, errors: Diagnostic[]): Diagnostic[] {
+
+    let b_bracket: boolean
+
+    b_bracket = isMatchingBrackets(line_str.text)
+
+    if (b_bracket == false) {
+        const par = line_str.text.match(par_reg_ex);
+        const first_p = line_str.text.indexOf(par![0]);
+        const last_p = line_str.text.lastIndexOf(par![par!.length - 1]);
+        const rng = new Range(line_idx, first_p, line_idx, last_p)
+        const msg = "Unbalanced Parenthesis"
+
+        let Error: Diagnostic = new Diagnostic(
+            rng, msg, DiagnosticSeverity.Error
+        )
+        errors.push(Error)
+    }
+    return errors
+}
+
+
+function isMatchingBrackets(str: string): boolean {
+    let brackets: RegExpMatchArray | null = str.match(par_reg_ex)
+    let stack: string[] = [];
+    const map = new Map<string, string>()
+    map.set('(', ')')
+    map.set('[', ']')
+    map.set('{', '}')
+
+    if (brackets) {
+        for (let i = 0; i < brackets.length; i++) {
+            if (brackets[i] === '(' || brackets[i] === '{' || brackets[i] === '[') {
+                stack.push(brackets[i]);
+            }
+            else {
+                let last = stack.pop();
+                if (last) {
+                    if (brackets[i] !== map.get(last)) { return false };
+                } else {
+                    return false
+                }
+            }
+        }
+        if (stack.length !== 0) { return false };
+    }
+    return true;
+}
+
+
+/*
 * This function checks wheter a file given as input for 
 * a read-command actually exists.
 */
-export function checkFilePaths(document: TextDocument, line_index: number, errors: Diagnostic[]):Diagnostic[] {
+export function checkFilePaths(document: TextDocument, line_str: TextLine, line_index: number, errors: Diagnostic[]): Diagnostic[] {
 
-    const line_str = document.lineAt(line_index).text
-    let error: Diagnostic|undefined
+    let error: Diagnostic | undefined
     const read_commands = searchCommands(RegExp('(?<=^|\\s|_)(read)(?=$|\\s|_)'))
-    let com_struct = getCommandArgs(line_str, read_commands)
+    let com_struct = getCommandArgs(line_str.text, read_commands)
 
     // Check for read and write commands
     if (com_struct.command) {
         const fileArg_idx = getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'))
-        error = checkPath(document, line_str, line_index, com_struct, fileArg_idx, 'file')
+        error = checkPath(document, line_str.text, line_index, com_struct, fileArg_idx, 'file')
     } else {
         const write_commands = searchCommands(RegExp('(?<=^|\\s|_)(write)(?=$|\\s|_)'))
-        com_struct = getCommandArgs(line_str, write_commands)
+        com_struct = getCommandArgs(line_str.text, write_commands)
         if (com_struct.command) {
             const fileArg_idx = getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'))
-            error = checkPath(document, line_str, line_index, com_struct, fileArg_idx, 'dir')
+            error = checkPath(document, line_str.text, line_index, com_struct, fileArg_idx, 'dir')
         }
     }
     if (error) {
@@ -71,7 +159,7 @@ type commandStruct = {
 * If the command is found a commandStruct object is returned, 
 * containing the command name and an array of arguments
 */
-function getCommandArgs(line: string, command: string[]):commandStruct {
+function getCommandArgs(line: string, command: string[]): commandStruct {
     //Remove comments from the line
     if (line.includes('#')) {
         line = line.substr(0, line.indexOf('#'))
@@ -105,7 +193,7 @@ function getCommandArgs(line: string, command: string[]):commandStruct {
 * Similar to getWordRangeAtPosition 
 * from vscode api
 */
-function getRange(line_str: string, line_idx: number, argument: string):Range {
+function getRange(line_str: string, line_idx: number, argument: string): Range {
     const arg_pos: number = line_str.indexOf(argument)
     return new Range(line_idx, arg_pos, line_idx, arg_pos + argument.length)
 }
@@ -114,7 +202,7 @@ function getRange(line_str: string, line_idx: number, argument: string):Range {
 * Returns the absolute path of the 
 * directory a given TextDocument is in
 */
-function getDocDir(document: TextDocument):string {
+function getDocDir(document: TextDocument): string {
     let cwd = document.uri.fsPath;
     if (cwd) {
         cwd = dirname(cwd);
@@ -135,7 +223,7 @@ function getCWD(document: TextDocument): string | undefined {
 * a given file exists. Path can be absolute or 
 * relative to the location of the TextDocument
 */
-function fileExists(document: TextDocument, file_path: string):boolean {
+function fileExists(document: TextDocument, file_path: string): boolean {
     if (!isAbsolute(file_path)) {
         const docDir = getCWD(document);
         if (docDir) {
@@ -156,7 +244,7 @@ function fileExists(document: TextDocument, file_path: string):boolean {
 * a given directory exists. Path can be absolute or 
 * relative to the location of the TextDocument
 */
-function dirExists(document: TextDocument, file_path: string):boolean {
+function dirExists(document: TextDocument, file_path: string): boolean {
     if (!isAbsolute(file_path)) {
         const docDir = getCWD(document);
         if (docDir) {
@@ -176,15 +264,15 @@ function dirExists(document: TextDocument, file_path: string):boolean {
 * Checks for the existence of a given file or directory
 * and returns a Diagnostic entry if it doesn't exist
 */
-function checkPath(document: TextDocument, line_str:string, line_index: number, com_struct: commandStruct, fileArg_idx: number, checkType: 'dir' | 'file'):Diagnostic|undefined {
+function checkPath(document: TextDocument, line_str: string, line_index: number, com_struct: commandStruct, fileArg_idx: number, checkType: 'dir' | 'file'): Diagnostic | undefined {
 
     // Initialize Diagnostic Variables
-    let rng:Range|undefined = undefined
-    let msg:string|undefined = undefined
+    let rng: Range | undefined = undefined
+    let msg: string | undefined = undefined
 
     if (com_struct.args.length >= fileArg_idx) { // path specified/argument provided?
         const file_path: string = com_struct.args[fileArg_idx - 1].replace(/['"]+/g, '')
-        
+
         switch (checkType) { // Check wether directory/file exists
             case 'dir':
                 if (!dirExists(document, file_path)) { // Directory doesn't exist
