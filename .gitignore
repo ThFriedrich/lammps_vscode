@@ -10,7 +10,6 @@ rst2json/__pycache__
 *.xcf
 *.svg
 *.rst
-*.html
 *.pdf
 *.fig
 *.vsix
