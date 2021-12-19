@@ -5,7 +5,8 @@ name: SYNC
 
 on:
   schedule:
-    - cron: '45 11 16 * *'
+    - cron: '45 11 1 * *'
+
   workflow_dispatch:
     
 jobs:
@@ -27,29 +28,21 @@ jobs:
           ${{ runner.os }}-
           
     - name: Download updated Docs
+      id: s1
       run:
         svn export https://github.com/lammps/lammps/branches/release/doc/src rst --force
 
     - name: Build Docs TS-Object
+      id: s2
+      if: steps.s1.conclusion == 'success'
       run: |
         python3 -m pip install --upgrade pip
         pip3 install numpy
         python3 ./rst2json/rst2JSON.py
-
-    - name: Build package
-      env:
-        VSCE_PAT: ${{ secrets.VSCE_PAT }}
-      run: |
-        apt install imagemagick -sync
-        bash ./scripts/resize256.sh
-        npm install
-        npm install -g vsce
-        npm audit fix
-        npm version patch
-        vsce package
-
-    - name: Push2Git
-      if: ${{ success() }}
+    
+    - name: Check for updated docs
+      id: s3
+      if: steps.s2.conclusion == 'success'
       run: |
         git config --global user.name 'thfriedrich'
         git config --global user.email 'thfriedrich@users.noreply.github.com'
@@ -57,20 +50,41 @@ jobs:
         git add .
         # Check if Lammps Docs were updated
         if ! [[ $(git status) == *"nothing to commit, working tree clean"* ]]; then
-          git commit -m "Scheduled sync of lammps_vscode with Lammps documentation $(date +'%Y-%m-%d')"
-          git push
-          echo "::set-env name=b_update::true" 
+          echo "b_update=true"  >> $GITHUB_ENV
         else
           # Check if vscode-Lammps master branch had commits since last tag
           n_com=$(git rev-list $(git describe --tags --abbrev=0 @^)..master --count)
           if [ "$n_com" -gt "0" ];then
-            echo "b_update=true" >> $GITHUB_ENV
+            echo "b_update=true"  >> $GITHUB_ENV
           fi
         fi
+
+    - name: Setup node
+      id: s4
+      if: steps.s3.conclusion == 'success' && env.b_update == 'true'
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Build package
+      id: s5
+      if: steps.s4.conclusion == 'success' && env.b_update == 'true'
+      run: |
+        sudo apt install imagemagick -y
+        bash ./scripts/resize256.sh
+        npm install
+        npm install -g vsce
+        npm audit fix
+        git add .
+        git commit -m "Scheduled sync of lammps_vscode with Lammps documentation $(date +'%Y-%m-%d')"
+        npm version patch
+        git push
+        vsce package
+
               
     - name: Get Tag and Date
-      if: env.b_update == 'true' && ${{ success() }}
-      id: date_tag
+      id: s6
+      if: steps.s5.conclusion == 'success' && env.b_update == 'true'
       run: | 
         echo "::set-output name=date::$(date +'%Y-%m-%d')"
         echo "::set-output name=vsix_file::$(find *.vsix)"
@@ -78,31 +92,34 @@ jobs:
         echo "::set-output name=lmp_version::$(curl --silent "https://api.github.com/repos/lammps/lammps/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')"
     
     - name: Create Release
-      if: env.b_update == 'true' && ${{ success() }}
-      id: create_release
+      id: s7
+      if: steps.s6.conclusion == 'success' && env.b_update == 'true'
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: v${{ steps.date_tag.outputs.tag }}-sync${{ steps.date_tag.outputs.date }}
-        release_name: v${{ steps.date_tag.outputs.tag }} Sync Release - ${{ steps.date_tag.outputs.date }}
-        body: Scheduled synchronisation of lammps_vscode with Lammps documentation from ${{ steps.date_tag.outputs.date }}. This version corresponds to lammps release ${{ steps.date_tag.outputs.lmp_version }}.
+        tag_name: v${{ steps.s6.outputs.tag }}-sync${{ steps.s6.outputs.date }}
+        release_name: v${{ steps.s6.outputs.tag }} Sync Release - ${{ steps.s6.outputs.date }}
+        body: Scheduled synchronisation of lammps_vscode with Lammps documentation from ${{ steps.s6.outputs.date }}. This version corresponds to lammps release ${{ steps.s6.outputs.lmp_version }}.
         draft: false
         prerelease: false   
-          
+
     - name: Publish2GitHub
-      if: env.b_update == 'true' && ${{ success() }}
+      id: s8
+      if: steps.s7.conclusion == 'success' && env.b_update == 'true'
       uses: skx/github-action-publish-binaries@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        releaseId: ${{ steps.create_release.outputs.id }} 
-        args: ${{ steps.date_tag.outputs.vsix_file }}
+        releaseId: ${{ steps.s7.outputs.id }} 
+        args: ${{ steps.s6.outputs.vsix_file }}
 
     - name: Publish2Marketplace
-      if: env.b_update == 'true' && ${{ success() }}
+      id: s9
+      if: steps.s8.conclusion == 'success' && env.b_update == 'true'
       run: vsce publish
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
+  
         
         
