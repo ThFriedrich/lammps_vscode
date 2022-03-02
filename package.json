@@ -230,7 +230,7 @@
         "mathjax-node": "^2.1.1",
         "node-nvidia-smi": "^1.0.0",
         "node-os-utils": "^1.3.2",
-        "plist": "^3.0.2",
+        "plist": "^3.0.4",
         "plotly.js-dist-min": "^2.6.0",
         "request": "^2.88.2",
         "vscode-oniguruma": "^1.3.1",
