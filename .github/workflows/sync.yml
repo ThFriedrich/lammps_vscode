@@ -46,7 +46,7 @@ jobs:
       run: |
         git config --global user.name 'thfriedrich'
         git config --global user.email 'thfriedrich@users.noreply.github.com'
-        git config --global pull.ff only
+        git config --global pull.rebase true
         git add .
         # Check if Lammps Docs were updated
         if ! [[ $(git status) == *"nothing to commit, working tree clean"* ]]; then
