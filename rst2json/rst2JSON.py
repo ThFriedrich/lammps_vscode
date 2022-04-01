@@ -66,15 +66,16 @@ class CMD:
             b_commands = True
             for ic, cmd in enumerate(cmds):
                 cmd = list(filter(None, cmd))
-                self.cmd_list.append(cmd[1])
-                if len(cmd) >= 3: #Accelerator styles
-                    if cmd[2].__contains__("Accelerator Variants"):
-                        acc_var = re.split(r",\s*",cmd[2].replace("Accelerator Variants: ",""))
-                        for a in acc_var:
-                            a = a.replace('*','')
-                            cmd_acc_var = cmd[1].replace(a[0:a.rfind("/")],a)
-                            self.cmd_list.append(cmd_acc_var)
-                            self.cmd_acc_var.append(a)
+                if not cmd[1].__contains__(":doc:"):
+                    self.cmd_list.append(cmd[1])
+                    if len(cmd) >= 3: #Accelerator styles
+                        if cmd[2].__contains__("Accelerator Variants"):
+                            acc_var = re.split(r",\s*",cmd[2].replace("Accelerator Variants: ",""))
+                            for a in acc_var:
+                                a = a.replace('*','')
+                                cmd_acc_var = cmd[1].replace(a[0:a.rfind("/")],a)
+                                self.cmd_list.append(cmd_acc_var)
+                                self.cmd_acc_var.append(a)
                 
         else:
             b_commands = False    
