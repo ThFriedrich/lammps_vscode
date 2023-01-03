@@ -3,7 +3,7 @@
 
 [![vsm-version](https://img.shields.io/visual-studio-marketplace/v/thfriedrich.lammps?style=flat&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=thfriedrich.lammps)
 [![vsm-installs](https://img.shields.io/visual-studio-marketplace/i/thfriedrich.lammps?style=flat&label=installs&logo=visual-studio-code&color=brightgreen)](https://marketplace.visualstudio.com/items?itemName=thfriedrich.lammps)
-![SYNC](https://img.shields.io/github/workflow/status/thfriedrich/lammps_vscode/SYNC?logo=github)
+[![SYNC](https://github.com/ThFriedrich/lammps_vscode/actions/workflows/sync.yml/badge.svg)](https://github.com/ThFriedrich/lammps_vscode/actions/workflows/sync.yml)
 ![GitHub](https://custom-icon-badges.herokuapp.com/github/license/thfriedrich/lammps_vscode?color=brightgreen&logo=repo)
 ![Updated](https://custom-icon-badges.herokuapp.com/github/release-date/thfriedrich/lammps_vscode?label=last%20update%20&logo=history&logoColor=white)
 [![Plant Tree](https://custom-icon-badges.herokuapp.com/badge/dynamic/json?color=brightgreen&label=Plant%20Tree&query=%24.total&url=https%3A%2F%2Fpublic.offset.earth%2Fusers%2Ftreeware%2Ftrees&&logo=treeware&logoColor=brightgreen)](https://plant.treeware.earth/thfriedrich/lammps_vscode)
