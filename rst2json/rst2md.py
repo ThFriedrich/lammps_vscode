@@ -75,7 +75,7 @@ def tr_blocks(block: str) -> str:
 def tr_inline_math(txt: str) -> str:
     inleq = re.findall(r"(\:math\:\`?)([\s\S\r]*?)(\`)", txt, 8)
     for eq in inleq:
-        txt = txt.replace("".join(eq), "\("+eq[1]+"\)")
+        txt = txt.replace("".join(eq), "\("+eq[1].replace("\\AA", "\\mathring{\\textrm{A}}")+"\)")
     return txt
 
 
