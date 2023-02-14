@@ -117,3 +117,6 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
    - plotly.js-dist-min
    - acorn
  - Changed documentation source in official lammps repo from 'master' to 'release'
+
+## Version 1.5.12
+ - Removed Github-Action to create Releases and archive them on GitHub. To rollback or install specific version the VSCODE UI should be used
