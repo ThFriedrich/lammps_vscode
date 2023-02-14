@@ -81,42 +81,9 @@ jobs:
         git push
         vsce package
 
-              
-    - name: Get Tag and Date
+    - name: Publish2Marketplace
       id: s6
       if: steps.s5.conclusion == 'success' && env.b_update == 'true'
-      run: | 
-        echo "::set-output name=date::$(date +'%Y-%m-%d')"
-        echo "::set-output name=vsix_file::$(find *.vsix)"
-        echo "::set-output name=tag::$(find *.vsix | cut -d'.' -f1-3 | cut -d'-' -f2-3)"
-        echo "::set-output name=lmp_version::$(curl --silent "https://api.github.com/repos/lammps/lammps/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')"
-    
-    - name: Create Release
-      id: s7
-      if: steps.s6.conclusion == 'success' && env.b_update == 'true'
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v${{ steps.s6.outputs.tag }}-sync${{ steps.s6.outputs.date }}
-        release_name: v${{ steps.s6.outputs.tag }} Sync Release - ${{ steps.s6.outputs.date }}
-        body: Scheduled synchronisation of lammps_vscode with Lammps documentation from ${{ steps.s6.outputs.date }}. This version corresponds to lammps release ${{ steps.s6.outputs.lmp_version }}.
-        draft: false
-        prerelease: false   
-
-    - name: Publish2GitHub
-      id: s8
-      if: steps.s7.conclusion == 'success' && env.b_update == 'true'
-      uses: skx/github-action-publish-binaries@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        releaseId: ${{ steps.s7.outputs.id }} 
-        args: ${{ steps.s6.outputs.vsix_file }}
-
-    - name: Publish2Marketplace
-      id: s9
-      if: steps.s8.conclusion == 'success' && env.b_update == 'true'
       run: vsce publish
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
