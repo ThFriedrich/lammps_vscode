@@ -43,7 +43,7 @@
 			"label": "UpdateRST",
 			"type": "shell",
 			"group": "build",
-			"command": "svn export https://github.com/lammps/lammps/trunk/doc/src rst --force; python3 ./rst2json/rst2JSON.py; rm -r rst/PDF; rm -r rst/Developer; rm -r rst/99; rm -r rst/2001; rm -r rst/_ext; rm -r rst/img/wsl_tutorial; bash ./scripts/resize256.sh",
+			"command": "svn export https://github.com/lammps/lammps/trunk/doc/release rst --force; python3 ./rst2json/rst2JSON.py; rm -r rst/PDF; rm -r rst/Developer; rm -r rst/99; rm -r rst/2001; rm -r rst/_ext; rm -r rst/img/wsl_tutorial; bash ./scripts/resize256.sh",
 			"presentation": {
 				"echo": true,
 				"reveal": "always",
