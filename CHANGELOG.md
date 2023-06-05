@@ -102,7 +102,7 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
    - Added checks for unbalanced parenthesis
    - Added function to check for maximum number of group definitions
 
-## Version 1.5.0
+## Version 1.5.0 29.11.2021
  - Added **Lammps dashboard** (beta) as discussed in [Issue #19](https://github.com/ThFriedrich/lammps_vscode/issues/19)
    - Plotting of log file data
    - Plotting of atomic dump data
@@ -118,5 +118,11 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
    - acorn
  - Changed documentation source in official lammps repo from 'master' to 'release'
 
-## Version 1.5.12
+## Version 1.5.12 14.02.2023
  - Removed Github-Action to create Releases and archive them on GitHub. To rollback or install specific version the VSCODE UI should be used
+## Version 1.6.0 05.06.2023
+ - Update doc_obj generation scripts
+  - Changed the way to split the rst into sections to improve stability
+  - Added checks for minimal entries found (e.g. Syntax, Description, Examples)
+  - Updated for new rst-directives (tabs, admonition, deprecated, only html, figure, versionadded)
+  - several smaller bugfixes and formatting improvements
