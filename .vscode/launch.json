@@ -18,7 +18,10 @@
             "request": "launch",
             "preLaunchTask": "npm: compile",
             "runtimeExecutable": "${execPath}",
-            "args": ["--extensionDevelopmentPath=${workspaceRoot}" ],
+            "args": [
+                "--disable-extensions",
+                "--extensionDevelopmentPath=${workspaceFolder}",
+              ],
             "outFiles": [ "${workspaceRoot}/dist/**/*.js" ],
         }
     ]
