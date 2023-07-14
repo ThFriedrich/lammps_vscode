@@ -1,6 +1,6 @@
 import { workspace, ShellExecution, Task, TaskScope, TaskDefinition, window, WorkspaceFolder } from 'vscode'
 
-let type = "lmps";
+const type = "lmps";
 
 interface lmp_task extends TaskDefinition {
     binary: string;
@@ -31,7 +31,7 @@ export function get_tasks(): Task[] {
 export function resolve_task(tsk: Task): Task | undefined {
     const file = window.activeTextEditor?.document.fileName
     const tdf: lmp_task = <any>tsk.definition;
-    let execution = new ShellExecution('')
+    const execution = new ShellExecution('')
     switch (tdf.task) {
         case "Run Single-Task":
             execution.commandLine = `${tdf.binary} -in ${file}`;

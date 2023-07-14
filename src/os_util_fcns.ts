@@ -12,7 +12,7 @@ export function get_gpu_info(): Promise<{ n_gpus: number, cuda: string, driver: 
                 const n_gpus: number = Number(data.nvidia_smi_log.attached_gpus)
                 const cuda: string = data.nvidia_smi_log.cuda_version
                 const driver: string = data.nvidia_smi_log.driver_version
-                let gpu: string[] = []
+                const gpu: string[] = []
                 let gpus = data.nvidia_smi_log.gpu
                 if (n_gpus <= 1) {
                     gpus = Array(data.nvidia_smi_log.gpu)
@@ -35,8 +35,8 @@ export function get_gpu_stat(): Promise<{ gpu_util: number[], gpu_mem: number[] 
                 reject(err);
             } else {
                 const n_gpus: number = Number(data.nvidia_smi_log.attached_gpus)
-                let util: number[] = []
-                let mem: number[] = []
+                const util: number[] = []
+                const mem: number[] = []
                 let gpus = data.nvidia_smi_log.gpu
                 if (n_gpus == 1) {
                     gpus = Array(data.nvidia_smi_log.gpu)

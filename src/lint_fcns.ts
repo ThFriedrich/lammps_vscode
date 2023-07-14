@@ -35,7 +35,7 @@ export function updateDiagnostics(document: TextDocument, collection: Diagnostic
 function group_command(document: TextDocument, errors: Diagnostic[]): Diagnostic[] {
 
     let group_counter = 0
-    let par_reg_ex: RegExp = RegExp("^\\s*group\\s+\\S*\\s+[delete|clear|empty|region|type|id|molecule|variable|include|subtract|union|intersect|dynamic|static]")
+    const par_reg_ex: RegExp = RegExp("^\\s*group\\s+\\S*\\s+[delete|clear|empty|region|type|id|molecule|variable|include|subtract|union|intersect|dynamic|static]")
 
     for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
         const line_str: TextLine = document.lineAt(line_idx)
@@ -49,7 +49,7 @@ function group_command(document: TextDocument, errors: Diagnostic[]): Diagnostic
                 const rng = new Range(line_idx, first_p, line_idx, last_p)
                 const msg = "There can be no more than 32 groups defined at one time, including “all”."
 
-                let Error: Diagnostic = new Diagnostic(
+                const Error: Diagnostic = new Diagnostic(
                     rng, msg, DiagnosticSeverity.Error
                 )
                 errors.push(Error)
@@ -62,9 +62,7 @@ function group_command(document: TextDocument, errors: Diagnostic[]): Diagnostic
 
 function checkBrackets(document: TextDocument, line_str: TextLine, line_idx: number, errors: Diagnostic[]): Diagnostic[] {
 
-    let b_bracket: boolean
-
-    b_bracket = isMatchingBrackets(line_str.text)
+    const b_bracket = isMatchingBrackets(line_str.text)
 
     if (b_bracket == false) {
         const par = line_str.text.match(par_reg_ex);
@@ -73,7 +71,7 @@ function checkBrackets(document: TextDocument, line_str: TextLine, line_idx: num
         const rng = new Range(line_idx, first_p, line_idx, last_p)
         const msg = "Unbalanced Parenthesis"
 
-        let Error: Diagnostic = new Diagnostic(
+        const Error: Diagnostic = new Diagnostic(
             rng, msg, DiagnosticSeverity.Error
         )
         errors.push(Error)
@@ -83,8 +81,8 @@ function checkBrackets(document: TextDocument, line_str: TextLine, line_idx: num
 
 
 function isMatchingBrackets(str: string): boolean {
-    let brackets: RegExpMatchArray | null = str.match(par_reg_ex)
-    let stack: string[] = [];
+    const brackets: RegExpMatchArray | null = str.match(par_reg_ex)
+    const stack: string[] = [];
     const map = new Map<string, string>()
     map.set('(', ')')
     map.set('[', ']')
@@ -96,15 +94,15 @@ function isMatchingBrackets(str: string): boolean {
                 stack.push(brackets[i]);
             }
             else {
-                let last = stack.pop();
+                const last = stack.pop();
                 if (last) {
-                    if (brackets[i] !== map.get(last)) { return false };
+                    if (brackets[i] !== map.get(last)) { return false }
                 } else {
                     return false
                 }
             }
         }
-        if (stack.length !== 0) { return false };
+        if (stack.length !== 0) { return false }
     }
     return true;
 }
@@ -165,7 +163,7 @@ function getCommandArgs(line: string, command: string[]): commandStruct {
         line = line.substr(0, line.indexOf('#'))
     }
     //Split line into array of strings without whitespaces, filter empty elemets
-    let line_arr = line.split(RegExp('\\s+')).filter(function (e) { return e })
+    const line_arr = line.split(RegExp('\\s+')).filter(function (e) { return e })
 
     // Initialize empty commandStruct variable
     const com_struct = <commandStruct>{}

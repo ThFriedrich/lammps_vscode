@@ -40,12 +40,12 @@ export function fix_img_path(txt: string, b_img: boolean, web_panel: WebviewPane
             if (b_img) {
                 const im_spl = im.match(RegExp('\\!\\[Image\\]\\((.*?)\\)'))
                 const img_path: string = join('rst', im_spl![1])
-                let img_uri:Uri
+                let img_uri: Uri
                 if (web_panel) {
                     const img_path_abs: Uri = Uri.file(context.asAbsolutePath(img_path))
                     img_uri = web_panel.webview.asWebviewUri(img_path_abs)
                 } else {
-                    const dot: number = img_path.lastIndexOf(".") 
+                    const dot: number = img_path.lastIndexOf(".")
                     img_uri = Uri.file(context.asAbsolutePath([img_path.slice(0, dot), "_256.png"].join('')))
                 }
                 txt = txt.replace(im_spl![1], img_uri.toString())
@@ -146,7 +146,7 @@ export function getArgIndex(command: string, argument: RegExp | string): number 
 /** Generates Autocompletion SnippetString for CompletionList*/
 function generateSnippetString(command_doc: doc_entry, syn_idx: number): SnippetString {
 
-    let snip = new SnippetString(command_doc.args[syn_idx][0].arg);
+    const snip = new SnippetString(command_doc.args[syn_idx][0].arg);
 
     for (let index = 1; index < command_doc.args[syn_idx].length; index++) {
         snip.appendText(" ")
@@ -195,8 +195,8 @@ export function getCompletionList(autoConf: WorkspaceConfiguration): CompletionL
 
     if (autoConf.Setting != "None") {
 
-        for (let c of command_docs.values()) {
-            for (let c_ix of c.command.values()) {
+        for (const c of command_docs.values()) {
+            for (const c_ix of c.command.values()) {
                 const syntax_id = getMostLikelySyntax(c_ix, c.syntax)
                 const compl_it = new CompletionItem(c_ix);
                 if (autoConf.Setting == 'Minimal') {
@@ -207,7 +207,7 @@ export function getCompletionList(autoConf: WorkspaceConfiguration): CompletionL
                     compl_it.kind = CompletionItemKind.Function
                     completion_List.items.push(compl_it)
                 } catch (error) {
-                    console.log(c.command[0])
+                    console.log(error);
                 }
 
             }
@@ -218,7 +218,7 @@ export function getCompletionList(autoConf: WorkspaceConfiguration): CompletionL
 
 export async function doc_completion_item(autoConf: WorkspaceConfiguration, compl_it: CompletionItem): Promise<CompletionItem | undefined> {
 
-    function mediumBlock(c: doc_entry, compl_it_doc: MarkdownString, syntax_id: number): MarkdownString {
+    function mediumBlock(c: doc_entry, compl_it_doc: MarkdownString): MarkdownString {
         compl_it_doc = docLink(compl_it_doc)
         compl_it_doc.appendCodeblock(c.syntax.join("\n"), 'lmps')
         compl_it_doc.appendMarkdown(c.parameters)
@@ -231,30 +231,34 @@ export async function doc_completion_item(autoConf: WorkspaceConfiguration, comp
         return compl_it_doc.appendMarkdown(`[Open documentation]( ${show_doc_uri} ) \n`)
     }
 
-    if (autoConf.Setting != "None") {
-        const color: string = getColor()
-        if (compl_it.label) {
-            const c: doc_entry | undefined = getDocumentation(compl_it.label)
-            if (c) {
-                const syntax_id = getMostLikelySyntax(compl_it.label, c.syntax)
-                compl_it.documentation = new MarkdownString("", true);
-                switch (autoConf.Setting) {
-                    case "Minimal":
-                        compl_it.documentation = docLink(compl_it.documentation)
-                        break;
-                    case "Medium":
-                        compl_it.documentation = mediumBlock(c, compl_it.documentation, syntax_id)
-                        break;
-                    case "Extensive":
-                        compl_it.documentation = mediumBlock(c, compl_it.documentation, syntax_id)
-                        compl_it.documentation.appendMarkdown(" \n" + "--- " + " \n")
-                        compl_it.documentation.appendMarkdown(await getMathMarkdown(c.short_description, color, true))
-                        break;
-                    default:
-                        break;
+    try {
+        if (autoConf.Setting != "None") {
+            const color: string = getColor()
+            if (compl_it.label) {
+                const c: doc_entry | undefined = getDocumentation(String(compl_it.label))
+                if (c) {
+                    // const syntax_id = getMostLikelySyntax(String(compl_it.label), c.syntax)
+                    compl_it.documentation = new MarkdownString("", true);
+                    switch (autoConf.Setting) {
+                        case "Minimal":
+                            compl_it.documentation = docLink(compl_it.documentation)
+                            break;
+                        case "Medium":
+                            compl_it.documentation = mediumBlock(c, compl_it.documentation)
+                            break;
+                        case "Extensive":
+                            compl_it.documentation = mediumBlock(c, compl_it.documentation)
+                            compl_it.documentation.appendMarkdown(" \n" + "--- " + " \n")
+                            compl_it.documentation.appendMarkdown(await getMathMarkdown(c.short_description, color, true))
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
         }
+    } catch (error) {
+        console.log(compl_it.label)
     }
     return compl_it
 }

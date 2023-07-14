@@ -15,12 +15,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Initialize Panel and ViewColumn for Documentation WebView
 	let panel: DocPanel | undefined = undefined;
-	let actCol: number = 2;
+	const actCol: number = 2;
 	let commandUnderCursor: string | undefined = undefined;
 
 	// Initialize Panel and ViewColumn for Dashboard WebView
 	let plot_panel: PlotPanel | undefined = undefined;
-	let plot_actCol: number = 2;
+	const plot_actCol: number = 2;
 
 	// Register Command to show Command documentation in WebView
 	context.subscriptions.push(
@@ -83,29 +83,31 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.languages.registerCompletionItemProvider("lmps",
 			{
-				async resolveCompletionItem(item: vscode.CompletionItem, token: vscode.CancellationToken): Promise<vscode.CompletionItem> {
+				async resolveCompletionItem(item: vscode.CompletionItem): Promise<vscode.CompletionItem> {
 					const autoConf = vscode.workspace.getConfiguration('lammps.AutoComplete')
 					const item_doc = await doc_completion_item(autoConf, item);
 					if (item_doc) {
-						commandUnderCursor = item_doc.label;
+						commandUnderCursor = String(item_doc.label);
 						return item_doc
 					} else {
-						commandUnderCursor = item.label;
+						commandUnderCursor = String(item.label);
 						return item
 					}
 				},
 				provideCompletionItems(
 					document: vscode.TextDocument,
 					position: vscode.Position,
-					token: vscode.CancellationToken,
-					context: vscode.CompletionContext) {
-					const linePrefix = document.lineAt(position).text.substr(0, position.character);
+					token: vscode.CancellationToken) {
+					if (token.isCancellationRequested) {
+						return Promise.resolve(new vscode.CompletionList([])); // Return an empty completion list
+					}
+					const linePrefix = document.lineAt(position).text.substring(0, position.character);
 					// provide completion suggestion only at the beginning of the line
 					if (linePrefix.search(RegExp('^\\s*[\\S]+\\s')) >= 0) {
 						return undefined;
 					} else {
 						const autoConf = vscode.workspace.getConfiguration('lammps.AutoComplete')
-						let compl_str: vscode.CompletionList = getCompletionList(autoConf)
+						const compl_str: vscode.CompletionList = getCompletionList(autoConf)
 						return compl_str
 					}
 				}
@@ -125,9 +127,9 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 		}),
 		vscode.workspace.onDidChangeTextDocument(editor => {
-			const c_str: string = editor.contentChanges[0].text
+			const c_str: string = editor.contentChanges[0]?.text
 			// Check only when a word was typed out comletely
-			const b_trig: boolean = c_str.search(RegExp('[\\n\\s#]')) != -1
+			const b_trig: boolean = c_str?.search(RegExp('[\\n\\s#]')) != -1
 			if (b_trig && editor.document.languageId == 'lmps') {
 				updateDiagnostics(editor.document, collection);
 			}
@@ -136,7 +138,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Provide Tasks to run Lammps-script in vscode
 	context.subscriptions.push(
 		vscode.tasks.registerTaskProvider('lmps', {
-			provideTasks(token?: vscode.CancellationToken) {
+			provideTasks() {
 				return get_tasks()
 			},
 			resolveTask(tsk: vscode.Task): vscode.Task | undefined {
@@ -149,7 +151,7 @@ export async function activate(context: vscode.ExtensionContext) {
 function check_versions(context: vscode.ExtensionContext) {
 
 
-    const meta = JSON.parse(readFileSync(join(context.extensionPath, 'package.json'), 'utf8'));
+	const meta = JSON.parse(readFileSync(join(context.extensionPath, 'package.json'), 'utf8'));
 	const v: string = meta.version
 	const v_stored: string | undefined = context.globalState.get('lmps_version')
 	if (!v_stored || v != v_stored) {

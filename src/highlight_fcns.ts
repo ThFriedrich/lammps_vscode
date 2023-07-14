@@ -72,7 +72,8 @@ let scopeStack: string[];
 
 function tokenize_lmps(text: string, grammar: vsctm.IGrammar) {
 
-	const lines = text.split(RegExp('\n'))
+	// eslint-disable-next-line no-control-regex
+	const lines = text.split(RegExp("\n"))
 
 	let html = '<pre class="editor editor-colors">';
 	for (let i = 0; i < lines.length; i++) {
@@ -93,8 +94,8 @@ function tokenize_lmps(text: string, grammar: vsctm.IGrammar) {
 function lineToken2html(tokens: vsctm.ITokenizeLineResult, line: string) {
 	let html = ''
 	for (let l = 0, len1 = tokens.tokens.length; l < len1; l++) {
-		let ref1 = tokens.tokens[l]
-		let scopes = ref1.scopes;
+		const ref1 = tokens.tokens[l]
+		const scopes = ref1.scopes;
 		let value = line.substring(ref1.startIndex, ref1.endIndex)
 		if (!value) {
 			value = ' ';
@@ -124,7 +125,7 @@ function updateScopeStack(scopeStack: string[], desiredScopes: string[], html: s
 		html = pushScope(scopeStack, desiredScopes[j], html);
 	}
 	return html;
-};
+}
 
 function pushScope(scopeStack: string[], scope: string, html: string) {
 	let className;
@@ -135,12 +136,12 @@ function pushScope(scopeStack: string[], scope: string, html: string) {
 	} else {
 		return html += "<span>";
 	}
-};
+}
 
 function popScope(scopeStack: string[], html: string) {
 	scopeStack.pop();
 	return html += '</span>';
-};
+}
 
 function escapeString(str: string) {
 	return str.replace(/[&"'<> ]/g, function (match) {
@@ -161,7 +162,7 @@ function escapeString(str: string) {
 				return match;
 		}
 	});
-};
+}
 
 
 // Substantial parts of this code were copied and/or adapted from the highlights package:
