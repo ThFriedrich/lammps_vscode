@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions, workspace, SaveDialogOptions } from 'vscode';
 import { join } from 'path'
 import { readFileSync, statSync, writeFileSync } from 'fs';
