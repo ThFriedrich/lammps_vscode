@@ -49,10 +49,12 @@ function group_command(document: TextDocument, errors: Diagnostic[]): Diagnostic
                 const rng = new Range(line_idx, first_p, line_idx, last_p)
                 const msg = "There can be no more than 32 groups defined at one time, including “all”."
 
-                const Error: Diagnostic = new Diagnostic(
-                    rng, msg, DiagnosticSeverity.Error
-                )
-                errors.push(Error)
+                errors.push({
+                    message: msg,
+                    range: rng,
+                    source: 'Lammps Extension',
+                    severity: DiagnosticSeverity.Error
+                })
             }
         }
     }
@@ -71,10 +73,12 @@ function checkBrackets(document: TextDocument, line_str: TextLine, line_idx: num
         const rng = new Range(line_idx, first_p, line_idx, last_p)
         const msg = "Unbalanced Parenthesis"
 
-        const Error: Diagnostic = new Diagnostic(
-            rng, msg, DiagnosticSeverity.Error
-        )
-        errors.push(Error)
+        errors.push({
+            message: msg,
+            range: rng,
+            source: 'Lammps Extension',
+            severity: DiagnosticSeverity.Error
+        })
     }
     return errors
 }
@@ -223,12 +227,7 @@ function getCWD(document: TextDocument): string | undefined {
 */
 function fileExists(document: TextDocument, file_path: string): boolean {
     if (!isAbsolute(file_path)) {
-        const docDir = getCWD(document);
-        if (docDir) {
-            file_path = join(docDir, file_path)
-        } else {
-            file_path = join(getDocDir(document), file_path)
-        }
+        file_path = join(getDocDir(document), file_path)
     }
     if (existsSync(file_path)) {
         return true
@@ -244,12 +243,7 @@ function fileExists(document: TextDocument, file_path: string): boolean {
 */
 function dirExists(document: TextDocument, file_path: string): boolean {
     if (!isAbsolute(file_path)) {
-        const docDir = getCWD(document);
-        if (docDir) {
-            file_path = join(docDir, file_path)
-        } else {
-            file_path = join(getDocDir(document), file_path)
-        }
+        file_path = join(getDocDir(document), file_path)
     }
     if (existsSync(dirname(file_path))) {
         return true
@@ -275,13 +269,13 @@ function checkPath(document: TextDocument, line_str: string, line_index: number,
             case 'dir':
                 if (!dirExists(document, file_path)) { // Directory doesn't exist
                     rng = getRange(line_str, line_index, file_path)
-                    msg = `The directory ${dirname(file_path)} does not exist`
+                    msg = `The directory ${dirname(file_path)} does not exist. \n Note that the path should be either absolute or relative to the scipt path: "` + getDocDir(document) + '"'
                 }
                 break;
             case 'file':
                 if (!fileExists(document, file_path)) { // File doesn't exist
                     rng = getRange(line_str, line_index, file_path)
-                    msg = `The file ${file_path} does not exist`
+                    msg = `The file ${file_path} does not exist. \n Note that the path should be either absolute or relative to the scipt path: "` + getDocDir(document) + '"'
                 }
                 break;
             default:
@@ -297,6 +291,7 @@ function checkPath(document: TextDocument, line_str: string, line_index: number,
         return {
             message: msg,
             range: rng,
+            source: 'Lammps Extension',
             severity: DiagnosticSeverity.Error
         }
     }
