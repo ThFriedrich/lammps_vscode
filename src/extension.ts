@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import { get_markdown_it } from './highlight_fcns';
 import { join } from 'path';
 import { readFileSync } from 'fs'
+
 export async function activate(context: vscode.ExtensionContext) {
 
 	check_versions(context)
@@ -145,12 +146,36 @@ export async function activate(context: vscode.ExtensionContext) {
 				return resolve_task(tsk)
 			}
 		}));
+
+	// Provide Symbols to display Headers in the Outline Tab
+	context.subscriptions.push(
+		vscode.languages.registerDocumentSymbolProvider("lmps", {
+			provideDocumentSymbols(document: vscode.TextDocument, cancellationToken: vscode.CancellationToken): Promise<vscode.SymbolInformation[]> {
+				return new Promise((resolve) => {
+					const symbols = [];
+					for (let i = 0; i < document.lineCount; i++) {
+						if (cancellationToken.isCancellationRequested) {
+							resolve(symbols);
+						}
+						const line = document.lineAt(i);
+						const m = line.text.match(RegExp("^\\s*#\\s*\\[\\s*(.*)"));
+						if (m && m.length > 1) {
+							symbols.push({
+								name: m[1],
+								kind: vscode.SymbolKind.Module,
+								containerName: 'Section',
+								location: new vscode.Location(document.uri, line.range)
+							});
+						}
+					}
+					resolve(symbols);
+				});
+			}
+		}));
 }
 
 // Function to display update notification
 function check_versions(context: vscode.ExtensionContext) {
-
-
 	const meta = JSON.parse(readFileSync(join(context.extensionPath, 'package.json'), 'utf8'));
 	const v: string = meta.version
 	const v_stored: string | undefined = context.globalState.get('lmps_version')
