@@ -7,9 +7,12 @@
     ],
     "icon": "imgs/logo.png",
     "description": "Keyword/Syntax highlighting extension for Molecular Dynamics Software LAMMPS",
-    "version": "1.5.0",
+    "version": "1.6.1",
     "license": "GPL-2.0-or-later",
     "publisher": "ThFriedrich",
+    "sponsor": {
+        "url": "https://plant.treeware.earth/thfriedrich/lammps_vscode"
+    },
     "repository": {
         "type": "git",
         "url": "https://github.com/ThFriedrich/lammps_vscode"
@@ -209,32 +212,32 @@
     "devDependencies": {
         "@types/glob": "^7.1.3",
         "@types/mocha": "^7.0.1",
-        "@types/node": "^12.12.55",
+        "@types/node": "^18.0.0",
         "@types/vscode": "^1.43.0",
-        "@typescript-eslint/eslint-plugin": "^2.18.0",
-        "@typescript-eslint/parser": "^2.18.0",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "@vscode/vsce": "^2.19.0",
         "copy-webpack-plugin": "^6.2.1",
         "cpx": "^1.5.0",
-        "eslint": "^6.8.0",
+        "eslint": "^7.0.0",
         "glob": "^7.1.6",
-        "mocha": "^7.0.1",
-        "ts-loader": "^7.0.5",
-        "typescript": "^3.9.7",
-        "vsce": "^1.88.0",
-        "webpack": "^5.28.0",
+        "mocha": "^10.1.0",
+        "ts-loader": "^9.4.2",
+        "typescript": "^5.1.6",
+        "webpack": "^5.76.0",
         "webpack-cli": "^4.5.0"
     },
     "dependencies": {
+        "acorn": "^8.0.0",
         "cpu-stats": "^1.0.0",
-        "markdown-it": "^11.0.0",
+        "markdown-it": "^12.3.2",
         "mathjax-node": "^2.1.1",
         "node-nvidia-smi": "^1.0.0",
         "node-os-utils": "^1.3.2",
-        "plist": "^3.0.2",
+        "plist": "^3.0.5",
         "plotly.js-dist-min": "^2.6.0",
         "request": "^2.88.2",
         "vscode-oniguruma": "^1.3.1",
-        "vscode-textmate": "^5.2.0",
-        "acorn": "^7.0.0"
+        "vscode-textmate": "^5.2.0"
     }
 }

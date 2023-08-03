@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions, workspace, SaveDialogOptions } from 'vscode';
 import { join } from 'path'
 import { readFileSync, statSync, writeFileSync } from 'fs';
@@ -191,7 +192,7 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
                                         writeFileSync(img_path, buf);
                                     }
                                 });
-                            };
+                            }
                             break;
                     }
 
@@ -245,11 +246,11 @@ export function draw_panel(panel: PlotPanel, context: ExtensionContext) {
 }
 
 function get_log_data(path: string): plot_data_ds | undefined {
-    let log = read_log(path)
+    const log = read_log(path)
     if (log) {
-        let plot_ser: plot_data[][] = []
+        const plot_ser: plot_data[][] = []
         for (let iy = 0; iy < log.data.length; iy++) {
-            let ser: plot_data[] = []
+            const ser: plot_data[] = []
             for (let ix = 1; ix < log.data[iy].data[0].length; ix++) {
                 ser.push({
                     plot_type: log.data[iy].type,
@@ -279,7 +280,7 @@ function locate_blocks(log: string) {
         RegExp("\\brun\\b[\\s\\S]*?(\\bDangerous\\sbuilds\\b|$)", 'g'),
         RegExp("\\bminimize\\b[\\s\\S]*?(\\bDangerous\\sbuilds\\b|$)", 'g'),
         RegExp("\\bneb\\b[\\s\\S]*?(\\bDangerous\\sbuilds\\b|$)", 'g')]
-    let blocks: log_block[] = []
+    const blocks: log_block[] = []
 
     work_kw.forEach(kw => {
         let match
@@ -291,11 +292,11 @@ function locate_blocks(log: string) {
 }
 
 function locate_meta(log: string, log_path: string) {
-    let meta: Meta = {}
+    const meta: Meta = {}
     const log_lines = log.split('\n')
     for (let p = 0; p < patterns_config.length; p++) {
         for (let i = 0; i < log_lines.length; i++) {
-            let match = patterns_config[p].regex.exec(log_lines[i])
+            const match = patterns_config[p].regex.exec(log_lines[i])
             if (match) {
                 meta[patterns_config[p].name] = match[1]
                 break
@@ -312,7 +313,7 @@ function read_log(log_path: string) {
         const log_file = readFileSync(log_path).toString().replace(re_comments, '')  // Read entire Log_file
         const meta = locate_meta(log_file, log_path)
         const blocks = locate_blocks(log_file)
-        let log_ds: {
+        const log_ds: {
             type: string,                                                              // Initialize Array of Datablocks
             header: string[],
             data: string[][]
@@ -323,11 +324,11 @@ function read_log(log_path: string) {
             blocks.forEach(block => {
                 let data_block                                                              // Find Data Blocks
                 while ((data_block = re_log_data.exec(block.match)) != null) {
-                    let header = data_block.input.slice(data_block.input.slice(0, data_block.index - 1).lastIndexOf('\n'), data_block.index).trim().split(RegExp('\\s+', 'g'))
+                    const header = data_block.input.slice(data_block.input.slice(0, data_block.index - 1).lastIndexOf('\n'), data_block.index).trim().split(RegExp('\\s+', 'g'))
                     const dat_l = data_block.toString().split(RegExp("\\n+", "g"))
-                    let dat_n: string[][] = dat_l.map((value) => value.trim().split(RegExp('\\s+')))
+                    const dat_n: string[][] = dat_l.map((value) => value.trim().split(RegExp('\\s+')))
                     if (header.length == dat_n[0].length) {
-                        let dl = []
+                        const dl = []
                         for (let nd = 0; nd < dat_n.length; nd++) {
                             if (header.length == dat_n[nd].length) {
                                 dl.push(dat_n[nd])
@@ -343,12 +344,12 @@ function read_log(log_path: string) {
 }
 
 function get_dump_data(path: string): dump_data_ds | undefined {
-    let dmp_ds: dump_data_ds = { 'data': [], 'meta': { 'path': path } }
-    let dmp = read_dump(path)
+    const dmp_ds: dump_data_ds = { 'data': [], 'meta': { 'path': path } }
+    const dmp = read_dump(path)
     if (dmp) {
         for (let iy = 0; iy < dmp.length; iy++) {
-            let ty: number[] = dmp[iy].data.map(data => parseInt(data[1]))
-            let col: string[] = ty.map(c => colors[c])
+            const ty: number[] = dmp[iy].data.map(data => parseInt(data[1]))
+            const col: string[] = ty.map(c => colors[c])
             dmp_ds.data.push({
                 x: dmp[iy].data.map(data => data[2]),
                 y: dmp[iy].data.map(data => data[3]),
@@ -375,7 +376,7 @@ function read_dump(dump_path: string) {
     if (dump_path) {
         const dump_file = readFileSync(dump_path).toString().replace(re_comments, '')      // Read entire Log_file
         let data_block                                           // Find Data Blocks
-        let dump_ds: {                                           // Initialize Array of Datablocks
+        const dump_ds: {                                           // Initialize Array of Datablocks
             header: string[],
             data: string[][]
         }[] = []

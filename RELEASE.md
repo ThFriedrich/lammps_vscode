@@ -1,6 +1,8 @@
-# Release Notes v.1.5.0
+# Release Notes v.1.6.0
 
-In this update some minor changes were introduced and features added. The most significant adition in this update is the **Lammps Simulation Dashboard** (Still in the testing phase). Please [report issues](https://github.com/ThFriedrich/lammps_vscode/issues/new/choose) if you encounter any problems so they can be fixed. Much of the content of this extension is generated in an automated fashion from the official [Lammps documentation](https://docs.lammps.org/Manual.html). It is hardly possible to check the behaviour of autocomplete and hover features and the generation and formatting of the embedded documentation pages for each individual command, what makes bug reports all the more important and valueable. Also, please share your ideas for enhancements or new features. 
+In this update some minor changes were introduced and features added and bugs fixed: [#51](https://github.com/ThFriedrich/lammps_vscode/issues/51), [#49](https://github.com/ThFriedrich/lammps_vscode/issues/49), [#39](https://github.com/ThFriedrich/lammps_vscode/issues/39). This concerns issues with resolving relative file paths in the linting functions. Issue [#52](https://github.com/ThFriedrich/lammps_vscode/issues/52), introduces symbols to create an outline of the document based on folding markers. The python scripts to generate the doc_obj.ts from the online rst-files got some updates and fixes too.
+
+ Please [report issues](https://github.com/ThFriedrich/lammps_vscode/issues/new/choose) if you encounter any problems so they can be fixed. Much of the content of this extension is generated in an automated fashion from the official [Lammps documentation](https://docs.lammps.org/Manual.html). It is hardly possible to check the behaviour of autocomplete and hover features and the generation and formatting of the embedded documentation pages for each individual command, what makes bug reports all the more important and valueable. Also, please share your ideas for enhancements or new features. 
 
 ---
 
@@ -10,33 +12,30 @@ This package is [Treeware](https://treeware.earth). If you find this extension u
 
 ## This Release introduces the following new features and improvements:
 
- - ### Added **Lammps dashboard** (beta) as discussed in [Issue #19](https://github.com/ThFriedrich/lammps_vscode/issues/19)
-   - Plotting of log file data
-   - Plotting of atomic dump data
-   - System Information display for Memory usage, CPU load and GPU load (Nvidia GPUs only)
-   - Added Editor command 'Open Lammps Simulation Dashboard'
-   - Added button to open dashboard in editor window
- - ### Synchronisation of lammps_vscode with Lammps documentation
-   - Changed documentation source in official lammps repo from 'master' to 'release'
+ - ### Added **Outline** as discussed in [Issue #52](https://github.com/ThFriedrich/lammps_vscode/issues/52)
+   - Adds symbols at extension-specific folding start-marker '#[' and uses subsequent string as description in the Outline tab
+![image](https://github.com/ThFriedrich/lammps_vscode/assets/47680554/363c192c-5fae-4367-8b8e-a3946aa1175b)
+
+ - ### Linting
+   - Previously file-path-exists type of checks related to the current working directory, which has now been fixed to use the path relative to the lammps input script location instead.
 
  - ### Grammar
-   - Keywords updated 
+   - Keywords updated
+   - Update doc_obj generation scripts
+   - Changed the way to split the rst into sections to improve stability
+   - Added checks for minimal entries found (e.g. Syntax, Description, Examples)
+   - Updated for new rst-directives (tabs, admonition, deprecated, only html, figure, versionadded)
+   - several smaller bugfixes and formatting improvements
   
- - ### Offline embedded documentation
-   - minor layout improvements 
- - ### Added dependencies
-   - cpu-stats
-   - markdown-it
-   - node-nvidia-smi
-   - node-os-utils
-   - plotly.js-dist-min
-   - acorn
+ - ### Development
+   - Codebase cleanups based on new ESLint
+   - Updated Task and debug definitions in .vscode
+
+ - ### Dependencies updated
+   - "@types/node": "^12.12.55" -> "^18.0.0",
+   - "@typescript-eslint/eslint-plugin": "^2.18.0" -> "^6.0.0" 
+   - "@typescript-eslint/parser": "^2.18.0" -> "^6.0.0"
+   - vsce: "1.88.0" -> "@vscode/vsce": "^2.19.0"
+   - "typescript": "^3.9.7" -> "^5.1.6"
+   - "acorn": "^7.0.0" -> "^8.0.0"
 ---
-
-If you have to or want to revert to a previous release, please download the corresponding vsix-package from [GitHub](https://github.com/ThFriedrich/lammps_vscode/releases) and [install it](https://code.visualstudio.com/docs/editor/extension-gallery#_install-from-a-vsix) through the GUI (Extensions menu -> click the 3 dots -> Install from VSIX...) or from the command line with the following command:
-```bash
-code --install-extension lammps-1.2.4.vsix 
-```
-
----
-

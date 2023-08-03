@@ -35,7 +35,7 @@ export function updateDiagnostics(document: TextDocument, collection: Diagnostic
 function group_command(document: TextDocument, errors: Diagnostic[]): Diagnostic[] {
 
     let group_counter = 0
-    let par_reg_ex: RegExp = RegExp("^\\s*group\\s+\\S*\\s+[delete|clear|empty|region|type|id|molecule|variable|include|subtract|union|intersect|dynamic|static]")
+    const par_reg_ex: RegExp = RegExp("^\\s*group\\s+\\S*\\s+[delete|clear|empty|region|type|id|molecule|variable|include|subtract|union|intersect|dynamic|static]")
 
     for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
         const line_str: TextLine = document.lineAt(line_idx)
@@ -49,10 +49,12 @@ function group_command(document: TextDocument, errors: Diagnostic[]): Diagnostic
                 const rng = new Range(line_idx, first_p, line_idx, last_p)
                 const msg = "There can be no more than 32 groups defined at one time, including “all”."
 
-                let Error: Diagnostic = new Diagnostic(
-                    rng, msg, DiagnosticSeverity.Error
-                )
-                errors.push(Error)
+                errors.push({
+                    message: msg,
+                    range: rng,
+                    source: 'Lammps Extension',
+                    severity: DiagnosticSeverity.Error
+                })
             }
         }
     }
@@ -62,9 +64,7 @@ function group_command(document: TextDocument, errors: Diagnostic[]): Diagnostic
 
 function checkBrackets(document: TextDocument, line_str: TextLine, line_idx: number, errors: Diagnostic[]): Diagnostic[] {
 
-    let b_bracket: boolean
-
-    b_bracket = isMatchingBrackets(line_str.text)
+    const b_bracket = isMatchingBrackets(line_str.text)
 
     if (b_bracket == false) {
         const par = line_str.text.match(par_reg_ex);
@@ -73,18 +73,20 @@ function checkBrackets(document: TextDocument, line_str: TextLine, line_idx: num
         const rng = new Range(line_idx, first_p, line_idx, last_p)
         const msg = "Unbalanced Parenthesis"
 
-        let Error: Diagnostic = new Diagnostic(
-            rng, msg, DiagnosticSeverity.Error
-        )
-        errors.push(Error)
+        errors.push({
+            message: msg,
+            range: rng,
+            source: 'Lammps Extension',
+            severity: DiagnosticSeverity.Error
+        })
     }
     return errors
 }
 
 
 function isMatchingBrackets(str: string): boolean {
-    let brackets: RegExpMatchArray | null = str.match(par_reg_ex)
-    let stack: string[] = [];
+    const brackets: RegExpMatchArray | null = str.match(par_reg_ex)
+    const stack: string[] = [];
     const map = new Map<string, string>()
     map.set('(', ')')
     map.set('[', ']')
@@ -96,15 +98,15 @@ function isMatchingBrackets(str: string): boolean {
                 stack.push(brackets[i]);
             }
             else {
-                let last = stack.pop();
+                const last = stack.pop();
                 if (last) {
-                    if (brackets[i] !== map.get(last)) { return false };
+                    if (brackets[i] !== map.get(last)) { return false }
                 } else {
                     return false
                 }
             }
         }
-        if (stack.length !== 0) { return false };
+        if (stack.length !== 0) { return false }
     }
     return true;
 }
@@ -165,7 +167,7 @@ function getCommandArgs(line: string, command: string[]): commandStruct {
         line = line.substr(0, line.indexOf('#'))
     }
     //Split line into array of strings without whitespaces, filter empty elemets
-    let line_arr = line.split(RegExp('\\s+')).filter(function (e) { return e })
+    const line_arr = line.split(RegExp('\\s+')).filter(function (e) { return e })
 
     // Initialize empty commandStruct variable
     const com_struct = <commandStruct>{}
@@ -225,12 +227,7 @@ function getCWD(document: TextDocument): string | undefined {
 */
 function fileExists(document: TextDocument, file_path: string): boolean {
     if (!isAbsolute(file_path)) {
-        const docDir = getCWD(document);
-        if (docDir) {
-            file_path = join(docDir, file_path)
-        } else {
-            file_path = join(getDocDir(document), file_path)
-        }
+        file_path = join(getDocDir(document), file_path)
     }
     if (existsSync(file_path)) {
         return true
@@ -246,12 +243,7 @@ function fileExists(document: TextDocument, file_path: string): boolean {
 */
 function dirExists(document: TextDocument, file_path: string): boolean {
     if (!isAbsolute(file_path)) {
-        const docDir = getCWD(document);
-        if (docDir) {
-            file_path = join(docDir, file_path)
-        } else {
-            file_path = join(getDocDir(document), file_path)
-        }
+        file_path = join(getDocDir(document), file_path)
     }
     if (existsSync(dirname(file_path))) {
         return true
@@ -277,13 +269,13 @@ function checkPath(document: TextDocument, line_str: string, line_index: number,
             case 'dir':
                 if (!dirExists(document, file_path)) { // Directory doesn't exist
                     rng = getRange(line_str, line_index, file_path)
-                    msg = `The directory ${dirname(file_path)} does not exist`
+                    msg = `The directory ${dirname(file_path)} does not exist. \n Note that the path should be either absolute or relative to the scipt path: "` + getDocDir(document) + '"'
                 }
                 break;
             case 'file':
                 if (!fileExists(document, file_path)) { // File doesn't exist
                     rng = getRange(line_str, line_index, file_path)
-                    msg = `The file ${file_path} does not exist`
+                    msg = `The file ${file_path} does not exist. \n Note that the path should be either absolute or relative to the scipt path: "` + getDocDir(document) + '"'
                 }
                 break;
             default:
@@ -299,6 +291,7 @@ function checkPath(document: TextDocument, line_str: string, line_index: number,
         return {
             message: msg,
             range: rng,
+            source: 'Lammps Extension',
             severity: DiagnosticSeverity.Error
         }
     }

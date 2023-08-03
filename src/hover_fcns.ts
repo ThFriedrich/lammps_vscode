@@ -3,6 +3,7 @@ import { doc_entry, getColor, fix_img_path } from './doc_fcns'
 import { getMathMarkdown } from './render_fcns'
 
 export function getRangeFromPosition(document: TextDocument, position: Position): string {
+    // eslint-disable-next-line no-useless-escape
     const range = document.getWordRangeAtPosition(position, RegExp('[\\w\\/]+(?:[\\t\\s]+[^\#\\s\\t]+)*'))
     return document.getText(range)
 }

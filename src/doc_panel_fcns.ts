@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { WebviewPanel, ExtensionContext, Uri, window, TextDocument, TextEditor, MarkdownString, Position, commands } from 'vscode';
 import { doc_entry, getColor, fix_img_path, getDocumentation } from './doc_fcns'
 import { getMathMarkdown } from './render_fcns'
