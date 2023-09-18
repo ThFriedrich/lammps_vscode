@@ -33,7 +33,7 @@ window.onload = function () {
             var div_sz = dump_div.getBoundingClientRect()
             var update = {
                 width: div_sz.width,
-                height: div_sz.height
+                height: document.documentElement.clientHeight - div_sz.top -25
             };
             if (dump_div.offsetHeight > 0) {
                 Plotly.relayout(dump_div, update);
@@ -278,7 +278,7 @@ window.onload = function () {
             var div_sz = dump_div.getBoundingClientRect()
             var update = {
                 width: div_sz.width,
-                height: div_sz.height
+                height: document.documentElement.clientHeight - div_sz.top -25
             };
             Plotly.relayout(dump_div, update);
         };
@@ -456,6 +456,7 @@ window.onload = function () {
             },
             steps: sliderSteps
         }]
+        layout['scene']['aspectmode']='data'
         // Create the plot:
         Plotly.newPlot(document.getElementById(plot_div),
             [data[0]], layout, modbar_config);
@@ -467,6 +468,7 @@ window.onload = function () {
         }
         document.getElementById(plot_div).style.border = '1px solid'
         document.getElementById(plot_div).style.borderColor = hl_col
+        resize_plots()
     }
 
     function openTab(evt, cont_type) {
