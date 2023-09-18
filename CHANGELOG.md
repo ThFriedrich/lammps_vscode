@@ -130,3 +130,12 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
  - Added Outline as discussed in [Issue #52](https://github.com/ThFriedrich/lammps_vscode/issues/52)
  - Fixed linting issues [#51](https://github.com/ThFriedrich/lammps_vscode/issues/51), [#49](https://github.com/ThFriedrich/lammps_vscode/issues/49), [#39](https://github.com/ThFriedrich/lammps_vscode/issues/39)
  - several updated dependencies
+
+ ## Version 1.7.0 18.09.2023
+ - Improvements in Dashboard dump-view layout
+   - Add scaling accounting for the bounding box size
+   - Improve automatic resizing of dump-div 
+ - Task provider
+   - Add a dryrun Task [#11](https://github.com/ThFriedrich/lammps_vscode/issues/11), using the ['-skiprun' flag](https://docs.lammps.org/latest/Run_options.html#skiprun)
+   - Add "args" to allow customisation of tasks [#41](https://github.com/ThFriedrich/lammps_vscode/issues/41)
+   - Simplify task provider implementation
