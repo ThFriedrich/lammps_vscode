@@ -7,7 +7,7 @@
     ],
     "icon": "imgs/logo.png",
     "description": "Keyword/Syntax highlighting extension for Molecular Dynamics Software LAMMPS",
-    "version": "1.6.2",
+    "version": "1.7.0",
     "license": "GPL-2.0-or-later",
     "publisher": "ThFriedrich",
     "sponsor": {
@@ -165,34 +165,36 @@
                 }
             }
         },
-        "taskDefinitions": [{
-            "type": "lmps",
-            "required": [
-                "binary"
-            ],
-            "properties": {
-                "binary": {
-                    "type": "string",
-                    "default": "/bin/lmp",
-                    "description": "Path to the Lammps executable"
-                },
-                "mpi_tasks": {
-                    "type": "integer",
-                    "default": 4,
-                    "description": "Number of tasks to run with MPI."
-                },
-                "gpu_nodes": {
-                    "type": "integer",
-                    "default": 1,
-                    "description": "GPU nodes to use."
-                },
-                "args": {
-                    "type": "string",
-                    "default": "",
-                    "description": "Additional command line arguments, e.g. '-skiprun'"
+        "taskDefinitions": [
+            {
+                "type": "lmps",
+                "required": [
+                    "binary"
+                ],
+                "properties": {
+                    "binary": {
+                        "type": "string",
+                        "default": "/bin/lmp",
+                        "description": "Path to the Lammps executable"
+                    },
+                    "mpi_tasks": {
+                        "type": "integer",
+                        "default": 4,
+                        "description": "Number of tasks to run with MPI."
+                    },
+                    "gpu_nodes": {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "GPU nodes to use."
+                    },
+                    "args": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Additional command line arguments, e.g. '-skiprun'"
+                    }
                 }
             }
-        }]
+        ]
     },
     "scripts": {
         "compile": "cpx \"src/**/*.js\" dist && tsc -p ./",
