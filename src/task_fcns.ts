@@ -35,17 +35,19 @@ export function resolve_task(tsk: Task): Task | undefined {
     const file = window.activeTextEditor?.document.fileName
     const tdf: lmp_task = <any>tsk.definition;
     const execution = new ShellExecution('')
+    let add_args:String = ''
+    if (tdf.args) {add_args = tdf.args}
     if (tdf.mpi_tasks && tdf.gpu_nodes) { // Multi-Task GPU
-        execution.commandLine = `mpirun -np ${tdf.mpi_tasks.toString()} ${tdf.binary} -sf gpu -pk gpu ${tdf.gpu_nodes.toString()} -in ${file} ${tdf.args}`;
+        execution.commandLine = `mpirun -np ${tdf.mpi_tasks.toString()} ${tdf.binary} -sf gpu -pk gpu ${tdf.gpu_nodes.toString()} -in ${file} ${add_args}`;
     }
     else if (!tdf.mpi_tasks && tdf.gpu_nodes) { // Single-Task GPU
-        execution.commandLine = `${tdf.binary} -sf gpu -pk gpu ${tdf.gpu_nodes.toString()} -in ${file} ${tdf.args}`;
+        execution.commandLine = `${tdf.binary} -sf gpu -pk gpu ${tdf.gpu_nodes.toString()} -in ${file} ${add_args}`;
     }
     else if (tdf.mpi_tasks && !tdf.gpu_nodes) { // Multi-Task CPU
-        execution.commandLine = `mpirun -np ${tdf.mpi_tasks.toString()} ${tdf.binary} -in ${file} ${tdf.args}`;
+        execution.commandLine = `mpirun -np ${tdf.mpi_tasks.toString()} ${tdf.binary} -in ${file} ${add_args}`;
     }
     else { // Single-Task CPU
-        execution.commandLine = `${tdf.binary} -in ${file} ${tdf.args}`;
+        execution.commandLine = `${tdf.binary} -in ${file} ${add_args}`;
     }
     return new Task(
         tdf,
