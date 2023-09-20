@@ -349,12 +349,12 @@ function get_dump_data(path: string): dump_data_ds | undefined {
     const dmp = read_dump(path)
     if (dmp) {
         for (let iy = 0; iy < dmp.length; iy++) {
-            const ty: number[] = dmp[iy].data.map(data => parseInt(data[1]))
+            const ty: number[] = dmp[iy].data.map(data => data[1])
             const col: string[] = ty.map(c => colors[c])
             dmp_ds.data.push({
-                x: dmp[iy].data.map(data => parseFloat(data[2])*dmp[iy].scale_xyz[0]),
-                y: dmp[iy].data.map(data =>  parseFloat(data[3])*dmp[iy].scale_xyz[1]),
-                z: dmp[iy].data.map(data =>  parseFloat(data[4])*dmp[iy].scale_xyz[2]),
+                x: dmp[iy].data.map(data => data[2] * dmp[iy].scale_xyz[0]),
+                y: dmp[iy].data.map(data => data[3] * dmp[iy].scale_xyz[1]),
+                z: dmp[iy].data.map(data => data[4] * dmp[iy].scale_xyz[2]),
                 mode: 'markers',
                 visible: true,
                 marker: {
@@ -377,32 +377,35 @@ function read_dump(dump_path: string) {
     if (dump_path) {
         const dump_file = readFileSync(dump_path).toString().replace(re_comments, '')      // Read entire Log_file
         let data_block                                           // Find Data Blocks
+        let bounds
         const dump_ds: {                                           // Initialize Array of Datablocks
             header: string[],
-            data: string[][],
+            data: number[][],
             scale_xyz: number[]
         }[] = []
-        let scale_xyz = [1.0, 1.0, 1.0]
-
-        const bounds = re_dump_bounds.exec(dump_file)
-        if (bounds != null) {
-            let idx = 0
-            for (let line of bounds[0].trim().split(RegExp('\\n+'))) {
+        let scale_xyz
+        let idx
+        while ((bounds = re_dump_bounds.exec(dump_file)) != null) {
+            idx = 0
+            scale_xyz = [1.0, 1.0, 1.0]
+            for (const line of bounds[0].trim().split(RegExp('\\n+'))) {
                 const vals = line.split(RegExp('\\s+'))
                 if (vals.length == 2) {
                     scale_xyz[idx] = parseFloat(vals[1]) - parseFloat(vals[0])
                     idx++
                 }
             }
-        }
-        while ((data_block = re_dump_data.exec(dump_file)) != null) {
-            const idx_head = data_block[0].indexOf('\n')
-            let header = data_block[0].slice(0, idx_head).trim().split(RegExp('\\s+'))
-            header = header.filter(e => e !== 'ITEM:' && e !== 'ATOMS')
-            const dat_l = data_block[0].slice(idx_head + 1).toString().trim().split(RegExp("\\n+", "g"))
-            const dat_n: string[][] = dat_l.map((value) => value.trim().split(RegExp('\\s+')))
-            if (header.length == dat_n[0].length) {
-                dump_ds.push({ header: header, data: dat_n, scale_xyz: scale_xyz })
+
+            if ((data_block = re_dump_data.exec(dump_file)) != null) {
+                const idx_head = data_block[0].indexOf('\n')
+                let header = data_block[0].slice(0, idx_head).trim().split(RegExp('\\s+'))
+                header = header.filter(e => e !== 'ITEM:' && e !== 'ATOMS')
+                const dat_l = data_block[0].slice(idx_head + 1).toString().trim().split(RegExp("\\n+", "g"))
+                const dat_n: number[][] = dat_l.map((value) =>
+                    value.trim().split(/\s+/).map((substring) => parseFloat(substring))
+                ); if (header.length == dat_n[0].length) {
+                    dump_ds.push({ header: header, data: dat_n, scale_xyz: scale_xyz })
+                }
             }
         }
         return dump_ds
