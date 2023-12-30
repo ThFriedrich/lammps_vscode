@@ -202,7 +202,7 @@ def tr_inline_doc(txt: str) -> str:
             d[0],
             "["
             + d[1].replace("\n", "")
-            + "](https://lammps.sandia.gov/doc/"
+            + "](https://docs.lammps.org/"
             + d[2].replace("\n", "")
             + ".html)",
         )
@@ -243,7 +243,7 @@ def tr_inline_pdf(txt: str) -> str:
             d[0],
             "["
             + d[1].replace("\n", "")
-            + "](https://lammps.sandia.gov/doc/"
+            + "](https://docs.lammps.org/"
             + d[2].replace("\n", "")
             + ".pdf)",
         )
