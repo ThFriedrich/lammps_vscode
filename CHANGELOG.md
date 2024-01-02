@@ -139,3 +139,6 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
    - Add a dryrun Task [#11](https://github.com/ThFriedrich/lammps_vscode/issues/11), using the ['-skiprun' flag](https://docs.lammps.org/latest/Run_options.html#skiprun)
    - Add "args" to allow customisation of tasks [#41](https://github.com/ThFriedrich/lammps_vscode/issues/41)
    - Simplify task provider implementation
+
+## Version 1.7.4 02.01.2024
+ - Update of the documentation links [#56](https://github.com/ThFriedrich/lammps_vscode/pull/56)
