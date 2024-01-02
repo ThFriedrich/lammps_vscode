@@ -140,5 +140,15 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
    - Add "args" to allow customisation of tasks [#41](https://github.com/ThFriedrich/lammps_vscode/issues/41)
    - Simplify task provider implementation
 
-## Version 1.7.4 02.01.2024
+ ## Version 1.8.0 02.01.2024
  - Update of the documentation links [#56](https://github.com/ThFriedrich/lammps_vscode/pull/56)
+ - Dashboard
+   - Fixes of Dashboard view in Windows
+   - Fix EOL-character issues when reading multiline dump- and log-files
+ - Task provider
+   - Rework of the 'resolve_task' funtion for better reliability
+   - Include OMP-threads option
+ - Packaging
+   - Removed dev-dependency glob-types
+   - Fixed Task provider definition
+   - Add Logo for Lammps-input-script files in tree view, etc.

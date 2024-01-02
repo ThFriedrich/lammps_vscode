@@ -1,4 +1,4 @@
-# Release Notes v.1.6.0 and v.1.7.0
+# Release Notes v.1.6.0, v.1.7.0 and v.1.8.8
 
 In this update some minor changes were introduced and features added and bugs fixed: [#51](https://github.com/ThFriedrich/lammps_vscode/issues/51), [#49](https://github.com/ThFriedrich/lammps_vscode/issues/49), [#39](https://github.com/ThFriedrich/lammps_vscode/issues/39). This concerns issues with resolving relative file paths in the linting functions. Issue [#52](https://github.com/ThFriedrich/lammps_vscode/issues/52), introduces symbols to create an outline of the document based on folding markers. The python scripts to generate the doc_obj.ts from the online rst-files got some updates and fixes too. Further, the task provider functinality was updated to allow a better customisation of task definitions [#41](https://github.com/ThFriedrich/lammps_vscode/issues/41). A dry-run task was also added as discussed in [#11](https://github.com/ThFriedrich/lammps_vscode/issues/51). The atomic-dump viewer in the dashboard was updated to scale the plots according to the simulation box dimensions. The auto-resize feature was improved as well.
 
@@ -43,9 +43,14 @@ This package is [Treeware](https://treeware.earth). If you find this extension u
    - Codebase cleanups
    - Add dry run task
    - Add "args" option for custom task definitions
+   - Add "omp_threads" argument
   
  - ### Dashboard
    - Improve auto-rescaling behaviour of dump-div
    - Add scaling to dump plots to properly account for box size
+   - Bugfixes for dump and log viewer in Windows
+
+ - ### Packaging
+   - Add Logo for Lammps-input-script files in tree view, etc. 
 
 ---
