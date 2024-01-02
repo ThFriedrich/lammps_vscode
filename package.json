@@ -17,7 +17,6 @@
         "type": "git",
         "url": "https://github.com/ThFriedrich/lammps_vscode"
     },
-    "bugs": "https://github.com/ThFriedrich/lammps_vscode/issues",
     "engines": {
         "vscode": "^1.43.0"
     },
@@ -29,32 +28,27 @@
     ],
     "main": "./dist/extension.js",
     "contributes": {
-        "languages": [
-            {
-                "id": "lmps",
-                "aliases": [
-                    "Lammps",
-                    "lmps"
-                ],
-                "filenamePatterns": [
-                    "in.*"
-                ],
-                "extensions": [
-                    ".lmp",
-                    ".lmps",
-                    ".lammps"
-                ],
-                "configuration": "./language-configuration.json"
-            }
-        ],
-        "snippets": [
-            {
-                "language": "lmps",
-                "path": "./snippets/lmps.json"
-            }
-        ],
-        "grammars": [
-            {
+        "languages": [{
+            "id": "lmps",
+            "aliases": [
+                "Lammps",
+                "lmps"
+            ],
+            "filenamePatterns": [
+                "in.*"
+            ],
+            "extensions": [
+                ".lmp",
+                ".lmps",
+                ".lammps"
+            ],
+            "configuration": "./language-configuration.json"
+        }],
+        "snippets": [{
+            "language": "lmps",
+            "path": "./snippets/lmps.json"
+        }],
+        "grammars": [{
                 "language": "lmps",
                 "scopeName": "source.lmps",
                 "path": "./syntaxes/lmps.tmLanguage.json"
@@ -70,8 +64,7 @@
                 }
             }
         ],
-        "commands": [
-            {
+        "commands": [{
                 "command": "extension.show_docs",
                 "title": "Show Documentation for this Command"
             },
@@ -85,20 +78,16 @@
             }
         ],
         "menus": {
-            "editor/context": [
-                {
-                    "command": "extension.show_docs",
-                    "when": "editorLangId == lmps&&commandOnCursor",
-                    "group": "navigation"
-                }
-            ],
-            "editor/title": [
-                {
-                    "when": "resourceLangId == lmps",
-                    "command": "extension.show_dash",
-                    "group": "navigation"
-                }
-            ]
+            "editor/context": [{
+                "command": "extension.show_docs",
+                "when": "editorLangId == lmps&&commandOnCursor",
+                "group": "navigation"
+            }],
+            "editor/title": [{
+                "when": "resourceLangId == lmps",
+                "command": "extension.show_dash",
+                "group": "navigation"
+            }]
         },
         "configuration": {
             "title": "Lammps",
@@ -153,6 +142,11 @@
                     "default": "/bin/lmp",
                     "description": "Path to the Lammps executable"
                 },
+                "lammps.tasks.mpiexec_path": {
+                    "type": "string",
+                    "default": "mpiexec",
+                    "description": "Path to the mpiexec executable"
+                },
                 "lammps.tasks.mpi_tasks": {
                     "type": "integer",
                     "default": 4,
@@ -162,39 +156,49 @@
                     "type": "integer",
                     "default": 1,
                     "description": "GPU nodes to use"
+                },
+                "lammps.tasks.omp_threads": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "Number of OMP Threads"
                 }
             }
         },
-        "taskDefinitions": [
-            {
-                "type": "lmps",
-                "required": [
-                    "binary"
-                ],
-                "properties": {
-                    "binary": {
-                        "type": "string",
-                        "default": "/bin/lmp",
-                        "description": "Path to the Lammps executable"
-                    },
-                    "mpi_tasks": {
-                        "type": "integer",
-                        "default": 4,
-                        "description": "Number of tasks to run with MPI."
-                    },
-                    "gpu_nodes": {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "GPU nodes to use."
-                    },
-                    "args": {
-                        "type": "string",
-                        "default": "",
-                        "description": "Additional command line arguments, e.g. '-skiprun'"
-                    }
+        "taskDefinitions": [{
+            "type": "lmps",
+            "properties": {
+                "binary": {
+                    "type": "string",
+                    "default": "/bin/lmp",
+                    "description": "Path to the Lammps executable"
+                },
+                "mpiexec_path": {
+                    "type": "string",
+                    "default": "mpiexec",
+                    "description": "Path to the mpiexec executable"
+                },
+                "mpi_tasks": {
+                    "type": "integer",
+                    "default": 4,
+                    "description": "Number of tasks to run with MPI."
+                },
+                "gpu_nodes": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "GPU nodes to use."
+                },
+                "omp_threads": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "Number of OMP Threads."
+                },
+                "args": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Additional command line arguments, e.g. '-skiprun'"
                 }
             }
-        ]
+        }]
     },
     "scripts": {
         "compile": "cpx \"src/**/*.js\" dist && tsc -p ./",
@@ -207,7 +211,6 @@
         "test-compile": "tsc -p ./"
     },
     "devDependencies": {
-        "@types/glob": "^7.1.3",
         "@types/mocha": "^7.0.1",
         "@types/node": "^18.0.0",
         "@types/vscode": "^1.43.0",
@@ -236,5 +239,7 @@
         "request": "^2.88.2",
         "vscode-oniguruma": "^1.3.1",
         "vscode-textmate": "^5.2.0"
-    }
+    },
+    "homepage": "https://github.com/ThFriedrich/lammps_vscode#readme",
+    "author": "Thomas Friedrich"
 }
