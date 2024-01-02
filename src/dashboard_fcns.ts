@@ -311,7 +311,7 @@ function locate_meta(log: string, log_path: string) {
 
 function read_log(log_path: string) {
     if (log_path) {
-        const log_file = readFileSync(log_path).toString().replace(re_comments, '')  // Read entire Log_file
+        const log_file = readFileSync(log_path).toString().replace(re_comments, '').replace(/\r\n/g, '\n');  // Read entire Log_file
         const meta = locate_meta(log_file, log_path)
         const blocks = locate_blocks(log_file)
         const log_ds: {
@@ -375,7 +375,7 @@ function get_dump_data(path: string): dump_data_ds | undefined {
 
 function read_dump(dump_path: string) {
     if (dump_path) {
-        const dump_file = readFileSync(dump_path).toString().replace(re_comments, '')      // Read entire Log_file
+        const dump_file = readFileSync(dump_path).toString().replace(re_comments, '').replace(/\r\n/g, '\n');      // Read entire dump_file
         let data_block                                           // Find Data Blocks
         let bounds
         const dump_ds: {                                           // Initialize Array of Datablocks
