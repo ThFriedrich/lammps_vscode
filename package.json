@@ -42,7 +42,11 @@
                 ".lmps",
                 ".lammps"
             ],
-            "configuration": "./language-configuration.json"
+            "configuration": "./language-configuration.json",
+            "icon": {
+                "light": "imgs/logo2.png",
+                "dark": "imgs/logo2.png"
+            }
         }],
         "snippets": [{
             "language": "lmps",
