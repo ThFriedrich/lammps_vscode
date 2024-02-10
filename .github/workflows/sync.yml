@@ -30,7 +30,13 @@ jobs:
     - name: Download updated Docs
       id: s1
       run:
-        svn export https://github.com/lammps/lammps/branches/release/doc/src rst --force
+        rm -rf rst
+        mkdir rst
+        cd rst
+        git clone --depth=1 --single-branch --branch=release https://github.com/lammps/lammps.git
+        cp -r lammps/doc/src/* .
+        rm -rf lammps/
+        cd ..
 
     - name: Build Docs TS-Object
       id: s2
