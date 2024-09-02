@@ -83,6 +83,7 @@ jobs:
         npm audit fix
         git add .
         git commit -m "Scheduled sync of lammps_vscode with Lammps documentation $(date +'%Y-%m-%d')"
+        git pull --rebase
         npm version patch
         git push
         vsce package
