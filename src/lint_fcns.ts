@@ -7,25 +7,32 @@ import { existsSync } from 'fs'
 // document checks/Linter functions //
 //////////////////////////////////////
 
+// Regular expressions for checking brackets and parentheses
 const par_reg_ex: RegExp = RegExp("[\\(\\[\\{\\)\\]\\}]", "g")
+// Regular expression for checking if the opened file is a log file
+const is_log_ex: RegExp = RegExp("Dangerous builds\\s=\\s\\d+")
+// Regular expression for checking if the line contains a group command
+const grp_reg_ex: RegExp = RegExp("^\\s*group\\s+\\S*\\s+[delete|clear|empty|region|type|id|molecule|variable|include|subtract|union|intersect|dynamic|static]")
 
 export function updateDiagnostics(document: TextDocument, collection: DiagnosticCollection): void {
 
     if (document) {
+        const is_log = document.getText().match(is_log_ex)
+        if (is_log == null) {
+            let errors: Diagnostic[] = []
+            for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
+                // check lines with a set of functions, which append Diagnostic entries to the errors array
+                const line_str: TextLine = document.lineAt(line_idx)
 
-        let errors: Diagnostic[] = []
-        for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
-            // check lines with a set of functions, which append Diagnostic entries to the errors array
-            const line_str: TextLine = document.lineAt(line_idx)
+                if (!line_str.text.startsWith('#')) {
+                    errors = checkFilePaths(document, line_str, line_idx, errors)
+                    errors = checkBrackets(document, line_str, line_idx, errors)
 
-            if (!line_str.text.startsWith('#')) {
-                errors = checkFilePaths(document, line_str, line_idx, errors)
-                errors = checkBrackets(document, line_str, line_idx, errors)
-
+                }
             }
+            errors = group_command(document, errors)
+            collection.set(document.uri, errors)
         }
-        errors = group_command(document, errors)
-        collection.set(document.uri, errors)
     } else {
         collection.clear();
     }
@@ -35,17 +42,16 @@ export function updateDiagnostics(document: TextDocument, collection: Diagnostic
 function group_command(document: TextDocument, errors: Diagnostic[]): Diagnostic[] {
 
     let group_counter = 0
-    const par_reg_ex: RegExp = RegExp("^\\s*group\\s+\\S*\\s+[delete|clear|empty|region|type|id|molecule|variable|include|subtract|union|intersect|dynamic|static]")
 
     for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
         const line_str: TextLine = document.lineAt(line_idx)
-        const par = line_str.text.match(par_reg_ex);
+        const grp = line_str.text.match(grp_reg_ex);
 
-        if (par) {
+        if (grp) {
             group_counter += 1
             if (group_counter > 32) {
-                const first_p = line_str.text.indexOf(par[0]);
-                const last_p = line_str.text.lastIndexOf(par[0][par[0].length - 1]);
+                const first_p = line_str.text.indexOf(grp[0]);
+                const last_p = line_str.text.lastIndexOf(grp[0][grp[0].length - 1]);
                 const rng = new Range(line_idx, first_p, line_idx, last_p)
                 const msg = "There can be no more than 32 groups defined at one time, including “all”."
 
