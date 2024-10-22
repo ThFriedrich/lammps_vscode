@@ -6,7 +6,7 @@
 [![vsm-installs](https://img.shields.io/visual-studio-marketplace/i/thfriedrich.lammps?style=flat&label=installs&logo=visual-studio-code&color=brightgreen)](https://marketplace.visualstudio.com/items?itemName=thfriedrich.lammps)
 [![SYNC](https://github.com/ThFriedrich/lammps_vscode/actions/workflows/sync.yml/badge.svg)](https://github.com/ThFriedrich/lammps_vscode/actions/workflows/sync.yml)
 ![GitHub](https://custom-icon-badges.herokuapp.com/github/license/thfriedrich/lammps_vscode?color=brightgreen&logo=repo)
-[![Plant Tree](https://custom-icon-badges.herokuapp.com/badge/dynamic/json?color=brightgreen&label=Plant%20Tree&query=%24.total&url=https%3A%2F%2Fpublic.offset.earth%2Fusers%2Ftreeware%2Ftrees&&logo=treeware&logoColor=brightgreen)](https://plant.treeware.earth/thfriedrich/lammps_vscode)
+[![Treeware (Trees)](https://custom-icon-badges.demolab.com/treeware/trees/thfriedrich/lammps_vscode?color=brightgreen&label=Plant%20Tree&logo=treeware&logoColor=brightgreen)](https://plant.treeware.earth/thfriedrich/lammps_vscode)
 [![Gitter](https://img.shields.io/gitter/room/thfriedrich/lammps_vscode?logo=gitter)](https://gitter.im/lammps_vscode/community)
 
 This extension for Visual Studio Code provides language support for LAMMPS (Molecular dynamics Software) Scripts.
@@ -70,7 +70,6 @@ This package is being synchronised with the Lammps documentation through a conti
  - interactive 3D Visualisation of atomic dumps
  - interactive plots of lammps log file data
  - automatically updating plots for easy live observation of simulation status
-  
 --- 
 
 
