@@ -152,3 +152,10 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
    - Removed dev-dependency glob-types
    - Fixed Task provider definition
    - Add Logo for Lammps-input-script files in tree view, etc.
+
+ ## Version 1.8.8 22.10.2024
+ - Packaging
+   - Various dependency updates as a consequence of moving to node 22
+ - Linting
+   - Disabled linting for log-files [#57](https://github.com/ThFriedrich/lammps_vscode/issues/57)
+   
