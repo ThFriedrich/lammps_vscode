@@ -87,12 +87,12 @@ jobs:
         git pull --rebase
         npm version patch
         git push
-        vsce package
+        npx @vscode/vsce package
 
     - name: Publish2Marketplace
       id: s6
       if: steps.s5.conclusion == 'success' && env.b_update == 'true'
-      run: vsce publish
+      run: npx @vscode/vsce publish
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
   
