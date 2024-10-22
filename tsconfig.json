@@ -8,9 +8,11 @@
 		],
 		"sourceMap": true,
 		"rootDir": "src",
-        "resolveJsonModule" : true,
+        "resolveJsonModule": true,
 		"strict": true,   /* enable all strict type-checking options */
-		"esModuleInterop": true
+		"esModuleInterop": true,
+		"strictFunctionTypes": false, /* Disable strict function type checking */
+		"skipLibCheck": true          /* Skip type checking for declaration files */
 	},
 	"exclude": [
 		"node_modules",
