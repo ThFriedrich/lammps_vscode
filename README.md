@@ -1,9 +1,9 @@
 # Lammps language extension for vscode README
 
 
-[![vsm-version](https://img.shields.io/visual-studio-marketplace/v/thfriedrich.lammps?style=flat&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=thfriedrich.lammps)
-![Visual Studio Marketplace Last Updated](https://img.shields.io/visual-studio-marketplace/last-updated/thfriedrich.lammps?style=flat&label=Last%20Update&logo=visual-studio-code)
-[![vsm-installs](https://img.shields.io/visual-studio-marketplace/i/thfriedrich.lammps?style=flat&label=installs&logo=visual-studio-code&color=brightgreen)](https://marketplace.visualstudio.com/items?itemName=thfriedrich.lammps)
+[![vsm-version](https://custom-icon-badges.demolab.com/visual-studio-marketplace/v/thfriedrich.lammps?style=flat&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=thfriedrich.lammps)
+![Visual Studio Marketplace Last Updated](https://custom-icon-badges.demolab.com/visual-studio-marketplace/last-updated/thfriedrich.lammps?style=flat&label=Last%20Update&logo=visual-studio-code)
+[![vsm-installs](https://custom-icon-badges.demolab.com/visual-studio-marketplace/i/thfriedrich.lammps?style=flat&label=installs&logo=visual-studio-code&color=brightgreen)](https://marketplace.visualstudio.com/items?itemName=thfriedrich.lammps)
 [![SYNC](https://github.com/ThFriedrich/lammps_vscode/actions/workflows/sync.yml/badge.svg)](https://github.com/ThFriedrich/lammps_vscode/actions/workflows/sync.yml)
 ![GitHub](https://custom-icon-badges.herokuapp.com/github/license/thfriedrich/lammps_vscode?color=brightgreen&logo=repo)
 [![Treeware (Trees)](https://custom-icon-badges.demolab.com/treeware/trees/thfriedrich/lammps_vscode?color=brightgreen&label=Plant%20Tree&logo=treeware&logoColor=brightgreen)](https://plant.treeware.earth/thfriedrich/lammps_vscode)
@@ -70,6 +70,7 @@ This package is being synchronised with the Lammps documentation through a conti
  - interactive 3D Visualisation of atomic dumps
  - interactive plots of lammps log file data
  - automatically updating plots for easy live observation of simulation status
+
 --- 
 
 
