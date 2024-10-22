@@ -79,7 +79,7 @@ jobs:
         sudo apt install imagemagick -y
         bash ./scripts/resize256.sh
         npm install
-        npm install -g vsce
+        npm install -g @vscode/vsce
         npm audit fix
         git add .
         git commit -m "Scheduled sync of lammps_vscode with Lammps documentation $(date +'%Y-%m-%d')"
