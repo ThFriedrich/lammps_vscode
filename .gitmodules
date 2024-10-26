@@ -1,0 +1,3 @@
+[submodule "inara"]
+	path = inara
+	url = https://github.com/openjournals/inara.git
