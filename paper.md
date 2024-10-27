@@ -7,14 +7,17 @@ tags:
   - materials science
   - computational materials science
 authors:
-  - name: Dr. Thomas Friedrich
+  - name: Thomas Friedrich
     orcid: 0000-0002-7584-2080
+    email: thomas.friedrich@eah-jena.de
     affiliation: "1, 2" # (Multiple affiliations must be quoted)
 affiliations:
  - name: Ernst-Abbe-University of Applied Sciences, Jena, Germany
    index: 1
+   ror: 01rfnc002
  - name: INNOVENT e.V. Technologieentwicklung Jena, Jena, Germany
    index: 2
+   ror: 016tmz810
 date: 26 October 2024
 bibliography: paper.bib
 
@@ -26,7 +29,7 @@ __Lammps_VSCODE__ is a editor-extension vor [vscode](https://code.visualstudio.c
 
 # Statement of need
 
-scientific publications [@LAMMPS]  [@plimpton1995fast]. 
+scientific publications [@Thompson2022; @Plimpton1995; @Kloss2012] Online Tutorials [@Fahim2022; @Mihok2022]
 
 
 # Figures
@@ -37,6 +40,6 @@ Figure sizes can be customized by adding an optional second parameter:
 
 # Acknowledgements
 
-I want to acknowledge contributions from Arnaud Allera and Felix-Justin Friedrich who actively worked on the code, and the many GitHub-users who contributed enhancement-ideas and bug-reports. I am particularly grateful for the anonymous donations to [ecologi](https://ecologi.com/) through the [Treeware license](https://treeware.earth/) of __Lammps_VSCODE__.
+I want to acknowledge contributions from Arnaud Allera and Felix-Justin Friedrich who actively worked on the code, and the many GitHub-users who contributed enhancement-ideas and bug-reports. I am particularly grateful for the anonymous donations to [Ecologi](https://ecologi.com/) through the [Treeware license](https://treeware.earth/) of __Lammps_VSCODE__.
 
 # References
