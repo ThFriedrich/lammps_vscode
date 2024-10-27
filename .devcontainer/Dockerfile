@@ -1,6 +1,6 @@
 FROM pandoc/latex:3.2.0-alpine
 
-ARG USERNAME=vscode
+ARG USERNAME=thomas
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 

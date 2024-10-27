@@ -17,5 +17,5 @@
 			"ghcr.io/cirolosapio/devcontainers-features/alpine-git:0": "0.1.0",
 			"ghcr.io/cirolosapio/devcontainers-features/alpine-openssh:0": "0.1.0"
 		},
-		"remoteUser": "vscode"
+		"remoteUser": "thomas"
 	}
