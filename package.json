@@ -54,6 +54,14 @@
             {
                 "language": "lmps",
                 "path": "./snippets/lmps.json"
+            },
+            {
+                "language": "json",
+                "path": "./snippets/tasks.code-snippets"
+            },
+            {
+                "language": "jsonc",
+                "path": "./snippets/tasks.code-snippets"
             }
         ],
         "grammars": [
@@ -181,38 +189,63 @@
         "taskDefinitions": [
             {
                 "type": "lmps",
+                "required": [
+                    "label"
+                ],
                 "properties": {
+                    "label": {
+                        "type": "string",
+                        "description": "The task's label used in the user interface"
+                    },
                     "binary": {
                         "type": "string",
-                        "default": "/bin/lmp",
-                        "description": "Path to the Lammps executable"
+                        "description": "Path to the LAMMPS executable",
+                        "examples": [
+                            "lmp",
+                            "lmp_mpi",
+                            "/usr/local/bin/lmp",
+                            "lmp_intel_cpu_intelmpi"
+                        ]
                     },
                     "mpiexec_path": {
                         "type": "string",
-                        "default": "mpiexec",
-                        "description": "Path to the mpiexec executable"
+                        "description": "Path to the MPI executable (required for MPI runs)",
+                        "examples": [
+                            "mpiexec",
+                            "mpirun",
+                            "srun"
+                        ]
                     },
                     "mpi_tasks": {
                         "type": "integer",
-                        "default": 4,
-                        "description": "Number of tasks to run with MPI."
+                        "description": "Number of MPI tasks/processes (0 = no MPI)",
+                        "default": 0,
+                        "minimum": 0
                     },
                     "gpu_nodes": {
                         "type": "integer",
-                        "default": 1,
-                        "description": "GPU nodes to use."
+                        "description": "Number of GPU nodes (0 = no GPU acceleration)",
+                        "default": 0,
+                        "minimum": 0
                     },
                     "omp_threads": {
                         "type": "integer",
-                        "default": 1,
-                        "description": "Number of OMP Threads."
+                        "description": "Number of OpenMP threads per MPI task (0 = no OpenMP)",
+                        "default": 0,
+                        "minimum": 0
                     },
                     "args": {
                         "type": "string",
-                        "default": "",
-                        "description": "Additional command line arguments, e.g. '-skiprun'"
+                        "description": "Additional command line arguments",
+                        "examples": [
+                            "-skiprun",
+                            "-log custom.log",
+                            "-screen none",
+                            "-var temp 300"
+                        ]
                     }
-                }
+                },
+                "when": "resourceLangId == lmps"
             }
         ]
     },
@@ -247,13 +280,12 @@
         "acorn": "^8.12.1",
         "cpu-stats": "^1.0.0",
         "markdown-it": "^14.1.0",
-        "mathjax-node": "^1.3.0",
+        "mathjax-full": "^3.2.1",
         "node-nvidia-smi": "^1.0.0",
         "node-os-utils": "^1.3.7",
         "npm-check-updates": "^17.1.1",
         "plist": "^3.1.0",
         "plotly.js-dist-min": "^2.35.0",
-        "request": "^2.88.2",
         "vscode-oniguruma": "^2.0.1",
         "vscode-textmate": "^9.1.0"
     },

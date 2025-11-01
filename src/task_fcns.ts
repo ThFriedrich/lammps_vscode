@@ -1,92 +1,128 @@
-import { workspace, ShellExecution, Task, TaskScope, TaskDefinition, window } from 'vscode'
+import { workspace, ShellExecution, Task, TaskDefinition, window, WorkspaceFolder } from 'vscode'
 
-// Lammps Task Definition
+// LAMMPS Task Definition Interface
+// Users can configure custom tasks in tasks.json with these properties
 interface lmp_task extends TaskDefinition {
-    binary?: string;
-    mpiexec_path?: string;
-    mpi_tasks?: number;
-    gpu_nodes?: number;
-    omp_threads?: number;
-    args?: string
+    type: 'lmps';
+    binary?: string;        // Path to LAMMPS executable
+    mpiexec_path?: string;  // Path to MPI launcher (mpiexec, mpirun, srun)
+    mpi_tasks?: number;     // Number of MPI processes
+    gpu_nodes?: number;     // Number of GPU nodes
+    omp_threads?: number;   // Number of OpenMP threads
+    args?: string;          // Additional command line arguments
 }
 
 export function get_tasks(): Task[] {
-    //Define default task executions
-    const lmp_tsk = workspace.getConfiguration('lammps.tasks')
-    const file = window.activeTextEditor?.document.fileName
-    const execution_cpu = new ShellExecution(`${lmp_tsk.binary} -in ${file}`);
-    const execution_mpi = new ShellExecution(`${lmp_tsk.mpiexec_path} -np ${lmp_tsk.mpi_tasks.toString()} ${lmp_tsk.binary} -in ${file}`);
-    const execution_gpu = new ShellExecution(`${lmp_tsk.binary} -sf gpu -pk gpu ${lmp_tsk.gpu_nodes.toString()} -in ${file}`);
-    const execution_mpi_gpu = new ShellExecution(`${lmp_tsk.mpiexec_path} -np ${lmp_tsk.mpi_tasks.toString()} ${lmp_tsk.binary} -sf gpu -pk gpu ${lmp_tsk.gpu_nodes.toString()} -in ${file}`);
-    const execution_skip = new ShellExecution(`${lmp_tsk.binary} -in ${file} -skiprun`);
+    const result: Task[] = [];
+    
+    // Get workspace folders
+    const workspaceFolders = workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        return result;
+    }
 
-    // Create tasks
-    return [
-        new Task({ type: "lmps" }, TaskScope.Workspace,
-            "Run Single-Task", "lmps", execution_cpu, []),
-        new Task({ type: "lmps" }, TaskScope.Workspace,
-            "Run Multi-Task", "lmps", execution_mpi, []),
-        new Task({ type: "lmps" }, TaskScope.Workspace,
-            "Run Single-Task GPU", "lmps", execution_gpu, []),
-        new Task({ type: "lmps" }, TaskScope.Workspace,
-            "Run Multi-Task GPU", "lmps", execution_mpi_gpu, []),
-        new Task({ type: "lmps" }, TaskScope.Workspace,
-            "Run Single-Task (Dry-run)", "lmps", execution_skip, [])
-    ];
+    // Create tasks for each workspace folder
+    for (const workspaceFolder of workspaceFolders) {
+        const lmp_tsk = workspace.getConfiguration('lammps.tasks', workspaceFolder.uri);
+        
+        const binary = lmp_tsk.get('binary') || 'lmp';
+        const mpiexec_path = lmp_tsk.get('mpiexec_path') || 'mpiexec';
+        const mpi_tasks = lmp_tsk.get('mpi_tasks') || 4;
+        const gpu_nodes = lmp_tsk.get('gpu_nodes') || 1;
+        
+        const file = window.activeTextEditor?.document.fileName || '${file}';
+        
+        const execution_cpu = new ShellExecution(`${binary} -in ${file}`);
+        const execution_mpi = new ShellExecution(`${mpiexec_path} -np ${mpi_tasks} ${binary} -in ${file}`);
+        const execution_gpu = new ShellExecution(`${binary} -sf gpu -pk gpu ${gpu_nodes} -in ${file}`);
+        const execution_mpi_gpu = new ShellExecution(`${mpiexec_path} -np ${mpi_tasks} ${binary} -sf gpu -pk gpu ${gpu_nodes} -in ${file}`);
+        const execution_skip = new ShellExecution(`${binary} -in ${file} -skiprun`);
+
+        result.push(
+            new Task({ type: "lmps" }, workspaceFolder, "Run Single-Task", "lmps", execution_cpu, []),
+            new Task({ type: "lmps" }, workspaceFolder, "Run Multi-Task", "lmps", execution_mpi, []),
+            new Task({ type: "lmps" }, workspaceFolder, "Run Single-Task GPU", "lmps", execution_gpu, []),
+            new Task({ type: "lmps" }, workspaceFolder, "Run Multi-Task GPU", "lmps", execution_mpi_gpu, []),
+            new Task({ type: "lmps" }, workspaceFolder, "Run Single-Task (Dry-run)", "lmps", execution_skip, [])
+        );
+    }
+    
+    return result;
 }
 
 export function resolve_task(tsk: Task): Task | undefined {
-    const file = window.activeTextEditor?.document.fileName
-    let config = workspace.getConfiguration('lammps.tasks');
-    const tdf: lmp_task = <any>tsk.definition;
-
-    // Set binary and mpiexec path from config or task definition
-    let binary_path: string
-    let mpiexec_path: string
-    if (!tdf['mpiexec_path']) 
-        { mpiexec_path = config.get('mpiexec_path')! }
-    else 
-        {mpiexec_path = tdf.mpiexec_path}
-    if (!tdf['binary']) 
-        { binary_path = config.get('binary')! }
-    else 
-        { binary_path = tdf.binary! }
-
-    // Determine if task is MPI, GPU or OMP
-    const b_mpi:boolean = !!tdf.mpi_tasks && tdf.mpi_tasks > 0
-    const b_gpu:boolean = !!tdf.gpu_nodes && tdf.gpu_nodes > 0
-    const b_omp:boolean = !!tdf.omp_threads && tdf.omp_threads > 0
-
-    // Create execution string
-    const execution = new ShellExecution('')
-    let add_args: String = ''
-    if (tdf.args) { add_args = tdf.args }
-
-    if (b_mpi && b_gpu) { // Multi-Task GPU
-        execution.commandLine = `${mpiexec_path} -np ${tdf.mpi_tasks!.toString()} ${binary_path} -sf gpu -pk gpu ${tdf.gpu_nodes!.toString()}`;
+    const file = window.activeTextEditor?.document.fileName || '${file}';
+    
+    // Get the workspace folder from the task scope
+    const scope = tsk.scope;
+    if (!scope || typeof scope === 'number') {
+        return undefined;
     }
-    else if (!b_mpi && b_gpu) { // Single-Task GPU
-        execution.commandLine = `${binary_path} -sf gpu -pk gpu ${tdf.gpu_nodes!.toString()}`;
-    }
-    else if (b_mpi && !b_gpu) { // Multi-Task CPU
-        execution.commandLine = `${mpiexec_path} -np ${tdf.mpi_tasks!.toString()} ${binary_path}`;
-    }
-    else { // Single-Task CPU
-        execution.commandLine = `${binary_path} -in ${file} ${add_args}`;
+    
+    const workspaceFolder = scope as WorkspaceFolder;
+    const config = workspace.getConfiguration('lammps.tasks', workspaceFolder.uri);
+    const tdf = tsk.definition as lmp_task;
+
+    // Validate task type
+    if (tdf.type !== 'lmps') {
+        return undefined;
     }
 
-    if (b_omp) { // Add OMP-Threads
-        execution.commandLine = `${execution.commandLine} -pk omp ${tdf.omp_threads!.toString()}`
+    // Get configuration values with fallbacks
+    const binary_path = tdf.binary ?? config.get<string>('binary') ?? 'lmp';
+    const mpiexec_path = tdf.mpiexec_path ?? config.get<string>('mpiexec_path') ?? 'mpiexec';
+    const mpi_tasks = tdf.mpi_tasks ?? config.get<number>('mpi_tasks') ?? 0;
+    const gpu_nodes = tdf.gpu_nodes ?? config.get<number>('gpu_nodes') ?? 0;
+    const omp_threads = tdf.omp_threads ?? config.get<number>('omp_threads') ?? 0;
+    const add_args = tdf.args ?? '';
+
+    // Determine execution mode
+    const b_mpi = mpi_tasks > 0;
+    const b_gpu = gpu_nodes > 0;
+    const b_omp = omp_threads > 0;
+
+    // Build command line based on configuration
+    let commandLine = '';
+
+    if (b_mpi && b_gpu) {
+        // MPI + GPU
+        commandLine = `${mpiexec_path} -np ${mpi_tasks} ${binary_path} -sf gpu -pk gpu ${gpu_nodes}`;
+    } else if (b_mpi) {
+        // MPI only
+        commandLine = `${mpiexec_path} -np ${mpi_tasks} ${binary_path}`;
+    } else if (b_gpu) {
+        // GPU only
+        commandLine = `${binary_path} -sf gpu -pk gpu ${gpu_nodes}`;
+    } else {
+        // Serial execution
+        commandLine = `${binary_path}`;
+    }
+
+    // Add OpenMP configuration if specified
+    if (b_omp) {
+        commandLine += ` -pk omp ${omp_threads}`;
     }
 
     // Add input file and additional arguments
-    execution.commandLine = `${execution.commandLine}  -in ${file} ${add_args}`
+    commandLine += ` -in ${file}`;
+    if (add_args) {
+        commandLine += ` ${add_args}`;
+    }
 
-    // Create Task
-    return new Task(
-        tdf,
-        TaskScope.Workspace,
-        "Run Custom",
-        "lmps",
-        execution);
+    const execution = new ShellExecution(commandLine);
+    
+    // Create task with a descriptive name based on configuration
+    let taskName = 'Run LAMMPS';
+    if (b_mpi && b_gpu) {
+        taskName += ` (MPI: ${mpi_tasks}, GPU: ${gpu_nodes})`;
+    } else if (b_mpi) {
+        taskName += ` (MPI: ${mpi_tasks})`;
+    } else if (b_gpu) {
+        taskName += ` (GPU: ${gpu_nodes})`;
+    }
+    if (b_omp) {
+        taskName += ` (OMP: ${omp_threads})`;
+    }
+
+    return new Task(tdf, workspaceFolder, taskName, 'lmps', execution);
 }

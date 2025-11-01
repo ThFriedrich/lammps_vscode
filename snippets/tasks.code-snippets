@@ -1,0 +1,61 @@
+{
+    "LAMMPS Custom Task": {
+        "prefix": "lmps-task",
+        "scope": "json,jsonc",
+        "description": "Create a custom LAMMPS task configuration",
+        "body": [
+            "{",
+            "\t\"type\": \"lmps\",",
+            "\t\"label\": \"${1:LAMMPS Custom Task}\",",
+            "\t\"binary\": \"${2:lmp}\",",
+            "\t\"mpiexec_path\": \"${3:mpiexec}\",",
+            "\t\"mpi_tasks\": ${4:4},",
+            "\t\"gpu_nodes\": ${5:0},",
+            "\t\"omp_threads\": ${6:0},",
+            "\t\"args\": \"${7:-log none}\",",
+            "\t\"problemMatcher\": [],",
+            "\t\"group\": {",
+            "\t\t\"kind\": \"build\",",
+            "\t\t\"isDefault\": ${8|true,false|}",
+            "\t}",
+            "}"
+        ]
+    },
+    "LAMMPS MPI Task": {
+        "prefix": "lmps-mpi",
+        "scope": "json,jsonc",
+        "description": "Create a LAMMPS MPI task",
+        "body": [
+            "{",
+            "\t\"type\": \"lmps\",",
+            "\t\"label\": \"${1:LAMMPS MPI}\",",
+            "\t\"binary\": \"${2:lmp_mpi}\",",
+            "\t\"mpiexec_path\": \"${3:mpiexec}\",",
+            "\t\"mpi_tasks\": ${4:8},",
+            "\t\"problemMatcher\": [],",
+            "\t\"group\": {",
+            "\t\t\"kind\": \"build\",",
+            "\t\t\"isDefault\": ${5|true,false|}",
+            "\t}",
+            "}"
+        ]
+    },
+    "LAMMPS GPU Task": {
+        "prefix": "lmps-gpu",
+        "scope": "json,jsonc",
+        "description": "Create a LAMMPS GPU task",
+        "body": [
+            "{",
+            "\t\"type\": \"lmps\",",
+            "\t\"label\": \"${1:LAMMPS GPU}\",",
+            "\t\"binary\": \"${2:lmp}\",",
+            "\t\"gpu_nodes\": ${3:1},",
+            "\t\"problemMatcher\": [],",
+            "\t\"group\": {",
+            "\t\t\"kind\": \"build\",",
+            "\t\t\"isDefault\": ${4|true,false|}",
+            "\t}",
+            "}"
+        ]
+    }
+}

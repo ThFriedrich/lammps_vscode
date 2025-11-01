@@ -139,11 +139,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Provide Tasks to run Lammps-script in vscode
 	context.subscriptions.push(
 		vscode.tasks.registerTaskProvider('lmps', {
-			provideTasks() {
-				return get_tasks()
+			provideTasks(): Thenable<vscode.Task[]> {
+				return Promise.resolve(get_tasks());
 			},
 			resolveTask(tsk: vscode.Task): vscode.Task | undefined {
-				return resolve_task(tsk)
+				return resolve_task(tsk);
 			}
 		}));
 
