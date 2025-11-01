@@ -13,19 +13,89 @@ const par_reg_ex: RegExp = RegExp("[\\(\\[\\{\\)\\]\\}]", "g")
 const is_log_ex: RegExp = RegExp("Dangerous builds\\s=\\s\\d+")
 // Regular expression for checking if the line contains a group command
 const grp_reg_ex: RegExp = RegExp("^\\s*group\\s+\\S*\\s+[delete|clear|empty|region|type|id|molecule|variable|include|subtract|union|intersect|dynamic|static]")
+// Regular expression for matching LAMMPS variables
+const var_def_ex: RegExp = RegExp("^\\s*variable\\s+(\\S+)\\s+(string|equal|file|atomfile|format|getenv|index|loop|universe|uloop|world)\\s+(.+)", "i")
+const var_use_ex: RegExp = RegExp("\\$\\{(\\w+)\\}|\\$(\\w+)", "g")
+
+/**
+ * Extract all variable definitions from the document
+ */
+function extractVariables(document: TextDocument): Map<string, string> {
+    const variables = new Map<string, string>();
+    
+    for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
+        const line = document.lineAt(line_idx).text;
+        
+        // Skip comments
+        if (line.trim().startsWith('#')) {
+            continue;
+        }
+        
+        // Remove inline comments
+        let cleanLine = line;
+        if (line.includes('#')) {
+            cleanLine = line.substr(0, line.indexOf('#'));
+        }
+        
+        const match = var_def_ex.exec(cleanLine);
+        if (match) {
+            const varName = match[1];
+            const varType = match[2];
+            let varValue = match[3].trim();
+            
+            // For string variables, remove quotes
+            if (varType === 'string') {
+                varValue = varValue.replace(/^["']|["']$/g, '');
+            }
+            
+            variables.set(varName, varValue);
+        }
+    }
+    
+    return variables;
+}
+
+/**
+ * Replace LAMMPS variables in a line with their values
+ */
+function resolveVariables(line: string, variables: Map<string, string>): string {
+    return line.replace(var_use_ex, (match, bracedVar, unbracedVar) => {
+        const varName = bracedVar || unbracedVar;
+        return variables.get(varName) || match;
+    });
+}
+
+/**
+ * Create a resolved version of the document with all variables replaced
+ */
+function createResolvedDocument(document: TextDocument): string[] {
+    const variables = extractVariables(document);
+    const resolvedLines: string[] = [];
+    
+    for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
+        const line = document.lineAt(line_idx).text;
+        resolvedLines.push(resolveVariables(line, variables));
+    }
+    
+    return resolvedLines;
+}
 
 export function updateDiagnostics(document: TextDocument, collection: DiagnosticCollection): void {
 
     if (document) {
         const is_log = document.getText().match(is_log_ex)
         if (is_log == null) {
+            // Create a resolved version of the document with all variables replaced
+            const resolvedLines = createResolvedDocument(document);
+            
             let errors: Diagnostic[] = []
             for (let line_idx = 0; line_idx < document.lineCount; line_idx++) {
                 // check lines with a set of functions, which append Diagnostic entries to the errors array
                 const line_str: TextLine = document.lineAt(line_idx)
+                const resolved_line = resolvedLines[line_idx]
 
                 if (!line_str.text.startsWith('#')) {
-                    errors = checkFilePaths(document, line_str, line_idx, errors)
+                    errors = checkFilePaths(document, resolved_line, line_idx, errors)
                     errors = checkBrackets(document, line_str, line_idx, errors)
 
                 }
@@ -122,22 +192,23 @@ function isMatchingBrackets(str: string): boolean {
 * This function checks wheter a file given as input for 
 * a read-command actually exists.
 */
-export function checkFilePaths(document: TextDocument, line_str: TextLine, line_index: number, errors: Diagnostic[]): Diagnostic[] {
+export function checkFilePaths(document: TextDocument, resolved_line: string, line_index: number, errors: Diagnostic[]): Diagnostic[] {
 
     let error: Diagnostic | undefined
+    
     const read_commands = searchCommands(RegExp('(?<=^|\\s|_)(read)(?=$|\\s|_)'))
-    let com_struct = getCommandArgs(line_str.text, read_commands)
+    let com_struct = getCommandArgs(resolved_line, read_commands)
 
     // Check for read and write commands
     if (com_struct.command) {
         const fileArg_idx = getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'))
-        error = checkPath(document, line_str.text, line_index, com_struct, fileArg_idx, 'file')
+        error = checkPath(document, resolved_line, line_index, com_struct, fileArg_idx, 'file')
     } else {
         const write_commands = searchCommands(RegExp('(?<=^|\\s|_)(write)(?=$|\\s|_)'))
-        com_struct = getCommandArgs(line_str.text, write_commands)
+        com_struct = getCommandArgs(resolved_line, write_commands)
         if (com_struct.command) {
             const fileArg_idx = getArgIndex(com_struct.command, RegExp('\\b(file|filename)\\b'))
-            error = checkPath(document, line_str.text, line_index, com_struct, fileArg_idx, 'dir')
+            error = checkPath(document, resolved_line, line_index, com_struct, fileArg_idx, 'dir')
         }
     }
     if (error) {
