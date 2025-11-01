@@ -17,6 +17,9 @@ export async function createHover(docs: doc_entry, context:ExtensionContext): Pr
         if (docs) {
             // Constructing the Markdown String to show in the Hover window
             const content = new MarkdownString("", true)
+            content.supportHtml = true;
+            content.isTrusted = true;
+            
             if (docs.short_description) {
                 const show_doc_uri = Uri.parse(`command:extension.show_docs`);
                 let short_desc: string = fix_img_path(docs.short_description, false, undefined, context)
@@ -45,7 +48,6 @@ export async function createHover(docs: doc_entry, context:ExtensionContext): Pr
                 content.appendMarkdown("### Restrictions: \n")
                 content.appendMarkdown(docs.restrictions)
             }
-            content.isTrusted = true;
             return new Hover(content)
         }
     }

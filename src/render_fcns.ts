@@ -23,41 +23,80 @@ SOFTWARE.
 <<<Much of the code in this file was copied and adapted from https://github.com/James-Yu/LaTeX-Workshop>>>
 */
 
-const mj = require('mathjax-node')
-const lf:string = "  \n  "
+// Lazy-load MathJax v3 to avoid loading at extension startup
+let mjInitialized = false;
+let tex2svg: any = null;
 
-mj.config = ({
-    MathJax: {
-        jax: ['input/TeX', 'output/SVG'],
-        extensions: ['tex2jax.js', 'MathZoom.js'],
-        showMathMenu: false,
-        showProcessingMessages: false,
-        messageStyle: 'none',
-        SVG: {
-            useGlobalCache: false
-        },
-        TeX: {
-            extensions: ['AMSmath.js', 'AMSsymbols.js', 'autoload-all.js', 'color.js', 'noUndefined.js']
+function initMathJax() {
+    if (!mjInitialized) {
+        try {
+            const { mathjax } = require('mathjax-full/js/mathjax.js');
+            const { TeX } = require('mathjax-full/js/input/tex.js');
+            const { SVG } = require('mathjax-full/js/output/svg.js');
+            const { liteAdaptor } = require('mathjax-full/js/adaptors/liteAdaptor.js');
+            const { RegisterHTMLHandler } = require('mathjax-full/js/handlers/html.js');
+            const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
+
+            // Create an HTML adaptor and register it
+            const adaptor = liteAdaptor();
+            RegisterHTMLHandler(adaptor);
+
+            // Create input and output processors
+            const tex = new TeX({
+                packages: AllPackages,
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            });
+            const svg = new SVG({ fontCache: 'none' });
+
+            // Create a conversion function
+            const html = mathjax.document('', { InputJax: tex, OutputJax: svg });
+            
+            tex2svg = (math: string, display: boolean = false) => {
+                const node = html.convert(math, { display });
+                return adaptor.innerHTML(node);
+            };
+
+            mjInitialized = true;
+            console.log('MathJax v3 initialized successfully');
+        } catch (error) {
+            console.error('Failed to load MathJax:', error);
+            throw error;
         }
     }
-})
+    return tex2svg;
+}
 
-mj.start()
+const lf:string = "  \n  "
 
-function scaleSVG(data: any, scale: number) {
-    const svgelm = data.svgNode
-    // w0[2] and h0[2] are units, i.e., pt, ex, em, ...
-    const w0 = svgelm.getAttribute('width').match(/([.\d]+)(\w*)/)
-    const h0 = svgelm.getAttribute('height').match(/([.\d]+)(\w*)/)
-    const w = scale * Number(w0[1])
-    const h = scale * Number(h0[1])
-    svgelm.setAttribute('width', w + w0[2])
-    svgelm.setAttribute('height', h + h0[2])
+function scaleSVG(svgString: string, scale: number): string {
+    // Parse width and height from SVG string
+    const widthMatch = svgString.match(/width="([.\d]+)(\w*)"/);
+    const heightMatch = svgString.match(/height="([.\d]+)(\w*)"/);
+    
+    if (widthMatch && heightMatch) {
+        const w = scale * Number(widthMatch[1]);
+        const h = scale * Number(heightMatch[1]);
+        const wUnit = widthMatch[2] || 'ex';
+        const hUnit = heightMatch[2] || 'ex';
+        
+        svgString = svgString.replace(/width="[.\d]+\w*"/, `width="${w}${wUnit}"`);
+        svgString = svgString.replace(/height="[.\d]+\w*"/, `height="${h}${hUnit}"`);
+    }
+    
+    return svgString;
 }
 
 function colorSVG(svg: string, color: string): string {
-    const ret = svg.replace('</title>', `</title><style> * { color: ${color} }</style>`)
-    return ret
+    // Insert style into the SVG properly
+    // Look for the closing > of the opening <svg> tag and insert style after it
+    const match = svg.match(/(<svg[^>]*>)/);
+    if (match) {
+        const svgOpenTag = match[1];
+        const styleTag = `<style>* { fill: ${color}; }</style>`;
+        return svg.replace(svgOpenTag, svgOpenTag + styleTag);
+    }
+    return svg;
 }
 
 function svgToDataUrl(xml: string): string {
@@ -66,19 +105,27 @@ function svgToDataUrl(xml: string): string {
     return b64Start + svg64
 }
 
-async function typeset(arg: string, scale: number, color:string, format:string, b_md:boolean): Promise<string> {
-    const data = await mj.typeset({
-        math: arg,
-        format: format,
-        svgNode: true
-    })
+async function typeset(arg: string, scale: number, color: string, isDisplay: boolean, b_md: boolean): Promise<string> {
+    const converter = initMathJax();
+    const svg = converter(arg, isDisplay);
+    
     if (b_md) {
-        scaleSVG(data, scale) 
-        const xml = colorSVG(data.svgNode.outerHTML, color)
-        const md = svgToDataUrl(xml)
-        return `![equation](${md})`
+        // For markdown (hover), encode as data URL for image embedding
+        const scaledSvg = scaleSVG(svg, scale);
+        const coloredSvg = colorSVG(scaledSvg, color);
+        const dataUrl = svgToDataUrl(coloredSvg);
+        
+        // Use markdown image syntax without alt text to avoid showing "equation"
+        if (isDisplay) {
+            // Block math - center the image and set height in em (scale applies)
+            return `<div style="text-align:center;"><img src=\"${dataUrl}\" style=\"height:${scale}em; display:block; margin:0.4em auto;\"/></div>`;
+        } else {
+            // Inline math - use an <img> with em-based height and a small negative vertical-align
+            // to better match the text baseline. The value -0.15em is a good starting point.
+            return `<img src=\"${dataUrl}\" style=\"height:${scale}em; vertical-align:-0.15em; display:inline-block;\"/>`;
+        }
     } else {
-        return data.svgNode.outerHTML
+        return svg;
     }
 }
 
@@ -92,7 +139,8 @@ export async function getMathMarkdown(txt: string, color:string, b_md:boolean): 
 
     for (let ix = 0; ix < txtSplit.length; ix++) {
         if (txtSplit[ix].search(eqPat) != -1) {
-            strOut += lf + await typeset(txtSplit[ix].replace(RegExp('\\\\(\\[|\\])', 'g'), ""), 1, color, "TeX", b_md) + lf
+            // Display math (block equations) - isDisplay = true
+            strOut += lf + await typeset(txtSplit[ix].replace(RegExp('\\\\(\\[|\\])', 'g'), ""), 1, color, true, b_md) + lf
         } else {
             // Check for Inline Math in standard Text Block
             // RegExp to match Inline Equations and Symbols
@@ -100,7 +148,8 @@ export async function getMathMarkdown(txt: string, color:string, b_md:boolean): 
             const txtSubSplit = txtSplit[ix].split(inlinePat)
             for (let iz = 0; iz < txtSubSplit.length; iz++) {
                 if (txtSubSplit[iz].search(inlinePat) != -1) {
-                    strOut += await typeset(txtSubSplit[iz].replace(RegExp('\\\\(\\(|\\))', 'g'), ""), 0.75, color, "inline-TeX", b_md)
+                    // Inline math - isDisplay = false
+                    strOut += await typeset(txtSubSplit[iz].replace(RegExp('\\\\(\\(|\\))', 'g'), ""), 0.75, color, false, b_md)
                 } else {
                     strOut += txtSubSplit[iz]
                 }
