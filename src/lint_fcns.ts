@@ -34,7 +34,7 @@ function extractVariables(document: TextDocument): Map<string, string> {
         // Remove inline comments
         let cleanLine = line;
         if (line.includes('#')) {
-            cleanLine = line.substr(0, line.indexOf('#'));
+            cleanLine = line.substring(0, line.indexOf('#'));
         }
         
         const match = var_def_ex.exec(cleanLine);
@@ -300,11 +300,14 @@ function getCWD(document: TextDocument): string | undefined {
 /**
 * Returns a boolean, indicating wether 
 * a given file exists. Path can be absolute or 
-* relative to the location of the TextDocument
+* relative to the workspace directory
 */
 function fileExists(document: TextDocument, file_path: string): boolean {
     if (!isAbsolute(file_path)) {
-        file_path = join(getDocDir(document), file_path)
+        const cwd = getCWD(document);
+        if (cwd) {
+            file_path = join(cwd, file_path)
+        }
     }
     if (existsSync(file_path)) {
         return true
@@ -316,11 +319,14 @@ function fileExists(document: TextDocument, file_path: string): boolean {
 /**
 * Returns a boolean, indicating wether 
 * a given directory exists. Path can be absolute or 
-* relative to the location of the TextDocument
+* relative to the workspace directory
 */
 function dirExists(document: TextDocument, file_path: string): boolean {
     if (!isAbsolute(file_path)) {
-        file_path = join(getDocDir(document), file_path)
+        const cwd = getCWD(document);
+        if (cwd) {
+            file_path = join(cwd, file_path)
+        }
     }
     if (existsSync(dirname(file_path))) {
         return true
@@ -346,13 +352,15 @@ function checkPath(document: TextDocument, line_str: string, line_index: number,
             case 'dir':
                 if (!dirExists(document, file_path)) { // Directory doesn't exist
                     rng = getRange(line_str, line_index, file_path)
-                    msg = `The directory ${dirname(file_path)} does not exist. \n Note that the path should be either absolute or relative to the scipt path: "` + getDocDir(document) + '"'
+                    const cwd = getCWD(document) || '';
+                    msg = `The directory ${dirname(file_path)} does not exist. \n Note that the path should be either absolute or relative to the workspace directory: "` + cwd + '"'
                 }
                 break;
             case 'file':
                 if (!fileExists(document, file_path)) { // File doesn't exist
                     rng = getRange(line_str, line_index, file_path)
-                    msg = `The file ${file_path} does not exist. \n Note that the path should be either absolute or relative to the scipt path: "` + getDocDir(document) + '"'
+                    const cwd = getCWD(document) || '';
+                    msg = `The file ${file_path} does not exist. \n Note that the path should be either absolute or relative to the workspace directory: "` + cwd + '"'
                 }
                 break;
             default:
