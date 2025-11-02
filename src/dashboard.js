@@ -6,6 +6,8 @@ window.onload = function () {
     var load_dump_btn = document.getElementById('load_dump_btn')
     var live_update_toggle = document.getElementById('live_update_toggle')
     var live_update_toggle_logs = document.getElementById('live_update_toggle_logs')
+    var run_task_btn = document.getElementById('run_task_btn')
+    var save_task_btn = document.getElementById('save_task_btn')
     var b_logs_plotted = false
     var b_dump_plotted = false
     var n_plots = 0
@@ -14,6 +16,7 @@ window.onload = function () {
 
 
     document.getElementById("sys_tab").addEventListener('click', function (event) { openTab(event, 'sys') })
+    document.getElementById("run_tab").addEventListener('click', function (event) { openTab(event, 'run') })
     document.getElementById("dump_tab").addEventListener('click', function (event) { openTab(event, 'dump') })
     document.getElementById("logs_tab").addEventListener('click', function (event) { openTab(event, 'logs') })
     document.getElementById("sys_tab").click();
@@ -78,7 +81,7 @@ window.onload = function () {
         }
     }
 
-    function redraw_log_panel(ev_data, ev_meta) {
+    function redraw_log_panel(ev_data, ev_meta, ev_performance) {
         var plot_div = document.getElementById('plot_div')
         while (plot_div.firstChild) {
             plot_div.removeChild(plot_div.firstChild);
@@ -108,6 +111,17 @@ window.onload = function () {
         }
         thead.appendChild(row1);
         thead.appendChild(row2);
+
+        // Section 1: Timeseries Plots
+        if (n_plots > 0) {
+            var section1_header = document.createElement('h3');
+            section1_header.textContent = 'Timeseries Data';
+            section1_header.style.marginTop = '15px';
+            section1_header.style.marginBottom = '5px';
+            section1_header.style.paddingLeft = '5px';
+            section1_header.style.borderBottom = '2px solid ' + hl_col;
+            plot_div.appendChild(section1_header);
+        }
 
         for (i = 0; i < n_plots; i++) {
             var plot_div_button = document.createElement('button');
@@ -142,6 +156,55 @@ window.onload = function () {
             plot_div.appendChild(plot_div_child);
             plot_log(plot_div_child.id, ev_data[i])
         }
+
+        // Section 2: Performance Breakdowns (if available)
+        if (ev_performance && ev_performance.length > 0) {
+            var section2_header = document.createElement('h3');
+            section2_header.id = 'perf_section_header';
+            section2_header.textContent = 'Performance Breakdowns';
+            section2_header.style.marginTop = '20px';
+            section2_header.style.marginBottom = '5px';
+            section2_header.style.paddingLeft = '5px';
+            section2_header.style.borderBottom = '2px solid ' + hl_col;
+            plot_div.appendChild(section2_header);
+
+            for (let i = 0; i < ev_performance.length; i++) {
+                if (ev_performance[i] && ev_performance[i].labels && ev_performance[i].values) {
+                    var perf_div_button = document.createElement('button');
+                    perf_div_button.textContent = "Performance Breakdown " + (1 + i).toString()
+                    if (ev_data[i] && ev_data[i][0]) {
+                        perf_div_button.textContent += '  ( ' + ev_data[i][0].plot_type + ' )'
+                    }
+                    perf_div_button.className = "accordion"
+                    perf_div_button.addEventListener("click", function () {
+                        this.classList.toggle("active");
+                        var panel = this.nextElementSibling;
+                        if (panel.style.display === "block") {
+                            panel.style.display = "none";
+                        } else {
+                            panel.style.display = "block";
+                            resize_plots()
+                        }
+                    });
+                    plot_div.appendChild(perf_div_button);
+
+                    var perf_div_child = document.createElement('div');
+                    perf_div_child.className = "panel"
+                    perf_div_child.id = "perf_panel_" + i.toString()
+                    perf_div_child.style.display = "none"
+                    
+                    // Create chart container inside panel
+                    var chart_container = document.createElement('div');
+                    chart_container.id = "perf_pie_chart_" + i.toString()
+                    chart_container.style.height = "400px"
+                    perf_div_child.appendChild(chart_container);
+                    
+                    plot_div.appendChild(perf_div_child);
+                    plot_performance_pie(chart_container.id, ev_performance[i], perf_div_child.id)
+                }
+            }
+        }
+        
         b_logs_plotted = true
     }
 
@@ -153,12 +216,13 @@ window.onload = function () {
     window.addEventListener('message', event => {
         var ev_data = event.data.data
         var ev_meta = event.data.meta
+        var ev_performance = event.data.performance
         var ev_type = event.data.type
 
         if (ev_data) {
             switch (ev_type) {
                 case 'plot_log':
-                    redraw_log_panel(ev_data, ev_meta)
+                    redraw_log_panel(ev_data, ev_meta, ev_performance)
                     if (!interval_set_log) {
                         setInterval(() => {
                             if (live_update_toggle_logs.checked) {
@@ -173,11 +237,73 @@ window.onload = function () {
                 case 'update_log':
                     var n_plots_update = ev_data?.length
                     if (n_plots_update && n_plots_update > n_plots) {
-                        redraw_log_panel(ev_data, ev_meta)
+                        // New plots appeared — rebuild full panel
+                        redraw_log_panel(ev_data, ev_meta, ev_performance)
                     } else {
+                        // Update existing timeseries plots
                         for (i = 0; i < n_plots; i++) {
                             var div_id = "plot_div_" + i.toString()
                             update_log(div_id, ev_data[i])
+                        }
+
+                        // Ensure performance section exists and update/create per-step charts
+                        if (ev_performance && ev_performance.length > 0) {
+                            const plotDiv = document.getElementById('plot_div');
+
+                            // Create section header if missing
+                            if (!document.getElementById('perf_section_header')) {
+                                var section2_header = document.createElement('h3');
+                                section2_header.id = 'perf_section_header';
+                                section2_header.textContent = 'Performance Breakdowns';
+                                section2_header.style.marginTop = '20px';
+                                section2_header.style.marginBottom = '5px';
+                                section2_header.style.paddingLeft = '5px';
+                                section2_header.style.borderBottom = '2px solid ' + hl_col;
+                                plotDiv.appendChild(section2_header);
+                            }
+
+                            for (let i = 0; i < ev_performance.length; i++) {
+                                if (ev_performance[i] && ev_performance[i].labels && ev_performance[i].values) {
+                                    const panelId = 'perf_panel_' + i.toString();
+                                    const chartId = 'perf_pie_chart_' + i.toString();
+                                    // If the perf container doesn't exist yet, create the accordion and panel
+                                    if (!document.getElementById(panelId)) {
+                                        var perf_div_button = document.createElement('button');
+                                        perf_div_button.id = 'perf_button_' + i.toString();
+                                        perf_div_button.textContent = "Performance Breakdown " + (1 + i).toString();
+                                        if (ev_data[i] && ev_data[i][0]) {
+                                            perf_div_button.textContent += '  ( ' + ev_data[i][0].plot_type + ' )'
+                                        }
+                                        perf_div_button.className = "accordion"
+                                        perf_div_button.addEventListener("click", function () {
+                                            this.classList.toggle("active");
+                                            var panel = this.nextElementSibling;
+                                            if (panel.style.display === "block") {
+                                                panel.style.display = "none";
+                                            } else {
+                                                panel.style.display = "block";
+                                                resize_plots()
+                                            }
+                                        });
+                                        plotDiv.appendChild(perf_div_button);
+
+                                        var perf_div_child = document.createElement('div');
+                                        perf_div_child.className = "panel"
+                                        perf_div_child.id = panelId
+                                        perf_div_child.style.display = "none"
+                                        perf_div_child.style.height = "400px"
+                                        
+                                        var chart_container = document.createElement('div');
+                                        chart_container.id = chartId
+                                        perf_div_child.appendChild(chart_container);
+                                        
+                                        plotDiv.appendChild(perf_div_child);
+                                    }
+
+                                    // Render/refresh the pie chart
+                                    plot_performance_pie(chartId, ev_performance[i], panelId)
+                                }
+                            }
                         }
                     }
 
@@ -287,6 +413,37 @@ window.onload = function () {
                     }, sys_interval);
 
                     break;
+                case 'active_file':
+                    // Set the script file input to the active file
+                    var scriptInput = document.getElementById('task_script');
+                    if (scriptInput && ev_data) {
+                        scriptInput.value = ev_data;
+                    }
+                    break;
+                case 'task_result':
+                    // Display task execution result
+                    var output = document.getElementById('task_output');
+                    if (output) {
+                        output.textContent = 'Task executed successfully!\n\nCommand: ' + ev_data.command + '\n\n' + ev_data.message;
+                        output.style.borderColor = 'green';
+                    }
+                    break;
+                case 'task_error':
+                    // Display task execution error
+                    var output = document.getElementById('task_output');
+                    if (output) {
+                        output.textContent = 'Error: ' + ev_data;
+                        output.style.borderColor = 'red';
+                    }
+                    break;
+                case 'task_saved':
+                    // Display save confirmation
+                    var output = document.getElementById('task_output');
+                    if (output) {
+                        output.textContent = ev_data;
+                        output.style.borderColor = 'green';
+                    }
+                    break;
                 default:
                     break;
             }
@@ -310,6 +467,56 @@ window.onload = function () {
         vscode.postMessage({
             command: 'load_dump'
         });
+    })
+
+    run_task_btn.addEventListener('click', () => {
+        var config = {
+            label: document.getElementById('task_label').value,
+            script: document.getElementById('task_script').value,
+            binary: document.getElementById('task_binary').value,
+            mpiexec_path: document.getElementById('task_mpiexec').value,
+            mpi_tasks: document.getElementById('task_mpi_tasks').value,
+            gpu_nodes: document.getElementById('task_gpu_nodes').value,
+            omp_threads: document.getElementById('task_omp_threads').value,
+            args: document.getElementById('task_args').value,
+            group: document.getElementById('task_group').value,
+            isDefault: document.getElementById('task_default').checked
+        };
+        
+        vscode.postMessage({
+            command: 'run_task',
+            config: config
+        });
+    })
+
+    save_task_btn.addEventListener('click', () => {
+        var config = {
+            label: document.getElementById('task_label').value,
+            script: document.getElementById('task_script').value,
+            binary: document.getElementById('task_binary').value,
+            mpiexec_path: document.getElementById('task_mpiexec').value,
+            mpi_tasks: document.getElementById('task_mpi_tasks').value,
+            gpu_nodes: document.getElementById('task_gpu_nodes').value,
+            omp_threads: document.getElementById('task_omp_threads').value,
+            args: document.getElementById('task_args').value,
+            group: document.getElementById('task_group').value,
+            isDefault: document.getElementById('task_default').checked
+        };
+        
+        vscode.postMessage({
+            command: 'save_task_config',
+            config: config
+        });
+    })
+
+    // Request active file when run tab is opened (only if not already set)
+    document.getElementById("run_tab").addEventListener('click', function() {
+        var scriptInput = document.getElementById('task_script');
+        if (scriptInput && !scriptInput.value) {
+            vscode.postMessage({
+                command: 'get_active_file'
+            });
+        }
     })
     
     var modbar_config = {
@@ -401,6 +608,87 @@ window.onload = function () {
             }
         }
         return layout
+    }
+
+    function plot_performance_pie(plot_div, perf_data, panel_id) {
+        // Build custom hover text with avg time
+        var hovertext = [];
+        for (let i = 0; i < perf_data.labels.length; i++) {
+            hovertext.push(
+                perf_data.labels[i] + '<br>' +
+                'Avg Time: ' + perf_data.avg_times[i].toFixed(4) + ' s<br>' +
+                'Percent: ' + perf_data.values[i].toFixed(2) + '%'
+            );
+        }
+        
+        var data = [{
+            values: perf_data.values,
+            labels: perf_data.labels,
+            type: 'pie',
+            textinfo: 'label+percent',
+            textposition: 'auto',
+            marker: {
+                colors: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f'],
+                line: {
+                    color: bg,
+                    width: 2
+                }
+            },
+            hovertext: hovertext,
+            hoverinfo: 'text',
+            hole: 0.3
+        }];
+
+        var layout = {
+            title: {
+                text: 'MPI Task Timing Breakdown',
+                font: {
+                    color: fg
+                }
+            },
+            showlegend: true,
+            legend: {
+                font: {
+                    color: fg
+                }
+            },
+            paper_bgcolor: bg,
+            plot_bgcolor: bg,
+            font: {
+                color: fg
+            },
+            height: 400,
+            margin: {
+                l: 20,
+                r: 20,
+                t: 40,
+                b: 20
+            }
+        };
+
+        var plotElement = document.getElementById(plot_div);
+        Plotly.newPlot(plotElement, data, layout, modbar_config);
+        
+        // Add total wall time inside the panel if available
+        if (perf_data.total_time !== undefined && panel_id) {
+            var panelElement = document.getElementById(panel_id);
+            if (panelElement) {
+                // Remove existing time display if present
+                var existingTimeDiv = document.getElementById(plot_div + '_time');
+                if (existingTimeDiv) {
+                    existingTimeDiv.remove();
+                }
+                
+                var timeDiv = document.createElement('div');
+                timeDiv.id = plot_div + '_time';
+                timeDiv.style.textAlign = 'center';
+                timeDiv.style.marginTop = '10px';
+                timeDiv.style.fontWeight = 'bold';
+                timeDiv.style.color = fg;
+                timeDiv.textContent = 'Total Wall Time: ' + perf_data.total_time.toFixed(4) + ' seconds';
+                panelElement.appendChild(timeDiv);
+            }
+        }
     }
 
     function plot_log(plot_div, data) {

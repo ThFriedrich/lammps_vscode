@@ -1,4 +1,4 @@
-import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions, workspace, SaveDialogOptions } from 'vscode';
+import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions, workspace, SaveDialogOptions, tasks, Task, ShellExecution, TaskScope } from 'vscode';
 import { join } from 'path'
 import { readFileSync, statSync, writeFileSync, promises as fsPromises } from 'fs';
 import { get_css } from './doc_panel_fcns'
@@ -11,6 +11,7 @@ export interface PlotPanel extends WebviewPanel {
     dump?: string
     dump_last_read?: number
     dump_file_size?: number
+    script_file?: string
 }
 
 interface plot_data {
@@ -55,8 +56,13 @@ interface Meta {
 
 interface plot_data_ds {
     meta: Meta,
-    data: plot_data[][]
-
+    data: plot_data[][],
+    performance?: {
+        labels: string[],
+        values: number[],
+        avg_times: number[],
+        total_time?: number
+    }[]
 }
 
 interface dump_data_ds {
@@ -66,15 +72,16 @@ interface dump_data_ds {
 }
 
 const colors =
-    ['#1f77b4', // muted blue
+    [   '#0daba1',  // teal
         '#ff7f0e',  // safety orange
-        '#2ca02c',  // cooked asparagus green
+        '#1f77b4',  // muted blue
         '#d62728',  // brick red
         '#9467bd',  // muted purple
         '#8c564b',  // chestnut brown
         '#e377c2',  // raspberry yogurt pink
         '#7f7f7f',  // middle gray
         '#bcbd22',  // curry yellow-green
+        '#2ca02c',  // cooked asparagus green
         '#17becf']  // blue-teal
 
 
@@ -127,9 +134,18 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
     const img_path_light = Uri.file(join(context.extensionPath, 'imgs', 'logo_sq_l.gif'))
     const img_path_dark = Uri.file(join(context.extensionPath, 'imgs', 'logo_sq_d.gif'))
 
+    // Capture the active file when opening the dashboard
+    const activeFile = window.activeTextEditor?.document.fileName;
+
     if (panel) {
         // If we already have a panel, show it in the target column
         panel.reveal(actCol);
+        // Update the script file if there's a new active file
+        if (activeFile) {
+            panel.script_file = activeFile;
+            // Send the updated file to the webview
+            panel.webview.postMessage({ type: 'active_file', data: activeFile });
+        }
     } else {
         // Otherwise, create a new panel
         panel = window.createWebviewPanel(
@@ -137,6 +153,10 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
             'Lammps Dashboard', actCol, { retainContextWhenHidden: true, enableScripts: true, localResourceRoots: [Uri.file(context.extensionPath)] }
         );
         panel.iconPath = { light: img_path_light, dark: img_path_dark }
+        // Store the script file in the panel
+        if (activeFile) {
+            panel.script_file = activeFile;
+        }
         panel.onDidChangeViewState(
             e => {
                 actCol = e.webviewPanel.viewColumn!
@@ -182,6 +202,25 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
                                 panel?.webview.postMessage({ type: 'cpu_stat', data: s })
                             });
                             break;
+                        case 'get_active_file':
+                            // Return the stored script file or fallback to current active editor
+                            const activeFile = panel.script_file || window.activeTextEditor?.document.fileName || '';
+                            panel?.webview.postMessage({ type: 'active_file', data: activeFile });
+                            break;
+                        case 'run_task':
+                            run_lammps_task(message.config).then((result: any) => {
+                                panel?.webview.postMessage({ type: 'task_result', data: result });
+                            }).catch((error: any) => {
+                                panel?.webview.postMessage({ type: 'task_error', data: error.message });
+                            });
+                            break;
+                        case 'save_task_config':
+                            save_task_config(message.config).then(() => {
+                                panel?.webview.postMessage({ type: 'task_saved', data: 'Task configuration saved successfully' });
+                            }).catch((error: any) => {
+                                panel?.webview.postMessage({ type: 'task_error', data: error.message });
+                            });
+                            break;
                         default:
                             if (message.startsWith('<img src=')) {
                                 const img_data = message.match(RegExp('<img src="data:image\\/(\\w+);base64,(.*)"'));
@@ -225,7 +264,7 @@ function get_update(panel: PlotPanel | undefined, updateType?: 'log' | 'dump') {
                 // File was overwritten - reload everything from scratch
                 const log_data: plot_data_ds | undefined = get_log_data(panel.log!)
                 if (log_data) {
-                    panel.webview.postMessage({ type: 'plot_log', data: log_data.data, meta: log_data.meta });
+                    panel.webview.postMessage({ type: 'plot_log', data: log_data.data, meta: log_data.meta, performance: log_data.performance });
                     panel.last_read = Date.now();
                     panel.log_file_size = current_size;
                 }
@@ -234,7 +273,7 @@ function get_update(panel: PlotPanel | undefined, updateType?: 'log' | 'dump') {
             else if (!panel.last_read || last_write > panel.last_read) {
                 const log_data: plot_data_ds | undefined = get_log_data(panel.log!)
                 if (log_data) {
-                    panel.webview.postMessage({ type: 'update_log', data: log_data.data, meta: log_data.meta });
+                    panel.webview.postMessage({ type: 'update_log', data: log_data.data, meta: log_data.meta, performance: log_data.performance });
                     panel.last_read = Date.now();
                     panel.log_file_size = current_size;
                 }
@@ -287,6 +326,12 @@ export function draw_panel(panel: PlotPanel, context: ExtensionContext) {
     const script: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'dist', 'dashboard.js')))
     const css = get_css(panel, context)
     panel.webview.html = css + build_plot_html(panel, node_lib_path, script_lib, script)
+    
+    // Send the initial script file to the webview if available
+    if (panel.script_file) {
+        panel.webview.postMessage({ type: 'active_file', data: panel.script_file });
+    }
+    
     if (panel.log) {
         set_plot_panel_content(panel, context, file_type.log)
     }
@@ -316,7 +361,7 @@ function get_log_data(path: string): plot_data_ds | undefined {
             }
             plot_ser.push(ser)
         }
-        return { 'data': plot_ser, 'meta': log.meta }
+        return { 'data': plot_ser, 'meta': log.meta, 'performance': log.performance }
     }
 }
 
@@ -357,6 +402,59 @@ function locate_meta(log: string, log_path: string) {
     return meta
 }
 
+function extract_performance(log: string): { labels: string[], values: number[], avg_times: number[], total_time?: number } | undefined {
+    // Match both standard and accelerated package performance breakdowns
+    const perf_section_regex = RegExp('(MPI task timing breakdown:|Section \\|.*%total)[\\s\\S]*?(?=\\n\\n|Loop time|$)', 'g');
+    const perf_match = perf_section_regex.exec(log);
+    
+    if (!perf_match) {
+        return undefined;
+    }
+    
+    const perf_text = perf_match[0];
+    const lines = perf_text.split('\n');
+    
+    const labels: string[] = [];
+    const values: number[] = [];
+    const avg_times: number[] = [];
+    let total_time: number | undefined = undefined;
+    
+    // Try to extract Loop time (total wall time)
+    const loop_time_match = log.match(/Loop time of ([\d.]+) on/);
+    if (loop_time_match) {
+        total_time = parseFloat(loop_time_match[1]);
+    }
+    
+    // Parse each line for section name, avg time, and %total
+    for (const line of lines) {
+        // Skip header lines and separators
+        if (line.includes('Section |') || line.includes('---') || line.includes('timing breakdown')) {
+            continue;
+        }
+        
+        // Match lines with timing data: "Section | min | avg | max | varavg | percentage"
+        // Format: Section | min time | avg time | max time | %varavg | %total
+        const timing_match = line.match(/^([A-Za-z]+)\s*\|\s*[\d.]+\s*\|\s*([\d.]+)\s*\|.*\|\s*([\d.]+)\s*$/);
+        if (timing_match) {
+            const section = timing_match[1].trim();
+            const avg_time = parseFloat(timing_match[2]);
+            const percentage = parseFloat(timing_match[3]);
+            
+            if (section && !isNaN(avg_time) && !isNaN(percentage) && percentage > 0) {
+                labels.push(section);
+                avg_times.push(avg_time);
+                values.push(percentage);
+            }
+        }
+    }
+    
+    if (labels.length > 0 && values.length > 0) {
+        return { labels, values, avg_times, total_time };
+    }
+    
+    return undefined;
+}
+
 
 function read_log(log_path: string) {
     if (log_path) {
@@ -368,6 +466,7 @@ function read_log(log_path: string) {
             header: string[],
             data: string[][]
         }[] = []
+        const performance_data: { labels: string[], values: number[], avg_times: number[], total_time?: number }[] = []
 
         if (blocks) {
             blocks.sort((a, b) => a.index - b.index)
@@ -387,9 +486,14 @@ function read_log(log_path: string) {
                         log_ds.push({ type: block.match.split("\n")[0], header: header, data: dl })
                     }
                 }
+                // Extract performance data for this block
+                const block_performance = extract_performance(block.match)
+                if (block_performance) {
+                    performance_data.push(block_performance)
+                }
             });
         }
-        return { 'data': log_ds, 'meta': meta }
+        return { 'data': log_ds, 'meta': meta, 'performance': performance_data.length > 0 ? performance_data : undefined }
     }
 }
 
@@ -491,7 +595,7 @@ export async function set_plot_panel_content(panel: PlotPanel | undefined, conte
                 if (panel.log) {
                     const log_data: plot_data_ds | undefined = get_log_data(panel.log)
                     if (log_data) {
-                        panel.webview.postMessage({ type: 'plot_log', data: log_data.data, meta: log_data.meta })
+                        panel.webview.postMessage({ type: 'plot_log', data: log_data.data, meta: log_data.meta, performance: log_data.performance })
                         panel.last_read = Date.now()
                         // Initialize file size tracking
                         const stats = await fsPromises.stat(panel.log);
@@ -590,6 +694,7 @@ function build_plot_html(panel: PlotPanel, node_lib_path: Uri, plotly_lib: Uri, 
         <!-- Tab links -->
         <div class="tab">
           <button class="tablinks" id="sys_tab">System Information</button>
+          <button class="tablinks" id="run_tab">Run Task</button>
           <button class="tablinks" id="dump_tab">Dumps</button>
           <button class="tablinks" id="logs_tab">Logs</button>
         </div>
@@ -597,6 +702,68 @@ function build_plot_html(panel: PlotPanel, node_lib_path: Uri, plotly_lib: Uri, 
         <!-- Tab content -->
         <div id="sys" class="tabcontent">
           <div id="sys_bars">
+          </div>
+        </div>
+
+        <div id="run" class="tabcontent">
+          <div id="run_task">
+            <h2>LAMMPS Task Configuration</h2>
+            <form id="task_form">
+              <table style="width: 100%; max-width: 800px;">
+                <tr>
+                  <td><label for="task_label" title="Display name for the task in VS Code's task list">Task Label:</label></td>
+                  <td><input type="text" id="task_label" value="LAMMPS Run" style="width: 100%;" title="Display name for the task in VS Code's task list"></td>
+                </tr>
+                <tr>
+                  <td><label for="task_script" title="Path to the LAMMPS input script to execute. Defaults to the active editor file.">Script File:</label></td>
+                  <td>
+                    <input type="text" id="task_script" placeholder="Active editor or specify path" style="width: 100%;" title="Path to the LAMMPS input script to execute. Defaults to the active editor file.">
+                  </td>
+                </tr>
+                <tr>
+                  <td><label for="task_binary" title="Path to the LAMMPS executable (e.g., lmp, lmp_mpi, lmp_intel_cpu_intelmpi, /usr/local/bin/lmp)">Binary:</label></td>
+                  <td><input type="text" id="task_binary" value="lmp" style="width: 100%;" title="Path to the LAMMPS executable (e.g., lmp, lmp_mpi, lmp_intel_cpu_intelmpi, /usr/local/bin/lmp)"></td>
+                </tr>
+                <tr>
+                  <td><label for="task_mpiexec" title="Path to the MPI launcher executable (e.g., mpiexec, mpirun, srun). Used when MPI Tasks > 0.">MPI Exec Path:</label></td>
+                  <td><input type="text" id="task_mpiexec" value="mpiexec" style="width: 100%;" title="Path to the MPI launcher executable (e.g., mpiexec, mpirun, srun). Used when MPI Tasks > 0."></td>
+                </tr>
+                <tr>
+                  <td><label for="task_mpi_tasks" title="Number of MPI processes to use for parallel execution. Set to 0 for single-task (serial) execution.">MPI Tasks:</label></td>
+                  <td><input type="number" id="task_mpi_tasks" value="4" min="0" max="9999" style="width: 100px;" title="Number of MPI processes to use for parallel execution. Set to 0 for single-task (serial) execution."></td>
+                </tr>
+                <tr>
+                  <td><label for="task_gpu_nodes" title="Number of GPU nodes to use with -sf gpu -pk gpu flags. Set to 0 to disable GPU acceleration.">GPU Nodes:</label></td>
+                  <td><input type="number" id="task_gpu_nodes" value="0" min="0" max="99" style="width: 100px;" title="Number of GPU nodes to use with -sf gpu -pk gpu flags. Set to 0 to disable GPU acceleration."></td>
+                </tr>
+                <tr>
+                  <td><label for="task_omp_threads" title="Number of OpenMP threads per MPI task. Set to 0 to use system default. Sets OMP_NUM_THREADS environment variable.">OMP Threads:</label></td>
+                  <td><input type="number" id="task_omp_threads" value="0" min="0" max="999" style="width: 100px;" title="Number of OpenMP threads per MPI task. Set to 0 to use system default. Sets OMP_NUM_THREADS environment variable."></td>
+                </tr>
+                <tr>
+                  <td><label for="task_args" title="Additional command-line arguments to pass to LAMMPS (e.g., -log none, -screen none, -var temp 300, -skiprun)">Additional Args:</label></td>
+                  <td><input type="text" id="task_args" placeholder="-log none" style="width: 100%;" title="Additional command-line arguments to pass to LAMMPS (e.g., -log none, -screen none, -var temp 300, -skiprun)"></td>
+                </tr>
+                <tr>
+                  <td><label for="task_group" title="Task group classification in VS Code. Build tasks can be run with Ctrl+Shift+B.">Task Group:</label></td>
+                  <td>
+                    <select id="task_group" style="width: 150px;" title="Task group classification in VS Code. Build tasks can be run with Ctrl+Shift+B.">
+                      <option value="build" selected>Build</option>
+                      <option value="test">Test</option>
+                      <option value="none">None</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td><label for="task_default" title="Mark this as the default task for its group. Default tasks can be executed with keyboard shortcuts (e.g., Ctrl+Shift+B for build group).">Default Task:</label></td>
+                  <td><input type="checkbox" id="task_default" checked title="Mark this as the default task for its group. Default tasks can be executed with keyboard shortcuts (e.g., Ctrl+Shift+B for build group)."></td>
+                </tr>
+              </table>
+              <br>
+              <button type="button" id="run_task_btn" style="padding: 10px 20px; font-size: 16px;" title="Execute the LAMMPS task immediately with the current configuration">▶ Run Task</button>
+              <button type="button" id="save_task_btn" style="padding: 10px 20px; font-size: 16px; margin-left: 10px;" title="Save this configuration to .vscode/tasks.json for reuse">💾 Save Task Config</button>
+            </form>
+            <div id="task_output" style="margin-top: 20px; padding: 10px; border: 1px solid; max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap;"></div>
           </div>
         </div>
         
@@ -627,4 +794,142 @@ function build_plot_html(panel: PlotPanel, node_lib_path: Uri, plotly_lib: Uri, 
     </body>   
     </html>`;
     return html
+}
+
+async function run_lammps_task(config: any): Promise<any> {
+    const workspaceFolders = workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        throw new Error('No workspace folder open');
+    }
+
+    const workspaceFolder = workspaceFolders[0];
+    
+    // Build the command based on the configuration
+    let command = '';
+    const binary = config.binary || 'lmp';
+    const script = config.script || window.activeTextEditor?.document.fileName || '';
+    
+    if (!script) {
+        throw new Error('No script file specified and no active editor');
+    }
+
+    // Build command based on MPI and GPU settings
+    const mpi_tasks = parseInt(config.mpi_tasks) || 0;
+    const gpu_nodes = parseInt(config.gpu_nodes) || 0;
+    const omp_threads = parseInt(config.omp_threads) || 0;
+    const args = config.args || '';
+
+    if (mpi_tasks > 0) {
+        const mpiexec = config.mpiexec_path || 'mpiexec';
+        command = `${mpiexec} -np ${mpi_tasks}`;
+        if (omp_threads > 0) {
+            command += ` -x OMP_NUM_THREADS=${omp_threads}`;
+        }
+        command += ` ${binary}`;
+    } else {
+        if (omp_threads > 0) {
+            command = `OMP_NUM_THREADS=${omp_threads} ${binary}`;
+        } else {
+            command = binary;
+        }
+    }
+
+    if (gpu_nodes > 0) {
+        command += ` -sf gpu -pk gpu ${gpu_nodes}`;
+    }
+
+    command += ` -in ${script}`;
+    
+    if (args) {
+        command += ` ${args}`;
+    }
+
+    // Create and execute the task
+    const taskDefinition = {
+        type: 'lmps',
+        label: config.label || 'LAMMPS Run',
+    };
+
+    const execution = new ShellExecution(command);
+    const task = new Task(
+        taskDefinition,
+        workspaceFolder,
+        config.label || 'LAMMPS Run',
+        'lmps',
+        execution,
+        []
+    );
+
+    // Execute the task
+    await tasks.executeTask(task);
+
+    return {
+        success: true,
+        command: command,
+        message: 'Task started successfully'
+    };
+}
+
+async function save_task_config(config: any): Promise<void> {
+    const workspaceFolders = workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        throw new Error('No workspace folder open');
+    }
+
+    const workspaceFolder = workspaceFolders[0];
+    const tasksJsonPath = join(workspaceFolder.uri.fsPath, '.vscode', 'tasks.json');
+
+    // Build the task configuration object
+    const taskConfig = {
+        type: 'lmps',
+        label: config.label || 'LAMMPS Custom Task',
+        binary: config.binary || 'lmp',
+        mpiexec_path: config.mpiexec_path || 'mpiexec',
+        mpi_tasks: parseInt(config.mpi_tasks) || 0,
+        gpu_nodes: parseInt(config.gpu_nodes) || 0,
+        omp_threads: parseInt(config.omp_threads) || 0,
+        args: config.args || '',
+        problemMatcher: [],
+        group: {
+            kind: config.group || 'build',
+            isDefault: config.isDefault !== false
+        }
+    };
+
+    // Read existing tasks.json or create new structure
+    let tasksJson: any;
+    try {
+        const tasksContent = readFileSync(tasksJsonPath, 'utf8');
+        tasksJson = JSON.parse(tasksContent);
+    } catch (e) {
+        // File doesn't exist or is invalid, create new structure
+        tasksJson = {
+            version: '2.0.0',
+            tasks: []
+        };
+    }
+
+    // Add or update the task
+    if (!tasksJson.tasks) {
+        tasksJson.tasks = [];
+    }
+
+    // Check if task with same label exists
+    const existingTaskIndex = tasksJson.tasks.findIndex((t: any) => t.label === taskConfig.label);
+    if (existingTaskIndex >= 0) {
+        tasksJson.tasks[existingTaskIndex] = taskConfig;
+    } else {
+        tasksJson.tasks.push(taskConfig);
+    }
+
+    // Ensure .vscode directory exists
+    const vscodePath = join(workspaceFolder.uri.fsPath, '.vscode');
+    try {
+        await fsPromises.mkdir(vscodePath, { recursive: true });
+    } catch (e) {
+        // Directory already exists
+    }
+
+    // Write the file
+    writeFileSync(tasksJsonPath, JSON.stringify(tasksJson, null, 2));
 }
