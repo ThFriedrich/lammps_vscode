@@ -1,8 +1,8 @@
-# Release Notes v.1.6.0, v.1.7.0 and v.1.8.8
+# Release Notes v.1.9.0
 
-In this update some minor changes were introduced and features added and bugs fixed: [#51](https://github.com/ThFriedrich/lammps_vscode/issues/51), [#49](https://github.com/ThFriedrich/lammps_vscode/issues/49), [#39](https://github.com/ThFriedrich/lammps_vscode/issues/39). This concerns issues with resolving relative file paths in the linting functions. Issue [#52](https://github.com/ThFriedrich/lammps_vscode/issues/52), introduces symbols to create an outline of the document based on folding markers. The python scripts to generate the doc_obj.ts from the online rst-files got some updates and fixes too. Further, the task provider functinality was updated to allow a better customisation of task definitions [#41](https://github.com/ThFriedrich/lammps_vscode/issues/41). A dry-run task was also added as discussed in [#11](https://github.com/ThFriedrich/lammps_vscode/issues/51). The atomic-dump viewer in the dashboard was updated to scale the plots according to the simulation box dimensions. The auto-resize feature was improved as well.
+This major update introduces significant improvements to the dashboard functionality, enhanced linting capabilities, and important dependency updates to address security vulnerabilities. The dump file viewer now supports flexible column ordering and properly handles different coordinate types (scaled, wrapped, unwrapped). Performance visualization has been expanded with detailed timing breakdowns, and the documentation panel now respects your editor font settings.
 
- Please [report issues](https://github.com/ThFriedrich/lammps_vscode/issues/new/choose) if you encounter any problems so they can be fixed. Much of the content of this extension is generated in an automated fashion from the official [Lammps documentation](https://docs.lammps.org/Manual.html). It is hardly possible to check the behaviour of autocomplete and hover features and the generation and formatting of the embedded documentation pages for each individual command, what makes bug reports all the more important and valueable. Also, please share your ideas for enhancements or new features. 
+Please [report issues](https://github.com/ThFriedrich/lammps_vscode/issues/new/choose) if you encounter any problems so they can be fixed. Much of the content of this extension is generated in an automated fashion from the official [Lammps documentation](https://docs.lammps.org/Manual.html). It is hardly possible to check the behaviour of autocomplete and hover features and the generation and formatting of the embedded documentation pages for each individual command, what makes bug reports all the more important and valueable. Also, please share your ideas for enhancements or new features.
 
 ---
 
@@ -12,45 +12,53 @@ This package is [Treeware](https://treeware.earth). If you find this extension u
 
 ## This Release introduces the following new features and improvements:
 
- - ### Added **Outline** as discussed in [Issue #52](https://github.com/ThFriedrich/lammps_vscode/issues/52)
-   - Adds symbols at extension-specific folding start-marker '#[' and uses subsequent string as description in the Outline tab
-![image](https://github.com/ThFriedrich/lammps_vscode/assets/47680554/363c192c-5fae-4367-8b8e-a3946aa1175b)
+ - ### Dashboard Enhancements
+   - **Flexible Dump File Support**: Dump viewer now dynamically detects column order from headers instead of using hardcoded indices. Fixes [#63](https://github.com/ThFriedrich/lammps_vscode/issues/63) and [#62](https://github.com/ThFriedrich/lammps_vscode/issues/62)
+     - Supports scaled coordinates (`xs`, `ys`, `zs`), unwrapped (`x`, `y`, `z`), and wrapped (`xu`, `yu`, `zu`)
+     - Automatically applies correct scaling based on coordinate type
+     - Works with any column ordering in dump files
+   - **Live Update Controls**: Independent toggle switches for log and dump file monitoring
+   - **Performance Visualization**: 
+     - Per-step performance breakdowns showing MPI task timing for each run/minimize/neb step
+     - Pie charts with detailed hover information including average times and percentages
+     - Total wall time display for each simulation step
+     - Foldable sections for better organization
+   - **Improved Update Handling**: 
+     - File size tracking to detect overwrites and restart simulations
+     - Incremental reading of large files for better performance
+     - Dynamic frame appending for dump plots
+     - Throttled window resize events to reduce CPU usage
+   - **Better Error Handling**: Validates required columns exist in dump files with clear error messages
 
- - ### Linting
-   - Previously file-path-exists type of checks related to the current working directory, which has now been fixed to use the path relative to the lammps input script location instead.
+ - ### Linting Improvements
+   - **Variable Resolution**: Implements variable unpacking to avoid false positives. Fixes [#58](https://github.com/ThFriedrich/lammps_vscode/issues/58) and [#68](https://github.com/ThFriedrich/lammps_vscode/issues/68)
+     - Resolves LAMMPS variables (`${VAR}` and `$VAR` syntax) before checking file paths
+     - Supports string variables for dynamic file names
+   - **Path Validation**: File paths now checked relative to workspace directory instead of script location
 
- - ### Grammar
-   - Keywords updated
-   - Update doc_obj generation scripts
-   - Changed the way to split the rst into sections to improve stability
-   - Added checks for minimal entries found (e.g. Syntax, Description, Examples)
-   - Updated for new rst-directives (tabs, admonition, deprecated, only html, figure, versionadded)
-   - several smaller bugfixes and formatting improvements
-  
- - ### Development
-   - Codebase cleanups based on new ESLint
-   - Updated Task and debug definitions in .vscode
-
- - ### Dependencies updated
-   - "@types/node": "^12.12.55" -> "^18.0.0",
-   - "@typescript-eslint/eslint-plugin": "^2.18.0" -> "^6.0.0" 
-   - "@typescript-eslint/parser": "^2.18.0" -> "^6.0.0"
-   - vsce: "1.88.0" -> "@vscode/vsce": "^2.19.0"
-   - "typescript": "^3.9.7" -> "^5.1.6"
-   - "acorn": "^7.0.0" -> "^8.0.0"
+ - ### Documentation Panel
+   - **Font Settings Integration**: Documentation panel now uses your editor's font size and family settings
+     - Automatically syncs with `editor.fontSize` and `editor.fontFamily`
+     - Consistent typography between editor and documentation views
 
  - ### Task Provider
-   - Codebase cleanups
-   - Add dry run task
-   - Add "args" option for custom task definitions
-   - Add "omp_threads" argument
-  
- - ### Dashboard
-   - Improve auto-rescaling behaviour of dump-div
-   - Add scaling to dump plots to properly account for box size
-   - Bugfixes for dump and log viewer in Windows
+   - **API Compatibility**: Updated implementation to support recent VSCode Task API changes
+   - Maintains backward compatibility with existing task definitions
 
- - ### Packaging
-   - Add Logo for Lammps-input-script files in tree view, etc. 
+ - ### Packaging & Dependencies
+   - **Security Updates**: All npm audit vulnerabilities resolved (0 vulnerabilities)
+   - **MathJax Upgrade**: Switched from MathJax-Node to MathJax-Full
+     - Better equation rendering in hover and documentation panels
+     - Improved compatibility with modern Node.js
+   - **NVIDIA SMI Package**: Replaced `node-nvidia-smi` with `@quik-fe/node-nvidia-smi`
+     - Fixes Dependabot security warnings for xml2js vulnerability
+     - Better support for Node.js 22+
+   - **Dependency Cleanup**: Removed deprecated "request" package
+   - **Node 22 Migration**: All dependencies updated for Node.js 22 compatibility
+
+ - ### Development Improvements
+   - GitHub Actions workflow stability enhanced with retry logic for apt package installation
+   - Python environment handling updated for Ubuntu 24.04+ (PEP 668 compliance)
+   - Improved CI/CD reliability with better error handling
 
 ---

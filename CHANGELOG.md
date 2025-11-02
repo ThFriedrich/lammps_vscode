@@ -159,15 +159,27 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
  - Linting
    - Disabled linting for log-files [#57](https://github.com/ThFriedrich/lammps_vscode/issues/57)
 
-  ## Version 1.9.0 22.11.2024
+  ## Version 1.9.0 02.11.2025
   - Task provider
     - Implementation updated to support VSCode Task API changes
   - Dashboard
-   - Performance improvements for dump viewer and logging
+    - Performance improvements for dump viewer and logging
+    - Added support for scaled coordinates (xs, ys, zs) in dump files
+    - Added error handling for missing coordinate columns in dump files. Fixes [#63](https://github.com/ThFriedrich/lammps_vscode/issues/63) and [#62](https://github.com/ThFriedrich/lammps_vscode/issues/62)
+    - Introduced live update toggles for log and dump data in the dashboard.
+    - Implemented throttling for plot resizing on window resize events to improve performance.
+    - Updated the logic for handling log and dump file updates, including file size tracking and handling file overwrites.
+    - Refactored the get_update function to support both log and dump updates with improved error handling.
+    - Added functionality to append new frames to existing dump plots dynamically.
+    - Cleaned up event listeners and ensured they are attached only once to improve efficiency.
+  - Documentation Panel
+    - Enhanced HTML head generation: added dynamic font size and family retrieval from VS Code settings for improved styling in the document panel.
   - Packaging
-   - Switch from MathJax-Node to MathJax-Full for rendering equations
-   - Removed "request" dependency
-   - Fix rendering of some equations in hover and documentation panel
+    - Switch from MathJax-Node to MathJax-Full for rendering equations
+    - Removed "request" dependency
+    - Fix rendering of some equations in hover and documentation panel
+    - Switched to '@quik-fe/node-nvidia-smi' for better compatibility with newer Node versions
+    - Fixed all vulnerability issues reported by npm audit
   - Linting
-   - Implemented unpacking of variables to avoid false positives in linting. Fixes [#58](https://github.com/ThFriedrich/lammps_vscode/issues/58) and [#68](https://github.com/ThFriedrich/lammps_vscode/issues/68)
+    - Implemented unpacking of variables to avoid false positives in linting. Fixes [#58](https://github.com/ThFriedrich/lammps_vscode/issues/58) and [#68](https://github.com/ThFriedrich/lammps_vscode/issues/68)
    
