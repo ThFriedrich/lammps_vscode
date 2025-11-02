@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { WebviewPanel, ExtensionContext, Uri, window, TextDocument, TextEditor, MarkdownString, Position, commands } from 'vscode';
+import { WebviewPanel, ExtensionContext, Uri, window, TextDocument, TextEditor, MarkdownString, Position, commands, workspace } from 'vscode';
 import { doc_entry, getColor, fix_img_path, getDocumentation } from './doc_fcns'
 import { getMathMarkdown } from './render_fcns'
 import { getRangeFromPosition } from './hover_fcns';
@@ -97,6 +97,11 @@ export function get_html_head(panel: DocPanel | PlotPanel, context: ExtensionCon
 
     const style: Uri = css_lmps[window.activeColorTheme.kind - 1]
     const style_panel_uri = panel.webview.asWebviewUri(style)
+    
+    // Get editor font size from VS Code settings
+    const config = workspace.getConfiguration('editor');
+    const fontSize = config.get<number>('fontSize', 14);
+    const fontFamily = config.get<string>('fontFamily', 'Consolas, "Courier New", monospace');
 
     const incl_str: string =
         `<!DOCTYPE html>
@@ -109,10 +114,19 @@ export function get_html_head(panel: DocPanel | PlotPanel, context: ExtensionCon
         <meta http-equiv="Content-Security-Policy"
         content="default-src 'none';
         img-src ${panel.webview.cspSource} data:;
-        style-src ${panel.webview.cspSource};
+        style-src ${panel.webview.cspSource} 'unsafe-inline';
         "/>
         
-        <link rel="stylesheet" type="text/css" href="${style_panel_uri}"> 
+        <link rel="stylesheet" type="text/css" href="${style_panel_uri}">
+        <style>
+            body {
+                font-size: ${fontSize}px;
+            }
+            code, pre {
+                font-family: ${fontFamily};
+                font-size: ${fontSize}px;
+            }
+        </style>
     </head>`
 
     return incl_str
