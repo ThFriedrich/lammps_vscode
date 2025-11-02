@@ -1,15 +1,16 @@
-/* eslint-disable no-unused-vars */
 import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions, workspace, SaveDialogOptions } from 'vscode';
 import { join } from 'path'
-import { readFileSync, statSync, writeFileSync } from 'fs';
+import { readFileSync, statSync, writeFileSync, promises as fsPromises } from 'fs';
 import { get_css } from './doc_panel_fcns'
 import { get_cpu_info, get_cpu_stat, get_gpu_info, get_gpu_stat } from './os_util_fcns'
 
 export interface PlotPanel extends WebviewPanel {
     log?: string
     last_read?: number
+    log_file_size?: number
     dump?: string
     dump_last_read?: number
+    dump_file_size?: number
 }
 
 interface plot_data {
@@ -152,14 +153,14 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
                             set_plot_panel_content(panel, context, file_type.log)
                             break;
                         case 'update_log':
-                            get_update(panel)
+                            get_update(panel, 'log');
                             break;
                         case 'load_dump':
                             panel.dump = undefined;
                             set_plot_panel_content(panel, context, file_type.dump)
                             break;
                         case 'update_dump':
-                            set_plot_panel_content(panel, context, file_type.dump)
+                            get_update(panel, 'dump');
                             break;
                         case 'get_gpu_info':
                             get_gpu_info().then((s: any) => {
@@ -210,27 +211,75 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
     return panel
 }
 
-function get_update(panel: PlotPanel | undefined) {
-    if (panel?.log) {
-        const last_write: number = statSync(panel.log).mtime.getTime()
-        if (last_write > panel.last_read!) {
-            const log_data: plot_data_ds | undefined = get_log_data(panel.log)
-            if (log_data) {
-                panel.webview.postMessage({ type: 'update_log', data: log_data.data, meta: log_data.meta });
-                panel.last_read = Date.now()
+function get_update(panel: PlotPanel | undefined, updateType?: 'log' | 'dump') {
+    // Use Promise.all to check both files in parallel
+    const promises: Promise<void>[] = [];
+    
+    if (panel?.log && (!updateType || updateType === 'log')) {
+        const logPromise = fsPromises.stat(panel.log).then(stats => {
+            const last_write = stats.mtime.getTime();
+            const current_size = stats.size;
+            
+            // Check if file has shrunk (overwritten/restarted)
+            if (panel.log_file_size && current_size < panel.log_file_size) {
+                // File was overwritten - reload everything from scratch
+                const log_data: plot_data_ds | undefined = get_log_data(panel.log!)
+                if (log_data) {
+                    panel.webview.postMessage({ type: 'plot_log', data: log_data.data, meta: log_data.meta });
+                    panel.last_read = Date.now();
+                    panel.log_file_size = current_size;
+                }
             }
-        }
-    }
-    if (panel?.dump) {
-        const last_write: number = statSync(panel.dump).mtime.getTime()
-        if (last_write > panel.dump_last_read!) {
-            const dump_data: dump_data_ds | undefined = get_dump_data(panel.dump)
-            if (dump_data) {
-                panel.webview.postMessage({ type: 'plot_dump', data: dump_data.data, meta: dump_data.meta });
-                panel.last_read = Date.now()
+            // Check if file has been modified
+            else if (!panel.last_read || last_write > panel.last_read) {
+                const log_data: plot_data_ds | undefined = get_log_data(panel.log!)
+                if (log_data) {
+                    panel.webview.postMessage({ type: 'update_log', data: log_data.data, meta: log_data.meta });
+                    panel.last_read = Date.now();
+                    panel.log_file_size = current_size;
+                }
             }
-        }
+        }).catch(err => {
+            console.error('[LAMMPS Dashboard] Error reading log file:', err);
+        });
+        promises.push(logPromise);
     }
+    
+    if (panel?.dump && (!updateType || updateType === 'dump')) {
+        const dumpPromise = fsPromises.stat(panel.dump).then(stats => {
+            const last_write = stats.mtime.getTime();
+            const current_size = stats.size;
+            
+            // Check if file has shrunk (overwritten/restarted)
+            if (panel.dump_file_size && current_size < panel.dump_file_size) {
+                // File was overwritten - reload everything from scratch
+                const dump_data: dump_data_ds | undefined = get_dump_data(panel.dump!, 0)
+                if (dump_data) {
+                    panel.webview.postMessage({ type: 'plot_dump', data: dump_data.data, meta: dump_data.meta });
+                    panel.dump_last_read = Date.now();
+                    panel.dump_file_size = current_size;
+                }
+            }
+            // Check if file has been modified and grown (new data appended)
+            else if (!panel.dump_last_read || last_write > panel.dump_last_read) {
+                const is_initial_load = !panel.dump_file_size;
+                const dump_data: dump_data_ds | undefined = get_dump_data(panel.dump!, panel.dump_file_size || 0)
+                
+                if (dump_data) {
+                    // Send with appropriate message type based on whether this is initial load or update
+                    const messageType = is_initial_load ? 'plot_dump' : 'update_dump';
+                    panel.webview.postMessage({ type: messageType, data: dump_data.data, meta: dump_data.meta });
+                    panel.dump_last_read = Date.now();
+                    panel.dump_file_size = current_size;
+                }
+            }
+        }).catch(err => {
+            console.error('[LAMMPS Dashboard] Error reading dump file:', err);
+        });
+        promises.push(dumpPromise);
+    }
+    
+    return Promise.all(promises);
 }
 export function draw_panel(panel: PlotPanel, context: ExtensionContext) {
     const node_lib_path: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'node_modules')))
@@ -344,9 +393,9 @@ function read_log(log_path: string) {
     }
 }
 
-function get_dump_data(path: string): dump_data_ds | undefined {
+function get_dump_data(path: string, start_byte: number = 0): dump_data_ds | undefined {
     const dmp_ds: dump_data_ds = { 'data': [], 'meta': { 'path': path } }
-    const dmp = read_dump(path)
+    const dmp = read_dump(path, start_byte)
     if (dmp) {
         for (let iy = 0; iy < dmp.length; iy++) {
             const ty: number[] = dmp[iy].data.map(data => data[1])
@@ -373,18 +422,37 @@ function get_dump_data(path: string): dump_data_ds | undefined {
     }
 }
 
-function read_dump(dump_path: string) {
+function read_dump(dump_path: string, start_byte: number = 0) {
     if (dump_path) {
-        const dump_file = readFileSync(dump_path).toString().replace(re_comments, '').replace(/\r\n/g, '\n');      // Read entire dump_file
-        let data_block                                           // Find Data Blocks
+        const full_file = readFileSync(dump_path).toString();
+        
+        let dump_file: string;
+        if (start_byte > 0) {
+            // Find the next "ITEM: TIMESTEP" after start_byte to ensure we start at a complete frame
+            const file_from_start = full_file.slice(start_byte);
+            const timestep_match = file_from_start.match(/ITEM: TIMESTEP/);
+            if (timestep_match && timestep_match.index !== undefined) {
+                // Start from the beginning of this timestep
+                dump_file = file_from_start.slice(timestep_match.index).replace(re_comments, '').replace(/\r\n/g, '\n');
+            } else {
+                // No new timesteps found
+                return [];
+            }
+        } else {
+            // Read from beginning
+            dump_file = full_file.replace(re_comments, '').replace(/\r\n/g, '\n');
+        }
+        
+        let data_block
         let bounds
-        const dump_ds: {                                           // Initialize Array of Datablocks
+        const dump_ds: {
             header: string[],
             data: number[][],
             scale_xyz: number[]
         }[] = []
         let scale_xyz
         let idx
+        
         while ((bounds = re_dump_bounds.exec(dump_file)) != null) {
             idx = 0
             scale_xyz = [1.0, 1.0, 1.0]
@@ -403,7 +471,8 @@ function read_dump(dump_path: string) {
                 const dat_l = data_block[0].slice(idx_head + 1).toString().trim().split(RegExp("\\n+", "g"))
                 const dat_n: number[][] = dat_l.map((value) =>
                     value.trim().split(/\s+/).map((substring) => parseFloat(substring))
-                ); if (header.length == dat_n[0].length) {
+                ); 
+                if (header.length == dat_n[0].length) {
                     dump_ds.push({ header: header, data: dat_n, scale_xyz: scale_xyz })
                 }
             }
@@ -424,6 +493,9 @@ export async function set_plot_panel_content(panel: PlotPanel | undefined, conte
                     if (log_data) {
                         panel.webview.postMessage({ type: 'plot_log', data: log_data.data, meta: log_data.meta })
                         panel.last_read = Date.now()
+                        // Initialize file size tracking
+                        const stats = await fsPromises.stat(panel.log);
+                        panel.log_file_size = stats.size;
                     }
                 }
                 break;
@@ -435,7 +507,10 @@ export async function set_plot_panel_content(panel: PlotPanel | undefined, conte
                     const dump_data: dump_data_ds | undefined = get_dump_data(panel.dump)
                     if (dump_data) {
                         panel.webview.postMessage({ type: 'plot_dump', data: dump_data.data, meta: dump_data.meta });
-                        panel.last_read = Date.now()
+                        panel.dump_last_read = Date.now()
+                        // Initialize file size tracking
+                        const stats = await fsPromises.stat(panel.dump);
+                        panel.dump_file_size = stats.size;
                     }
                 }
                 break;
@@ -528,7 +603,10 @@ function build_plot_html(panel: PlotPanel, node_lib_path: Uri, plotly_lib: Uri, 
         <div id="dump" class="tabcontent">
           <div>
             <button type="button" id="load_dump_btn">📂 Open Lammps Dump File</button>
-            <button type="button" id="update_dump_btn">🔄 Refresh</button>
+            <label style="margin-left: 20px;">
+              <input type="checkbox" id="live_update_toggle" checked>
+              Live Updates
+            </label>
             <div id="dump_path_div"></div><br>
             <div id="dump_div" class="dump_div" align="center">
             <!-- Plotly chart will be drawn inside this DIV -->
@@ -538,6 +616,10 @@ function build_plot_html(panel: PlotPanel, node_lib_path: Uri, plotly_lib: Uri, 
         
         <div id="logs" class="tabcontent">
             <button type="button" id="load_log_btn">📂 Open Lammps Log File</button>
+            <label style="margin-left: 20px;">
+              <input type="checkbox" id="live_update_toggle_logs" checked>
+              Live Updates
+            </label>
             <div id="plot_div" class="log_div">
             <!-- Plotly chart will be drawn inside this DIV -->
             </div>

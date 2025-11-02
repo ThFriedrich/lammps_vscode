@@ -4,10 +4,13 @@ window.onload = function () {
 
     var load_log_btn = document.getElementById('load_log_btn')
     var load_dump_btn = document.getElementById('load_dump_btn')
-    var update_dump_btn = document.getElementById('update_dump_btn')
+    var live_update_toggle = document.getElementById('live_update_toggle')
+    var live_update_toggle_logs = document.getElementById('live_update_toggle_logs')
     var b_logs_plotted = false
     var b_dump_plotted = false
     var n_plots = 0
+    var resizeTimeout = null;
+    var firstDone = false;
 
 
     document.getElementById("sys_tab").addEventListener('click', function (event) { openTab(event, 'sys') })
@@ -18,38 +21,53 @@ window.onload = function () {
     function resize_plots_sub() {
         if (b_logs_plotted) {
             Array.from(document.getElementsByClassName('panel')).forEach(plot_div => {
-                var div_sz = plot_div.getBoundingClientRect()
-                var update = {
-                    width: div_sz.width,
-                    height: div_sz.height
-                };
                 if (plot_div.offsetHeight > 0) {
+                    var div_sz = plot_div.getBoundingClientRect()
+                    var update = {
+                        width: div_sz.width,
+                        height: div_sz.height
+                    };
                     Plotly.relayout(plot_div, update);
                 }
             });
         }
         if (b_dump_plotted) {
             var dump_div = document.getElementById("dump_div");
-            var div_sz = dump_div.getBoundingClientRect()
-            var update = {
-                width: div_sz.width,
-                height: document.documentElement.clientHeight - div_sz.top -25
-            };
             if (dump_div.offsetHeight > 0) {
+                var div_sz = dump_div.getBoundingClientRect()
+                var update = {
+                    width: div_sz.width,
+                    height: document.documentElement.clientHeight - div_sz.top - 25
+                };
                 Plotly.relayout(dump_div, update);
             }
         }
+        if (!firstDone) {
+            window.addEventListener("resize", resize_plots_throttled)
+            firstDone = true;
+        }
+    }
+
+    function resize_plots_throttled() {
+        if (resizeTimeout) {
+            clearTimeout(resizeTimeout);
+        }
+        resizeTimeout = setTimeout(resize_plots_sub, 100);
     }
 
     function resize_plots(e) {
         var fired = 0;
+        var lastResize = Date.now();
         window.addEventListener('mousemove', mousemove);
         window.addEventListener('mouseup', mouseup);
 
         function mousemove(e) {
             fired++;
-            if (!(fired % 3) || fired == 1) {
-                resize_plots_sub()
+            var now = Date.now();
+            // Throttle to max once per 50ms
+            if (now - lastResize > 50) {
+                resize_plots_sub();
+                lastResize = now;
             }
         }
 
@@ -116,15 +134,20 @@ window.onload = function () {
             plot_div_child.style.resize = "vertical"
             plot_div_child.id = "plot_div_" + i.toString()
             plot_div_child.style.display = "none"
-            plot_div.addEventListener("mousedown", resize_plots);
+            // Attach resize handler only once per plot
+            if (!plot_div.dataset.resizeAttached) {
+                plot_div.addEventListener("mousedown", resize_plots);
+                plot_div.dataset.resizeAttached = 'true';
+            }
             plot_div.appendChild(plot_div_child);
             plot_log(plot_div_child.id, ev_data[i])
         }
         b_logs_plotted = true
     }
 
-    var interval_set = false
-    var log_interval = 500
+    var interval_set_log = false
+    var interval_set_dump = false
+    var log_interval = 1000
     var sys_interval = 250
 
     window.addEventListener('message', event => {
@@ -136,13 +159,15 @@ window.onload = function () {
             switch (ev_type) {
                 case 'plot_log':
                     redraw_log_panel(ev_data, ev_meta)
-                    if (!interval_set) {
+                    if (!interval_set_log) {
                         setInterval(() => {
-                            vscode.postMessage({
-                                command: 'update_log'
-                            });
+                            if (live_update_toggle_logs.checked) {
+                                vscode.postMessage({
+                                    command: 'update_log'
+                                });
+                            }
                         }, log_interval);
-                        interval_set = true
+                        interval_set_log = true
                     }
                     break;
                 case 'update_log':
@@ -161,13 +186,21 @@ window.onload = function () {
                     dump_path_div.textContent = ev_meta.path;
                     plot_dump("dump_div", ev_data)
                     b_dump_plotted = true
-                    if (!interval_set) {
+                    if (!interval_set_dump) {
                         setInterval(() => {
-                            vscode.postMessage({
-                                command: 'update_log'
-                            });
+                            if (live_update_toggle.checked) {
+                                vscode.postMessage({
+                                    command: 'update_dump'
+                                });
+                            }
                         }, log_interval);
-                        interval_set = true
+                        interval_set_dump = true
+                    }
+                    break;
+                case 'update_dump':
+                    // Append new frames to existing dump plot
+                    if (b_dump_plotted && ev_data && ev_data.length > 0) {
+                        update_dump("dump_div", ev_data);
                     }
                     break;
                 case 'cpu_stat':
@@ -260,30 +293,6 @@ window.onload = function () {
         }
     });
 
-    window.addEventListener("resize", function () {
-        if (b_logs_plotted) {
-            Array.from(document.getElementsByClassName('panel')).forEach(plot_div => {
-                var div_sz = plot_div.getBoundingClientRect()
-                var update = {
-                    width: div_sz.width,
-                    height: div_sz.height
-                };
-                if (plot_div.offsetHeight > 0) {
-                    Plotly.relayout(plot_div, update);
-                }
-            });
-        }
-        if (b_dump_plotted) {
-            var dump_div = document.getElementById("dump_div");
-            var div_sz = dump_div.getBoundingClientRect()
-            var update = {
-                width: div_sz.width,
-                height: document.documentElement.clientHeight - div_sz.top -25
-            };
-            Plotly.relayout(dump_div, update);
-        };
-    });
-
     vscode.postMessage({
         command: 'get_cpu_info'
     });
@@ -302,12 +311,7 @@ window.onload = function () {
             command: 'load_dump'
         });
     })
-
-    update_dump_btn.addEventListener('click', () => {
-        vscode.postMessage({
-            command: 'update_dump'
-        });
-    })
+    
     var modbar_config = {
         displayModeBar: true,
         responsive: true,
@@ -469,6 +473,33 @@ window.onload = function () {
         document.getElementById(plot_div).style.border = '1px solid'
         document.getElementById(plot_div).style.borderColor = hl_col
         resize_plots()
+    }
+
+    function update_dump(plot_div, new_data) {
+        var plot_element = document.getElementById(plot_div);
+        var current_layout = plot_element.layout;
+        
+        // Get current number of timesteps from slider
+        var current_steps = current_layout.sliders[0].steps;
+        var num_existing = current_steps.length;
+        
+        // Append new slider steps for new timesteps
+        for (let i = 0; i < new_data.length; i++) {
+            var timestep_index = num_existing + i;
+            current_steps.push({
+                label: String(timestep_index),
+                method: 'update',
+                args: [{
+                    'x': [new_data[i].x],
+                    'y': [new_data[i].y],
+                    'z': [new_data[i].z],
+                    'marker': [new_data[i].marker]
+                }]
+            });
+        }
+        
+        // Update the layout with the extended slider
+        Plotly.relayout(plot_element, {'sliders[0].steps': current_steps});
     }
 
     function openTab(evt, cont_type) {

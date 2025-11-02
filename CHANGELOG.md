@@ -158,4 +158,16 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
    - Various dependency updates as a consequence of moving to node 22
  - Linting
    - Disabled linting for log-files [#57](https://github.com/ThFriedrich/lammps_vscode/issues/57)
+
+  ## Version 1.9.0 22.11.2024
+  - Task provider
+    - Implementation updated to support VSCode Task API changes
+  - Dashboard
+   - Performance improvements for dump viewer and logging
+  - Packaging
+   - Switch from MathJax-Node to MathJax-Full for rendering equations
+   - Removed "request" dependency
+   - Fix rendering of some equations in hover and documentation panel
+  - Linting
+   - Implemented unpacking of variables to avoid false positives in linting. Fixes [#58](https://github.com/ThFriedrich/lammps_vscode/issues/58) and [#68](https://github.com/ThFriedrich/lammps_vscode/issues/68)
    
