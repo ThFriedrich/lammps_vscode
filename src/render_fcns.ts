@@ -23,49 +23,25 @@ SOFTWARE.
 <<<Much of the code in this file was copied and adapted from https://github.com/James-Yu/LaTeX-Workshop>>>
 */
 
-// Lazy-load MathJax v3 to avoid loading at extension startup
-let mjInitialized = false;
-let tex2svg: any = null;
+// Import MathJax components at the top level
+import { mathjax } from 'mathjax-full/js/mathjax.js';
+import { TeX } from 'mathjax-full/js/input/tex.js';
+import { SVG } from 'mathjax-full/js/output/svg.js';
+import { liteAdaptor } from 'mathjax-full/js/adaptors/liteAdaptor.js';
+import { RegisterHTMLHandler } from 'mathjax-full/js/handlers/html.js';
+import 'mathjax-full/js/input/tex/AllPackages.js';
 
-function initMathJax() {
-    if (!mjInitialized) {
-        try {
-            const { mathjax } = require('mathjax-full/js/mathjax.js');
-            const { TeX } = require('mathjax-full/js/input/tex.js');
-            const { SVG } = require('mathjax-full/js/output/svg.js');
-            const { liteAdaptor } = require('mathjax-full/js/adaptors/liteAdaptor.js');
-            const { RegisterHTMLHandler } = require('mathjax-full/js/handlers/html.js');
-            const { AllPackages } = require('mathjax-full/js/input/tex/AllPackages.js');
+// Initialize MathJax components
+const adaptor = liteAdaptor();
+RegisterHTMLHandler(adaptor);
 
-            // Create an HTML adaptor and register it
-            const adaptor = liteAdaptor();
-            RegisterHTMLHandler(adaptor);
+const texInput = new TeX({
+    packages: { '[+]': ['ams', 'base', 'newcommand', 'configmacros', 'color', 'noerrors', 'noundefined', 'mathtools'] }
+});
+const svgOutput = new SVG({ fontCache: 'local' });
+const htmlConverter = mathjax.document('', { InputJax: texInput, OutputJax: svgOutput });
 
-            // Create input and output processors
-            const tex = new TeX({
-                packages: AllPackages,
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']]
-            });
-            const svg = new SVG({ fontCache: 'none' });
-
-            // Create a conversion function
-            const html = mathjax.document('', { InputJax: tex, OutputJax: svg });
-            
-            tex2svg = (math: string, display: boolean = false) => {
-                const node = html.convert(math, { display });
-                return adaptor.innerHTML(node);
-            };
-
-            mjInitialized = true;
-            console.log('MathJax v3 initialized successfully');
-        } catch (error) {
-            console.error('Failed to load MathJax:', error);
-            throw error;
-        }
-    }
-    return tex2svg;
-}
+console.log('MathJax initialized at module load');
 
 const lf:string = "  \n  "
 
@@ -106,8 +82,17 @@ function svgToDataUrl(xml: string): string {
 }
 
 async function typeset(arg: string, scale: number, color: string, isDisplay: boolean, b_md: boolean): Promise<string> {
-    const converter = initMathJax();
-    const svg = converter(arg, isDisplay);
+    // Convert LaTeX to SVG using mathjax-full
+    const convertOption = {
+        display: isDisplay,
+        em: 18,
+        ex: 9,
+        containerWidth: 80 * 18
+    };
+    const node = htmlConverter.convert(arg, convertOption);
+    
+    // Extract SVG string
+    let svg = adaptor.innerHTML(node);
     
     if (b_md) {
         // For markdown (hover), encode as data URL for image embedding

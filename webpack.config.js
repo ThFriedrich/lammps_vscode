@@ -18,19 +18,27 @@ const config = {
         devtoolModuleFilenameTemplate: '../[resource-path]'
     },
     devtool: 'source-map',
-    externals: {
-        'vscode': 'commonjs2 vscode', // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
-        'mathjax-node': 'commonjs2 mathjax-node',
-        'markdown-it': 'commonjs2 markdown-it',
-        '@quik-fe/node-nvidia-smi': 'commonjs2 @quik-fe/node-nvidia-smi',
-        'node-os-utils': 'commonjs2 node-os-utils',
-        'plist': 'commonjs2 plist',
-        'cpu-stats': 'commonjs2 cpu-stats',
-        'request': 'commonjs2 request',
-        'vscode-oniguruma': 'commonjs2 vscode-oniguruma',
-        'vscode-textmate': 'commonjs2 vscode-textmate',
-        'plotly.js-dist-min': 'commonjs2 plotly.js-dist-min'
-    },
+    externals: [
+        {
+            'vscode': 'commonjs2 vscode', // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
+            'markdown-it': 'commonjs2 markdown-it',
+            '@quik-fe/node-nvidia-smi': 'commonjs2 @quik-fe/node-nvidia-smi',
+            'node-os-utils': 'commonjs2 node-os-utils',
+            'plist': 'commonjs2 plist',
+            'cpu-stats': 'commonjs2 cpu-stats',
+            'request': 'commonjs2 request',
+            'vscode-oniguruma': 'commonjs2 vscode-oniguruma',
+            'vscode-textmate': 'commonjs2 vscode-textmate',
+            'plotly.js-dist-min': 'commonjs2 plotly.js-dist-min'
+        },
+        // Externalize all mathjax-full modules to avoid webpack bundling issues
+        function({ request }, callback) {
+            if (request && request.startsWith('mathjax-full')) {
+                return callback(null, 'commonjs2 ' + request);
+            }
+            callback();
+        }
+    ],
     resolve: {
         // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
         extensions: ['.ts', '.js']
