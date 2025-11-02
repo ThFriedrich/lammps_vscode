@@ -20,34 +20,75 @@ export async function createHover(docs: doc_entry, context:ExtensionContext): Pr
             content.supportHtml = true;
             content.isTrusted = true;
             
+            // Build the complete content string first
+            let fullContent = "";
+            
             if (docs.short_description) {
                 const show_doc_uri = Uri.parse(`command:extension.show_docs`);
                 let short_desc: string = fix_img_path(docs.short_description, false, undefined, context)
                 short_desc = await getMathMarkdown(short_desc, color, true)
-                content.appendMarkdown(short_desc + `. [Read more... ]( ${show_doc_uri} ) \n`)
-                content.appendMarkdown("\n --- \n")
+                fullContent += short_desc + `. [Read more... ]( ${show_doc_uri} ) \n\n --- \n`;
             }
             if (docs.syntax) {
-                content.appendMarkdown("### Syntax: \n")
-                content.appendCodeblock(docs.syntax.join('\n'), "lmps")
-                content.appendMarkdown(await getMathMarkdown(docs.parameters, color, true) + "\n\n")
+                fullContent += "### Syntax: \n";
+                fullContent += "```lmps\n" + docs.syntax.join('\n') + "\n```\n";
+                let params = await getMathMarkdown(docs.parameters, color, true)
+                fullContent += params + "\n\n";
             }
             if (docs.examples && hover_conf.Examples) {
                 let exmpl: string = fix_img_path(docs.examples, true, undefined, context)
                 exmpl = await getMathMarkdown(exmpl, color, true)
-                content.appendMarkdown("### Examples: \n")
-                content.appendMarkdown(exmpl + '\n')
+                fullContent += "### Examples: \n" + exmpl + '\n';
             }
             if (docs.description && hover_conf.Detail == 'Complete') {
                 let full_desc: string = fix_img_path(docs.description, true, undefined, context)
                 full_desc = await getMathMarkdown(full_desc, color, true)
-                content.appendMarkdown("### Description: \n")
-                content.appendMarkdown(full_desc + "\n")
+                fullContent += "### Description: \n" + full_desc + "\n";
             }
             if (docs.restrictions && hover_conf.Restrictions) {
-                content.appendMarkdown("### Restrictions: \n")
-                content.appendMarkdown(docs.restrictions)
+                fullContent += "### Restrictions: \n" + docs.restrictions;
             }
+            
+            // Now apply SVG filtering to the entire combined content
+            const MAX_TOTAL_LENGTH = 100000; // 100KB total size limit
+            
+            if (fullContent.length > MAX_TOTAL_LENGTH) {
+                // String is too large - need to remove largest SVGs until it fits
+                const imgPattern = /<img\s+src="(data:image\/svg\+xml[^"]*)"[^>]*>/g;
+                
+                // Collect all SVG images with their sizes
+                const svgImages: Array<{match: string, dataUrl: string, size: number, isDisplay: boolean}> = [];
+                let match;
+                
+                while ((match = imgPattern.exec(fullContent)) !== null) {
+                    svgImages.push({
+                        match: match[0],
+                        dataUrl: match[1],
+                        size: match[1].length,
+                        isDisplay: match[0].includes('display:block')
+                    });
+                }
+                
+                // Sort by size (largest first)
+                svgImages.sort((a, b) => b.size - a.size);
+                
+                // Replace largest SVGs with placeholders until total size is acceptable
+                for (const svg of svgImages) {
+                    if (fullContent.length <= MAX_TOTAL_LENGTH) {
+                        break; // Size is now acceptable
+                    }
+                    
+                    const placeholder = svg.isDisplay 
+                        ? '\n\n*[Equation too complex for hover preview]*\n\n'
+                        : '*[Equation too complex]*';
+                    
+                    fullContent = fullContent.replace(svg.match, placeholder);
+                }
+            }
+            
+            // Add the filtered content to the MarkdownString
+            content.appendMarkdown(fullContent);
+            
             return new Hover(content)
         }
     }

@@ -152,7 +152,36 @@ class CMD:
         self.html_filename = rst_path.replace(".rst", ".html")
 
     def __get_short_description__(self):
-        self.short_description = re.split(r"\.\s+?", self.description, 1)[0]
+        # Split on period followed by space, but avoid splitting inside equations
+        # Use a more robust approach: temporarily mask equations, split, then unmask
+        desc = self.description
+        
+        # Store equations and replace with placeholders
+        equations = []
+        
+        # Match display equations \[...\] (non-greedy, handles newlines)
+        def save_and_replace_display(match):
+            equations.append(('display', match.group(0)))
+            return f'___EQ{len(equations)-1}___'
+        
+        desc = re.sub(r'\\\[[\s\S]*?\\\]', save_and_replace_display, desc)
+        
+        # Match inline equations \(...\) (non-greedy)
+        def save_and_replace_inline(match):
+            equations.append(('inline', match.group(0)))
+            return f'___EQ{len(equations)-1}___'
+        
+        desc = re.sub(r'\\\([\s\S]*?\\\)', save_and_replace_inline, desc)
+        
+        # Now safely split on period followed by space
+        parts = re.split(r'\.\s+', desc, 1)
+        short_desc = parts[0] if parts else desc
+        
+        # Restore equations
+        for i, (eq_type, eq_text) in enumerate(equations):
+            short_desc = short_desc.replace(f'___EQ{i}___', eq_text)
+        
+        self.short_description = short_desc
 
     def __get_syntax_prms__(self):
         def tweak_prms_block(blocks: str) -> str:
