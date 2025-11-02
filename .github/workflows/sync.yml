@@ -14,9 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for tags
+        
     - uses: actions/setup-node@v4
       with:
         node-version: '22'
+        
     - name: Cache node modules
       uses: actions/cache@v4
       env:
@@ -44,8 +48,7 @@ jobs:
       id: s2
       if: steps.s1.conclusion == 'success'
       run: |
-        python3 -m pip install --upgrade pip
-        pip3 install numpy
+        pip3 install numpy --break-system-packages
         python3 ./rst2json/rst2JSON.py
     
     - name: Check for updated docs
@@ -61,32 +64,54 @@ jobs:
           echo "b_update=true"  >> $GITHUB_ENV
         else
           # Check if vscode-Lammps master branch had commits since last tag
-          n_com=$(git rev-list $(git describe --tags --abbrev=0 @^)..master --count)
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            # No tags exist, count all commits
+            n_com=$(git rev-list --count HEAD)
+          else
+            # Count commits since last tag
+            n_com=$(git rev-list ${LAST_TAG}..HEAD --count)
+          fi
           if [ "$n_com" -gt "0" ];then
             echo "b_update=true"  >> $GITHUB_ENV
           fi
         fi
 
-    - name: Setup node
-      id: s4
-      if: steps.s3.conclusion == 'success' && env.b_update == 'true'
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-
     - name: Build package
       id: s5
-      if: steps.s4.conclusion == 'success' && env.b_update == 'true'
+      if: steps.s3.conclusion == 'success' && env.b_update == 'true'
       run: |
-        sudo apt install imagemagick -y
+        # Update package lists and install with retry logic
+        sudo apt-get update
+        for i in 1 2 3; do
+          sudo apt-get install -y imagemagick && break || {
+            echo "Attempt $i failed. Retrying in 10 seconds..."
+            sleep 10
+            sudo apt-get update
+          }
+        done
         bash ./scripts/resize256.sh
-        npm install
+        npm ci  # Use clean install for CI
         npm install @vscode/vsce
         git add .
+        
+        # Create commit with docs update
         git commit -m "Scheduled sync of lammps_vscode with Lammps documentation $(date +'%Y-%m-%d')"
-        git pull --rebase
+        
+        # Pull latest changes and handle conflicts
+        git pull --rebase origin master || {
+          echo "Rebase failed, aborting..."
+          git rebase --abort
+          exit 1
+        }
+        
+        # Bump version (creates another commit)
         npm version patch
-        git push
+        
+        # Push both commits
+        git push origin master --follow-tags
+        
+        # Build the package
         npx @vscode/vsce package
 
     - name: Publish2Marketplace
