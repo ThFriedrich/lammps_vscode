@@ -502,12 +502,44 @@ function get_dump_data(path: string, start_byte: number = 0): dump_data_ds | und
     const dmp = read_dump(path, start_byte)
     if (dmp) {
         for (let iy = 0; iy < dmp.length; iy++) {
-            const ty: number[] = dmp[iy].data.map(data => data[1])
+            // Find column indices from header labels
+            const idx_type = dmp[iy].header.indexOf('type');
+            
+            // Try to find x, y, z coordinates (prefer scaled coordinates if available)
+            let idx_x = dmp[iy].header.indexOf('xs');
+            let idx_y = dmp[iy].header.indexOf('ys');
+            let idx_z = dmp[iy].header.indexOf('zs');
+            let is_scaled = (idx_x !== -1 && idx_y !== -1 && idx_z !== -1);
+            
+            // Fall back to unwrapped coordinates if scaled not found
+            if (idx_x === -1) idx_x = dmp[iy].header.indexOf('x');
+            if (idx_y === -1) idx_y = dmp[iy].header.indexOf('y');
+            if (idx_z === -1) idx_z = dmp[iy].header.indexOf('z');
+            
+            // Try wrapped coordinates as last resort
+            if (idx_x === -1) idx_x = dmp[iy].header.indexOf('xu');
+            if (idx_y === -1) idx_y = dmp[iy].header.indexOf('yu');
+            if (idx_z === -1) idx_z = dmp[iy].header.indexOf('zu');
+            
+            // Validate that required columns exist
+            if (idx_type === -1 || idx_x === -1 || idx_y === -1 || idx_z === -1) {
+                console.error(`Missing required columns in dump file. Header: ${dmp[iy].header.join(', ')}`);
+                continue;
+            }
+            
+            const ty: number[] = dmp[iy].data.map(data => data[idx_type])
             const col: string[] = ty.map(c => colors[c])
+            
+            // Only apply box scaling if coordinates are scaled (xs, ys, zs)
+            // For unwrapped/wrapped coordinates (x, y, z or xu, yu, zu), don't scale
+            const scale_x = is_scaled ? dmp[iy].scale_xyz[0] : 1.0;
+            const scale_y = is_scaled ? dmp[iy].scale_xyz[1] : 1.0;
+            const scale_z = is_scaled ? dmp[iy].scale_xyz[2] : 1.0;
+            
             dmp_ds.data.push({
-                x: dmp[iy].data.map(data => data[2] * dmp[iy].scale_xyz[0]),
-                y: dmp[iy].data.map(data => data[3] * dmp[iy].scale_xyz[1]),
-                z: dmp[iy].data.map(data => data[4] * dmp[iy].scale_xyz[2]),
+                x: dmp[iy].data.map(data => data[idx_x] * scale_x),
+                y: dmp[iy].data.map(data => data[idx_y] * scale_y),
+                z: dmp[iy].data.map(data => data[idx_z] * scale_z),
                 mode: 'markers',
                 visible: true,
                 marker: {
