@@ -7,7 +7,7 @@
     ],
     "icon": "imgs/logo.png",
     "description": "Keyword/Syntax highlighting extension for Molecular Dynamics Software LAMMPS",
-    "version": "1.9.2",
+    "version": "1.9.3",
     "license": "GPL-2.0-or-later",
     "publisher": "ThFriedrich",
     "sponsor": {
