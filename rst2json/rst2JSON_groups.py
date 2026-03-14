@@ -105,4 +105,7 @@ def update_syntax(syntax_path, groups):
     with open(syntax_path, 'w', encoding='utf-8') as f:
         json.dump(syn, f, ensure_ascii=False, indent=4)
 
-    print('Commands updated in groups: \n' + '\n'.join(groups_updated))
+    if groups_updated:
+        print('Commands updated in groups: \n' + '\n'.join(groups_updated))
+    else:
+        print('No updates needed for groups.')

@@ -1,7 +1,9 @@
 import json
-import numpy as np
 import os
 import re
+import logging
+from pathlib import Path
+
 import rst2md
 import rst2JSON_groups
 from copy import copy
@@ -65,30 +67,19 @@ class CMD:
         with open(self.__rst_path__, "r") as f:
             self.__rst_txt__ = f.read()
             splits = []
-            section_iter = re.finditer(
-                '(?:Syntax|Examples|Description|Restrictions|Related.*?commands|Default)\n+"+\n+',
-                self.__rst_txt__,
+            # Match section headings like:
+            #   Syntax\n""""\n
+            # or just the heading followed by a blank line and content:
+            #   Description\n\n  (no underline)
+            # Accept both 'Example' and 'Examples'. Use multiline mode.
+            section_re = re.compile(
+                r"^(Syntax|Examples|Example|Description|Restrictions|Related.*?commands|Default)\s*\n(?:[\"'`\-=_~^+*#]{2,}\s*\n)?",
+                re.MULTILINE,
             )
-            for m in section_iter:
-                tag = self.__rst_txt__[m.start() : m.start() + 6]
-                if tag == "Syntax":
-                    splits.append({"tag": "Syntax", "p1": m.start(), "p2": m.end()})
-                elif tag == "Exampl":
-                    splits.append({"tag": "Examples", "p1": m.start(), "p2": m.end()})
-                elif tag == "Descri":
-                    splits.append(
-                        {"tag": "Description", "p1": m.start(), "p2": m.end()}
-                    )
-                elif tag == "Restri":
-                    splits.append(
-                        {"tag": "Restrictions", "p1": m.start(), "p2": m.end()}
-                    )
-                elif tag == "Relate":
-                    splits.append(
-                        {"tag": "Related commands", "p1": m.start(), "p2": m.end()}
-                    )
-                elif tag == "Defaul":
-                    splits.append({"tag": "Default", "p1": m.start(), "p2": m.end()})
+            for m in section_re.finditer(self.__rst_txt__):
+                tag_raw = m.group(1)
+                tag = "Examples" if tag_raw == "Example" else tag_raw
+                splits.append({"tag": tag, "p1": m.start(), "p2": m.end()})
 
             n_splits = len(splits)
             if n_splits > 0:
@@ -187,21 +178,23 @@ class CMD:
         def tweak_prms_block(blocks: str) -> str:
             out = ""
             for b in blocks:
+                # Custom RST separator marker; it should not appear in rendered output.
+                if re.match(r"^\s*\.\.\s*spacer\s*$", b.strip()):
+                    continue
                 if b.__contains__("parsed-literal::") or b.__contains__("code-block::"):
                     lines = rst2md.tr_plain(b).splitlines()
-                    lines = list(filter(None, lines))
-                    n_ws = np.zeros(len(lines), int)
-                    for ix, l in enumerate(lines):
-                        n_ws[ix] = len(l) - len(l.lstrip())
-                    ws_min = np.min(n_ws)
+                    lines = [ln for ln in lines if ln]
+                    # compute minimal leading whitespace count
+                    leading_ws = [len(l) - len(l.lstrip()) for l in lines]
+                    ws_min = min(leading_ws) if leading_ws else 0
                     for ix, l in enumerate(lines):
                         l_str = l[:ws_min].replace(" ", "&#160;") + l[ws_min:] + "   \n"
-                        if n_ws[ix] == ws_min:
+                        if leading_ws[ix] == ws_min:
                             out += "  * " + l_str
                         else:
                             out += "    " + l_str
                 else:
-                    out += b + "   \n"
+                    out += re.sub(r"(?m)^\s*\.\.\s*spacer\s*$\n?", "", b) + "   \n"
             out = rst2md.rm_markup(out)
             out = rst2md.tr_inline_math(out)
             out = rst2md.fix_tr_markup_bugs(out)
@@ -222,7 +215,7 @@ class CMD:
         self.syntax = syntax_array
         self.n_syntax = len(syntax_array)
         prms_block = tweak_prms_block(blocks[1:])
-        self.parameters = rst2md.tr_inline_doc(prms_block)
+        self.parameters = rst2md.tr_inline_link(rst2md.tr_inline_doc(prms_block))
 
     def __blocks2md_section__(self, blocks: str) -> str:
         out = str()
@@ -231,15 +224,7 @@ class CMD:
         return out
 
     def __section2blocks__(self, txt: str) -> str:
-        blocks = re.split(
-            r"(?:^|\n*)(\.\..*?\:\:[\s\S\r]*?)(?=(?:\n{2,}\s{0,1}\S|\Z))", txt
-        )
-        for ib, b in enumerate(blocks):
-            if b == "":
-                blocks.remove(b)
-            else:
-                blocks[ib] = re.sub(r"^\n*|\s*$", "", b)
-        return blocks
+        return rst2md.split_directive_blocks(txt)
 
     def __section2md__(self, section_rst: str) -> str:
         blocks = self.__section2blocks__(section_rst)
@@ -420,6 +405,62 @@ class CMD:
                     }
                 )
 
+def main():
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+    rst_path = Path("rst")
+    rst_files = [f.name for f in rst_path.iterdir() if f.suffix == ".rst"]
+    groups = rst2JSON_groups.init_group_dict()
+    cmd_count = 0
+    warning_cmds = []
+    out_path = Path("./src/doc_obj.ts")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w", encoding="utf-8") as f:
+        f.write("export const command_docs = [\n")
+        for rst in rst_files:
+            Doc = CMD(os.path.join(rst_path, rst))
+            if Doc.valid[0]:
+                groups = rst2JSON_groups.cmds_by_group(Doc.cmd_list, groups)
+                cmd_count += len(Doc.cmd_list)
+                json.dump(
+                    {
+                        "command": Doc.cmd_list,
+                        "syntax": Doc.syntax,
+                        "args": Doc.args,
+                        "parameters": Doc.parameters,
+                        "examples": Doc.examples,
+                        "html_filename": Doc.html_filename,
+                        "short_description": Doc.short_description,
+                        "description": Doc.description,
+                        "restrictions": Doc.restrictions,
+                        "related": Doc.related,
+                    },
+                    f,
+                    ensure_ascii=False,
+                    indent=4,
+                )
+                f.write(",\n")
+                logging.info("passed: %s", rst)
+                if not Doc.valid[1]:
+                    warning_cmds.append(rst)
+            else:
+                logging.debug("skipped: %s", rst)
+        f.write("];\n")
+        logging.info("%s commands processed", cmd_count)
+        if warning_cmds:
+            logging.warning(
+                "Incomplete entries found for %s command(s): %s",
+                len(warning_cmds),
+                ", ".join(warning_cmds),
+            )
+
+        groups = rst2JSON_groups.remove_duplicates_group_dict(groups)
+        rst2JSON_groups.update_syntax("./syntaxes/lmps.tmLanguage.json", groups)
+
+
+if __name__ == "__main__":
+    main()
+
 
 def dbg_print(Doc):
     # from time import sleep
@@ -432,53 +473,3 @@ def dbg_print(Doc):
         print("\n------------------\n")
         # sleep(2)
 
-
-rst_path = "rst"
-rst_files = [f for f in os.listdir(rst_path) if (f.endswith(".rst"))]
-groups = rst2JSON_groups.init_group_dict()
-cmd_count = 0
-warning_cmds = []
-with open("./src/doc_obj.ts", "w", encoding="utf-8") as f:
-    f.write("export const command_docs = [\n")
-    for rst in rst_files:
-        Doc = CMD(os.path.join(rst_path, rst))
-        if Doc.valid[0]:
-            # dbg_print(Doc)
-            groups = rst2JSON_groups.cmds_by_group(Doc.cmd_list, groups)
-            cmd_count += len(Doc.cmd_list)
-            json.dump(
-                {
-                    "command": Doc.cmd_list,
-                    "syntax": Doc.syntax,
-                    "args": Doc.args,
-                    "parameters": Doc.parameters,
-                    "examples": Doc.examples,
-                    "html_filename": Doc.html_filename,
-                    "short_description": Doc.short_description,
-                    "description": Doc.description,
-                    "restrictions": Doc.restrictions,
-                    "related": Doc.related,
-                },
-                f,
-                ensure_ascii=False,
-                indent=4,
-            )
-            f.write(",\n")
-            print("passed: " + rst)
-            if not Doc.valid[1]:
-                warning_cmds.append(rst)
-        else:
-            pass
-    f.write("];\n")
-    print("\n" + str(cmd_count) + " commands processed\n")
-    print(
-        "\033[93m"
-        + "Incomplete entries found for "
-        + str(len(warning_cmds))
-        + " command(s): \n\t- "
-        + "\n\t- ".join(warning_cmds)
-        + "\033[0m \n"
-    )
-
-    groups = rst2JSON_groups.remove_duplicates_group_dict(groups)
-    rst2JSON_groups.update_syntax("./syntaxes/lmps.tmLanguage.json", groups)

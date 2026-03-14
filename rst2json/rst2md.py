@@ -1,5 +1,4 @@
 import re
-import numpy as np
 
 
 def tr_section(section_rst: str, DOC) -> str:
@@ -53,7 +52,7 @@ def tr_blocks(block: str) -> str:
     elif re.search("warning\s*?::",line1.lower()):
         md = tr_warning(rest)
     elif re.search("seealso\s*?::",line1.lower()):
-        md = tr_warning(rest)
+        md = tr_seealso(rest)
     elif re.search("^.. (image|figure)\s*?::",line1.lower()):  # single image
         md = tr_image(line1)
     elif re.search("include\s*?::",line1.lower()):
@@ -71,6 +70,8 @@ def tr_blocks(block: str) -> str:
         md = '\n'
         for t in tabs:
             md += tr_tab(t)
+    elif re.search(r"^\s*\.\.\s*spacer(?:\s*::)?\s*$", line1.lower()):
+        md = tr_spacer()
     elif re.search("admonition\s*?::",line1.lower()):
         md = tr_admonition(line1, rest)
     elif re.search("(versionadded|versionchanged)\s*?::",line1.lower()):
@@ -82,6 +83,47 @@ def tr_blocks(block: str) -> str:
     else:
         md = tr_plain(block)
     return md
+
+
+def tr_spacer() -> str:
+    """Translate rst spacer directive to a simple markdown blank separator."""
+    return "\n"
+
+
+def _is_directive_start(line: str) -> bool:
+    """Check whether a line starts an RST directive (e.g. '.. code-block::')."""
+    return re.match(r"^\s*\.\.[\s].*::", line) is not None
+
+
+def split_directive_blocks(txt: str) -> list:
+    """Split RST text into alternating plain-text / directive blocks."""
+    lines = txt.splitlines()
+    blocks = []
+    i = 0
+    n = len(lines)
+
+    while i < n:
+        if _is_directive_start(lines[i]):
+            start = i
+            i += 1
+            while i < n:
+                ln = lines[i]
+                if not ln.strip():
+                    i += 1
+                    continue
+                if re.match(r"^[ \t]+", ln):
+                    i += 1
+                    continue
+                break
+            blocks.append("\n".join(lines[start:i]))
+        else:
+            start = i
+            i += 1
+            while i < n and not _is_directive_start(lines[i]):
+                i += 1
+            blocks.append("\n".join(lines[start:i]))
+
+    return [re.sub(r"^\n*|\s*$", "", b) for b in blocks if b and b.strip()]
 
 def tr_tab(tabs):
     tab_sec = tabs.split('\n\n',1)
@@ -130,15 +172,47 @@ def tr_references(section: str, references: dict) -> str:
 
 def tr_table(txt: str) -> str:
     tables = re.findall(
-        r"((?:\n\n\+(?:\-+\+)+\n)([\s\S\r]*?)(?:\n\+(?:\-+\+)+\n)\n)", txt
+        r"((?:\n\n\+(?:[\-=]+\+)+\n)([\s\S\r]*?)(?:\n\+(?:[\-=]+\+)+\n)\n)", txt
     )
     for t in tables:
-        md_tab = re.split(r"\n\+(?:\-+\+)+", t[1])
-        cols = md_tab[0].count("|") - 1
-        md_tab[0] = "\n" + md_tab[0]
-        md_tab.insert(0, "\n" + "| " * cols + "|")  # avoids highlighting first row
-        md_tab.insert(1, "\n" + "|---" * cols + "|")
-        txt = txt.replace(t[0], "\n" + "".join(md_tab) + "\n\n")
+        # Split on separator lines (both +---+ and +===+ variants)
+        row_blocks = re.split(r"\n\+(?:[\-=]+\+)+", t[1])
+
+        # Parse each block: may contain multiple lines for multi-line cells.
+        parsed_rows = []
+        for block in row_blocks:
+            lines = [l for l in block.splitlines() if re.match(r"\s*\|", l)]
+            if not lines:
+                continue
+            # Count columns from the first content line only
+            n_cols = lines[0].count("|") - 1
+            if n_cols < 1:
+                continue
+            # Merge multi-line cell content per column
+            cells = [""] * n_cols
+            for line in lines:
+                parts = line.split("|")[1 : n_cols + 1]
+                for i, part in enumerate(parts):
+                    s = part.strip()
+                    if s:
+                        cells[i] = (cells[i] + " " + s).strip() if cells[i] else s
+            parsed_rows.append(cells)
+
+        if not parsed_rows:
+            continue
+
+        n_cols = len(parsed_rows[0])
+        # Leading blank row avoids VS Code highlighting the first row as header
+        md_lines = [
+            "| " * n_cols + "|",
+            "|---" * n_cols + "|",
+        ]
+        for row in parsed_rows:
+            while len(row) < n_cols:
+                row.append("")
+            md_lines.append("| " + " | ".join(row[:n_cols]) + " |")
+
+        txt = txt.replace(t[0], "\n" + "\n".join(md_lines) + "\n\n")
 
     return txt
 
@@ -163,14 +237,31 @@ def tr_table_imgs(txt: str) -> str:
 
 
 def tr_table_from_list(txt: str, tab: str) -> str:
-    n_cols = int(re.search(r"(?!::columns:\s*)([0-9]+)", tab)[0])
-    items = re.findall(r"(?<=\*\s)(.*)(?=\n)", tab)
-    n_lines = int(np.ceil(len(items) / n_cols))
+    # Parse the declared column count from the directive options.
+    col_match = re.search(r":columns:\s*(\d+)", tab)
+    if not col_match:
+        return tab
+    n_cols = int(col_match.group(1))
+
+    # Keep empty bullet entries (e.g. "*"), since they represent blank cells.
+    bullet_items = []
+    for m in re.finditer(r"^\s*\*(?:[ \t]+(.*))?$", tab, re.MULTILINE):
+        bullet_items.append("" if m.group(1) is None else m.group(1).strip())
+    items = bullet_items
+    if not items:
+        return tab
+
+    n_lines = -(-len(items) // n_cols)
     md_tab = (
         "\n  " + "| " * n_cols + "|" + " \n  " + "|---" * n_cols + "|"
     )  # avoids highlighting first row
+
     for i_l in range(n_lines):
-        md_tab += "\n  " + " | ".join(items[i_l * n_cols : ((i_l + 1) * n_cols)]) + "|"
+        row = items[i_l * n_cols : ((i_l + 1) * n_cols)]
+        # Markdown tables need consistent cell counts across rows.
+        if len(row) < n_cols:
+            row.extend([""] * (n_cols - len(row)))
+        md_tab += "\n  | " + " | ".join(row[:n_cols]) + " |"
 
     return md_tab + "\n  "
 
@@ -184,7 +275,7 @@ def tr_list_table(txt: str, tab: str) -> str:
         for it_x, it in enumerate(c):
             c[it_x] = re.sub(r"^\s*\-*\s*", "", it)
         col.append(c)
-        n_cols = np.max((n_cols, len(c)))
+        n_cols = max(n_cols, len(c))
 
     md_tab = (
         "\n  " + "| " * n_cols + "|" + " \n  " + "|---" * n_cols + "|"
@@ -196,7 +287,11 @@ def tr_list_table(txt: str, tab: str) -> str:
 
 
 def tr_inline_doc(txt: str) -> str:
-    doc_lnk = re.findall(r"(\:doc\:\`?([\s\S\r]*?)\<([\s\S\r]*?)\>\`?)", txt, 8)
+    # Long form: :doc:`display text <target>`
+    # [^`]*? stops at backtick so it never crosses into the next :doc: reference.
+    # Multi-line display text (e.g. :doc:`fix ave/chunk\n<fix_ave_chunk>`) still works
+    # because [^`] matches newlines.
+    doc_lnk = re.findall(r"(\:doc\:\`([^`]*?)\<([^`>]+?)\>\`)", txt)
     for d in doc_lnk:
         txt = txt.replace(
             d[0],
@@ -206,16 +301,24 @@ def tr_inline_doc(txt: str) -> str:
             + d[2].replace("\n", "")
             + ".html)",
         )
+    # Short form: :doc:`label`  (label is also the target filename, no angle brackets)
+    doc_lnk_short = re.findall(r"(\:doc\:\`([^`<>]+?)\`)", txt)
+    for d in doc_lnk_short:
+        label = d[1].replace("\n", "")
+        txt = txt.replace(
+            d[0],
+            "[" + label + "](https://docs.lammps.org/" + label + ".html)",
+        )
     return txt
 
 
 def tr_inline_link(txt: str) -> str:
     # `FFmpeg documentation <http://ffmpeg.org/ffmpeg.html>`_.
     # `https://openkim.org/browse/models/by-type <https://openkim.org/browse/models/by-type>`_
-    lnk = re.findall(r"(\`(.*?)\s+\<(.*?)\>\`\_)", txt, 8)
+    lnk = re.findall(r"(\`(.*?)\s+\<(.*?)\>\`\_)", txt, re.DOTALL)
     for d in lnk:
         txt = txt.replace(
-            d[0], "[" + d[1].replace("\n", "") + "](" + d[2].replace("\n", "") + ")"
+            d[0], "[" + d[1].replace("\n", " ") + "](" + d[2].replace("\n", "") + ")"
         )
     return txt
 
@@ -264,10 +367,25 @@ def tr_code(code_id: str, code_block: str) -> str:
 
 
 def tr_math(math_block: str) -> str:
-    if math_block.__contains__("&") and not math_block.__contains__("begin{align"):
-        return "\[\\begin{align*} " + math_block + " \\end{align*} \]"
+    # Normalize indentation for directive bodies, including cases where
+    # equation lines use only a single leading space.
+    lines = math_block.splitlines()
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    while lines and not lines[-1].strip():
+        lines.pop()
+
+    if not lines:
+        body = ""
     else:
-        return "\[" + math_block + "\]"
+        leading = [len(l) - len(l.lstrip()) for l in lines if l.strip()]
+        ws_min = min(leading) if leading else 0
+        body = "\n".join(l[ws_min:] if len(l) >= ws_min else l for l in lines)
+
+    if body.__contains__("&") and not body.__contains__("begin{align"):
+        return "\[\\begin{align*}\n" + body + "\n\\end{align*}\]"
+    else:
+        return "\[\n" + body + "\n\]"
 
 
 def tr_note(note_block: str, title:str='') -> str:
@@ -310,7 +428,11 @@ def tr_warning(warn_block: str) -> str:
 
 
 def tr_plain(plain_block: str) -> str:
-    return re.sub(r"\n*\s*\.\..*?\:\:[\s\S]*?[$\n]", "", plain_block, 8)
+    out = re.sub(r"\n*\s*\.\..*?\:\:[\s\S]*?[$\n]", "", plain_block, 8)
+    # Custom LAMMPS marker used as visual separator in rst sources.
+    # It may appear inside a plain block, so strip it explicitly.
+    out = re.sub(r"(?m)^\s*\.\.\s*spacer\s*$\n?", "", out)
+    return out
 
 
 def tr_image(txt: str) -> str:
@@ -322,8 +444,12 @@ def tr_include(txt: str) -> str:
     file = re.findall(r"(?<=\:\:)\s*(\S*$)", txt)[0]
     with open("rst/" + file, "r") as f:
         incl_txt = f.read()
-    incl_txt = tr_blocks(incl_txt)
-    return "\n " + incl_txt + "\n"
+
+    out = ""
+    for b in split_directive_blocks(incl_txt):
+        out += tr_blocks(b) + "\n"
+
+    return "\n " + out.strip("\n") + "\n"
 
 
 def rm_markup(txt: str) -> str:
