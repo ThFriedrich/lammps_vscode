@@ -1,2 +1,6 @@
 *.pdf
 jats
+node_modules
+rst
+dist
+*.pyc
