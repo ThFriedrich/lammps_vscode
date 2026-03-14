@@ -59,51 +59,56 @@ export function fix_img_path(txt: string, b_img: boolean, web_panel: WebviewPane
 
 
 export function getDocumentation(snippet: string): doc_entry | undefined {
+    // Build a small cache map for fast lookups (command string -> doc_entry).
+    // We'll lazily initialize it via buildCommandMap() below in getCommand().
+    if (!snippet) return undefined
 
-    const sub_com = snippet.split(RegExp('[\\t\\s]+'));
+    // normalize whitespace and split safely
+    const sub_com = snippet.trim().split(/\s+/)
 
-    // Captures commands with 2 Arguments between 2 Keywords
-    let docs: doc_entry | undefined = getCommand(sub_com[0] + ' ' + sub_com[3])
-    if (docs) {
-        return docs
-    } else {
-        // Captures AtC commands with 3 Keywords like "fix_modify AtC control localized_lambda"
-        docs = getCommand(sub_com[0] + ' AtC ' + sub_com[2] + ' ' + sub_com[3])
-        if (docs) {
-            return docs
-        } else {
-            // // Captures AtC commands with 2 Keywords like like "fix_modify AtC output"
-            docs = getCommand(sub_com[0] + ' AtC ' + sub_com[2])
-            if (docs) {
-                return docs
-            } else {
-                // Captures commands with 1 Arguments between 2 Keywords
-                docs = getCommand(sub_com[0] + ' ' + sub_com[2])
-                if (docs) {
-                    return docs
-                } else {
-                    // Captures commands with 2 Arguments
-                    docs = getCommand(sub_com[0] + ' ' + sub_com[1])
-                    if (docs) {
-                        return docs
-                    } else {
-                        // Captures commands with 1 Argument
-                        docs = getCommand(sub_com[0])
-                        if (docs) {
-                            return docs
-                        } else {
-                            return undefined
-                        }
-                    }
-                }
-            }
-        }
+    const tok = (i: number) => (i >= 0 && i < sub_com.length ? sub_com[i] : "")
+
+    const candidates: string[] = []
+    // More specific patterns first (mirror the original order)
+    if (tok(0) && tok(3)) candidates.push(`${tok(0)} ${tok(3)}`)
+    if (tok(0) && tok(2) && tok(3)) candidates.push(`${tok(0)} AtC ${tok(2)} ${tok(3)}`)
+    if (tok(0) && tok(2)) candidates.push(`${tok(0)} AtC ${tok(2)}`)
+    if (tok(0) && tok(2)) candidates.push(`${tok(0)} ${tok(2)}`)
+    if (tok(0) && tok(1)) candidates.push(`${tok(0)} ${tok(1)}`)
+    if (tok(0)) candidates.push(tok(0))
+
+    const map = buildCommandMap()
+    for (const key of candidates) {
+        const doc = map.get(key)
+        if (doc) return doc
     }
+    return undefined
 }
 
-/** Returns the entire documentation entry for a given command.*/
+// Cached lookup map (built on first use)
+let _commandMap: Map<string, doc_entry> | null = null
+
+function buildCommandMap(): Map<string, doc_entry> {
+    if (_commandMap) return _commandMap
+    _commandMap = new Map<string, doc_entry>()
+    for (const e of command_docs) {
+        for (const cmd of e.command) {
+            _commandMap.set(cmd, e)
+        }
+    }
+    return _commandMap
+}
+
+/** Returns the entire documentation entry for a given command. Uses a cached map for O(1) lookup. */
 export function getCommand(find_command: string): doc_entry | undefined {
-    return command_docs.find(e => e.command.includes(find_command));
+    if (!find_command) return undefined
+    const map = buildCommandMap()
+    return map.get(find_command)
+}
+
+/** Initialize the internal command map (call during extension activation). */
+export function initCommandDocMap(): void {
+    buildCommandMap()
 }
 
 /** Returns all commands that include a given substring or RegExp */

@@ -1,4 +1,4 @@
-import { doc_entry, getCompletionList, getDocumentation, doc_completion_item } from "./doc_fcns";
+import { doc_entry, getCompletionList, getDocumentation, doc_completion_item, initCommandDocMap } from "./doc_fcns";
 import { DocPanel, manage_doc_panel, set_doc_panel_content, create_doc_page } from './doc_panel_fcns';
 import { PlotPanel, manage_plot_panel, draw_panel } from './dashboard_fcns';
 import { createHover, getRangeFromPosition } from './hover_fcns';
@@ -13,6 +13,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	check_versions(context)
 	const md = await get_markdown_it(context)
+
+	// Initialize doc command map for fast lookups
+	initCommandDocMap()
 
 	// Initialize Panel and ViewColumn for Documentation WebView
 	let panel: DocPanel | undefined = undefined;
