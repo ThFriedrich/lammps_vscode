@@ -50,10 +50,18 @@ jobs:
       run: |
         pip3 install numpy --break-system-packages
         python3 ./rst2json/rst2JSON.py
+
+    - name: Test documentation pipeline
+      id: s_test
+      if: steps.s2.conclusion == 'success'
+      run: |
+        npm ci
+        npm run compile
+        node tools/test_doc_pipeline.js --skip-build --allow-issues
     
     - name: Check for updated docs
       id: s3
-      if: steps.s2.conclusion == 'success'
+      if: steps.s_test.conclusion == 'success'
       run: |
         git config --global user.name 'thfriedrich'
         git config --global user.email 'thfriedrich@users.noreply.github.com'
