@@ -1,8 +1,9 @@
 import { WebviewPanel, ExtensionContext, Uri, window, OpenDialogOptions, workspace, SaveDialogOptions, tasks, Task, ShellExecution, TaskScope } from 'vscode';
 import { join } from 'path'
 import { readFileSync, statSync, writeFileSync, promises as fsPromises } from 'fs';
-import { get_css } from './doc_panel_fcns'
 import { get_cpu_info, get_cpu_stat, get_gpu_info, get_gpu_stat } from './os_util_fcns'
+import { getMathMarkdown } from './render_fcns'
+import { getColor } from './doc_fcns'
 
 export interface PlotPanel extends WebviewPanel {
     log?: string
@@ -12,6 +13,13 @@ export interface PlotPanel extends WebviewPanel {
     dump_last_read?: number
     dump_file_size?: number
     script_file?: string
+    md?: { render: (arg0: string) => any; }
+    chatHistory?: Array<{ role: 'user' | 'assistant', content: string }>
+    pendingChatInfo?: {
+        query: string;
+        historyUserMessage: string;
+        scriptContext?: string;
+    }
 }
 
 interface plot_data {
@@ -72,7 +80,7 @@ interface dump_data_ds {
 }
 
 const colors =
-    [   '#0daba1',  // teal
+    ['#0daba1',  // teal
         '#ff7f0e',  // safety orange
         '#1f77b4',  // muted blue
         '#d62728',  // brick red
@@ -129,7 +137,7 @@ const patterns_config = [
     }
 ]
 
-export async function manage_plot_panel(context: ExtensionContext, panel: PlotPanel | undefined, actCol: number): Promise<PlotPanel | undefined> {
+export async function manage_plot_panel(context: ExtensionContext, panel: PlotPanel | undefined, actCol: number, md: { render: (arg0: string) => any; }): Promise<PlotPanel | undefined> {
 
     const img_path_light = Uri.file(join(context.extensionPath, 'imgs', 'logo_sq_l.gif'))
     const img_path_dark = Uri.file(join(context.extensionPath, 'imgs', 'logo_sq_d.gif'))
@@ -140,7 +148,8 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
     if (panel) {
         // If we already have a panel, show it in the target column
         panel.reveal(actCol);
-        // Update the script file if there's a new active file
+        // Update the script file and md renderer if there's a new active file
+        panel.md = md;
         if (activeFile) {
             panel.script_file = activeFile;
             // Send the updated file to the webview
@@ -153,7 +162,9 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
             'Lammps Dashboard', actCol, { retainContextWhenHidden: true, enableScripts: true, localResourceRoots: [Uri.file(context.extensionPath)] }
         );
         panel.iconPath = { light: img_path_light, dark: img_path_dark }
-        // Store the script file in the panel
+        // Store the script file and md renderer in the panel
+        panel.md = md;
+        panel.chatHistory = [];
         if (activeFile) {
             panel.script_file = activeFile;
         }
@@ -165,9 +176,40 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
             context.subscriptions
         );
         panel.webview.onDidReceiveMessage(
-            message => {
+            (message: any) => {
                 if (panel) {
                     switch (message.command) {
+                        case 'get_workspace_documents': {
+                            // List files currently open in the editor
+                            console.log('[Dashboard] Getting workspace documents...');
+                            console.log('[Dashboard] Visible editors:', window.visibleTextEditors.length);
+                            const openFiles: string[] = window.visibleTextEditors
+                                .filter(editor => {
+                                    const fileName = editor.document.fileName;
+                                    const languageId = editor.document.languageId;
+
+                                    // Skip non-file editors (like output panels)
+                                    if (!fileName || fileName.startsWith('extension-output-') || fileName === 'exthost') {
+                                        console.log('[Dashboard] Skipping non-file editor:', fileName);
+                                        return false;
+                                    }
+
+                                    // Include LAMMPS files or allow user to manually select other files
+                                    const isLammps = languageId === 'lmps';
+                                    console.log('[Dashboard] File:', fileName, 'Language:', languageId, 'Is LAMMPS:', isLammps);
+                                    return isLammps;
+                                })
+                                .map(editor => editor.document.fileName);
+
+                            console.log('[Dashboard] Sending', openFiles.length, 'files to webview');
+                            panel.webview.postMessage({
+                                type: 'workspace_documents',
+                                data: openFiles,
+                                currentFile: panel.script_file
+                            });
+                            break;
+                        }
+                        // ...existing code for other cases...
                         case 'load_log':
                             panel.log = undefined;
                             set_plot_panel_content(panel, context, file_type.log)
@@ -207,6 +249,37 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
                             const activeFile = panel.script_file || window.activeTextEditor?.document.fileName || '';
                             panel?.webview.postMessage({ type: 'active_file', data: activeFile });
                             break;
+                        case 'get_active_file_content': {
+                            // Use filePath from message if provided, otherwise use panel.script_file
+                            let fileName = message.filePath || panel?.script_file || '';
+                            let content: string | null = null;
+                            if (fileName) {
+                                // Try to find an open editor for this file
+                                const editor = window.visibleTextEditors.find(e => e.document.fileName === fileName);
+                                if (editor) {
+                                    content = editor.document.getText();
+                                } else {
+                                    // If not open, try to read from disk
+                                    try {
+                                        content = readFileSync(fileName, 'utf8');
+                                    } catch (e) {
+                                        content = null;
+                                    }
+                                }
+                            }
+                            if (content !== null && fileName) {
+                                panel?.webview.postMessage({
+                                    type: 'active_file_content',
+                                    data: { content, fileName }
+                                });
+                            } else {
+                                panel?.webview.postMessage({
+                                    type: 'active_file_content',
+                                    data: null
+                                });
+                            }
+                            break;
+                        }
                         case 'run_task':
                             run_lammps_task(message.config).then((result: any) => {
                                 panel?.webview.postMessage({ type: 'task_result', data: result });
@@ -221,18 +294,76 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
                                 panel?.webview.postMessage({ type: 'task_error', data: error.message });
                             });
                             break;
+                        case 'rag_chat':
+                            rag_chat(panel, message.query, message.context, panel.md);
+                            break;
+                        case 'rag_cancel':
+                            // Cancel ongoing RAG request
+                            import('./extension').then(({ ragProvider }) => {
+                                if (ragProvider) {
+                                    ragProvider.cancelRequest();
+                                }
+                            });
+                            break;
+                        case 'rag_line_check_confirm':
+                            // User confirmed line-by-line check
+                            rag_line_by_line_check(panel, message.scriptContext, panel.md);
+                            break;
+                        case 'rag_line_check_decline':
+                            // User declined line-by-line check, continue with normal response
+                            rag_continue_response(panel, panel.md);
+                            break;
+                        case 'select_context_file':
+                            // Open file dialog for context file selection
+                            window.showOpenDialog({
+                                canSelectFiles: true,
+                                canSelectFolders: false,
+                                canSelectMany: false,
+                                filters: { 'LAMMPS Files': ['lmp', 'lmps', 'in', 'input', 'data', 'txt'] },
+                                title: 'Select Context File'
+                            }).then((fileUri: Uri[] | undefined) => {
+                                if (fileUri && fileUri[0]) {
+                                    const filePath = fileUri[0].fsPath;
+                                    workspace.fs.readFile(fileUri[0]).then((content: Uint8Array) => {
+                                        const textContent = new TextDecoder().decode(content);
+                                        panel?.webview.postMessage({
+                                            type: 'context_file_selected',
+                                            data: {
+                                                fileName: filePath,
+                                                content: textContent
+                                            }
+                                        });
+                                    });
+                                }
+                            });
+                            break;
+                        case 'get_ollama_models':
+                            get_ollama_models(panel);
+                            break;
+                        case 'set_chat_model':
+                            set_chat_model(panel, message.model);
+                            break;
+                        case 'clear_chat_history':
+                            if (panel.chatHistory) {
+                                panel.chatHistory = [];
+                                panel.webview.postMessage({ type: 'chat_history_cleared' });
+                            }
+                            break;
                         default:
-                            if (message.startsWith('<img src=')) {
+                            // Handle image save requests (message is a string in this case)
+                            if (typeof message === 'string' && message.startsWith('<img src=')) {
                                 const img_data = message.match(RegExp('<img src="data:image\\/(\\w+);base64,(.*)"'));
-                                const buf = Buffer.from(img_data[2], 'base64');
-                                get_save_img_path('Save Image as...').then((img_path: string | undefined) => {
-                                    if (img_path) {
-                                        if (!img_path.endsWith('.png')) {
-                                            img_path += '.png'
+                                if (img_data) {
+                                    const buf = Buffer.from(img_data[2], 'base64');
+                                    get_save_img_path('Save Image as...').then((img_path: string | undefined) => {
+                                        if (img_path) {
+                                            if (!img_path.endsWith('.png')) {
+                                                img_path += '.png'
+                                            }
+                                            writeFileSync(img_path, buf);
                                         }
-                                        writeFileSync(img_path, buf);
-                                    }
-                                });
+                                    });
+                                }
                             }
                             break;
                     }
@@ -243,7 +374,6 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
             null,
             context.subscriptions
         );
-
         context.subscriptions.push(panel)
     }
     draw_panel(panel, context)
@@ -253,12 +383,12 @@ export async function manage_plot_panel(context: ExtensionContext, panel: PlotPa
 function get_update(panel: PlotPanel | undefined, updateType?: 'log' | 'dump') {
     // Use Promise.all to check both files in parallel
     const promises: Promise<void>[] = [];
-    
+
     if (panel?.log && (!updateType || updateType === 'log')) {
         const logPromise = fsPromises.stat(panel.log).then(stats => {
             const last_write = stats.mtime.getTime();
             const current_size = stats.size;
-            
+
             // Check if file has shrunk (overwritten/restarted)
             if (panel.log_file_size && current_size < panel.log_file_size) {
                 // File was overwritten - reload everything from scratch
@@ -283,12 +413,12 @@ function get_update(panel: PlotPanel | undefined, updateType?: 'log' | 'dump') {
         });
         promises.push(logPromise);
     }
-    
+
     if (panel?.dump && (!updateType || updateType === 'dump')) {
         const dumpPromise = fsPromises.stat(panel.dump).then(stats => {
             const last_write = stats.mtime.getTime();
             const current_size = stats.size;
-            
+
             // Check if file has shrunk (overwritten/restarted)
             if (panel.dump_file_size && current_size < panel.dump_file_size) {
                 // File was overwritten - reload everything from scratch
@@ -303,7 +433,7 @@ function get_update(panel: PlotPanel | undefined, updateType?: 'log' | 'dump') {
             else if (!panel.dump_last_read || last_write > panel.dump_last_read) {
                 const is_initial_load = !panel.dump_file_size;
                 const dump_data: dump_data_ds | undefined = get_dump_data(panel.dump!, panel.dump_file_size || 0)
-                
+
                 if (dump_data) {
                     // Send with appropriate message type based on whether this is initial load or update
                     const messageType = is_initial_load ? 'plot_dump' : 'update_dump';
@@ -317,21 +447,30 @@ function get_update(panel: PlotPanel | undefined, updateType?: 'log' | 'dump') {
         });
         promises.push(dumpPromise);
     }
-    
+
     return Promise.all(promises);
 }
 export function draw_panel(panel: PlotPanel, context: ExtensionContext) {
     const node_lib_path: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'node_modules')))
     const script_lib: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'node_modules', 'plotly.js-dist-min', 'plotly.min.js')))
     const script: Uri = panel.webview.asWebviewUri(Uri.file(join(context.extensionPath, 'dist', 'dashboard.js')))
-    const css = get_css(panel, context)
-    panel.webview.html = css + build_plot_html(panel, node_lib_path, script_lib, script)
-    
-    // Send the initial script file to the webview if available
+    panel.webview.html = build_plot_html(panel, node_lib_path, script_lib, script)
+
+    // Send the initial script file and its content to the webview for RAG context
     if (panel.script_file) {
         panel.webview.postMessage({ type: 'active_file', data: panel.script_file });
+        // Also send the file content as default RAG context
+        try {
+            const content = readFileSync(panel.script_file, 'utf-8');
+            panel.webview.postMessage({
+                type: 'active_file_content',
+                data: { content: content, fileName: panel.script_file }
+            });
+        } catch (e) {
+            // File might not exist or be readable, ignore
+        }
     }
-    
+
     if (panel.log) {
         set_plot_panel_content(panel, context, file_type.log)
     }
@@ -406,32 +545,32 @@ function extract_performance(log: string): { labels: string[], values: number[],
     // Match both standard and accelerated package performance breakdowns
     const perf_section_regex = RegExp('(MPI task timing breakdown:|Section \\|.*%total)[\\s\\S]*?(?=\\n\\n|Loop time|$)', 'g');
     const perf_match = perf_section_regex.exec(log);
-    
+
     if (!perf_match) {
         return undefined;
     }
-    
+
     const perf_text = perf_match[0];
     const lines = perf_text.split('\n');
-    
+
     const labels: string[] = [];
     const values: number[] = [];
     const avg_times: number[] = [];
     let total_time: number | undefined = undefined;
-    
+
     // Try to extract Loop time (total wall time)
     const loop_time_match = log.match(/Loop time of ([\d.]+) on/);
     if (loop_time_match) {
         total_time = parseFloat(loop_time_match[1]);
     }
-    
+
     // Parse each line for section name, avg time, and %total
     for (const line of lines) {
         // Skip header lines and separators
         if (line.includes('Section |') || line.includes('---') || line.includes('timing breakdown')) {
             continue;
         }
-        
+
         // Match lines with timing data: "Section | min | avg | max | varavg | percentage"
         // Format: Section | min time | avg time | max time | %varavg | %total
         const timing_match = line.match(/^([A-Za-z]+)\s*\|\s*[\d.]+\s*\|\s*([\d.]+)\s*\|.*\|\s*([\d.]+)\s*$/);
@@ -439,7 +578,7 @@ function extract_performance(log: string): { labels: string[], values: number[],
             const section = timing_match[1].trim();
             const avg_time = parseFloat(timing_match[2]);
             const percentage = parseFloat(timing_match[3]);
-            
+
             if (section && !isNaN(avg_time) && !isNaN(percentage) && percentage > 0) {
                 labels.push(section);
                 avg_times.push(avg_time);
@@ -447,11 +586,11 @@ function extract_performance(log: string): { labels: string[], values: number[],
             }
         }
     }
-    
+
     if (labels.length > 0 && values.length > 0) {
         return { labels, values, avg_times, total_time };
     }
-    
+
     return undefined;
 }
 
@@ -504,38 +643,38 @@ function get_dump_data(path: string, start_byte: number = 0): dump_data_ds | und
         for (let iy = 0; iy < dmp.length; iy++) {
             // Find column indices from header labels
             const idx_type = dmp[iy].header.indexOf('type');
-            
+
             // Try to find x, y, z coordinates (prefer scaled coordinates if available)
             let idx_x = dmp[iy].header.indexOf('xs');
             let idx_y = dmp[iy].header.indexOf('ys');
             let idx_z = dmp[iy].header.indexOf('zs');
             let is_scaled = (idx_x !== -1 && idx_y !== -1 && idx_z !== -1);
-            
+
             // Fall back to unwrapped coordinates if scaled not found
             if (idx_x === -1) idx_x = dmp[iy].header.indexOf('x');
             if (idx_y === -1) idx_y = dmp[iy].header.indexOf('y');
             if (idx_z === -1) idx_z = dmp[iy].header.indexOf('z');
-            
+
             // Try wrapped coordinates as last resort
             if (idx_x === -1) idx_x = dmp[iy].header.indexOf('xu');
             if (idx_y === -1) idx_y = dmp[iy].header.indexOf('yu');
             if (idx_z === -1) idx_z = dmp[iy].header.indexOf('zu');
-            
+
             // Validate that required columns exist
             if (idx_type === -1 || idx_x === -1 || idx_y === -1 || idx_z === -1) {
                 console.error(`Missing required columns in dump file. Header: ${dmp[iy].header.join(', ')}`);
                 continue;
             }
-            
+
             const ty: number[] = dmp[iy].data.map(data => data[idx_type])
             const col: string[] = ty.map(c => colors[c])
-            
+
             // Only apply box scaling if coordinates are scaled (xs, ys, zs)
             // For unwrapped/wrapped coordinates (x, y, z or xu, yu, zu), don't scale
             const scale_x = is_scaled ? dmp[iy].scale_xyz[0] : 1.0;
             const scale_y = is_scaled ? dmp[iy].scale_xyz[1] : 1.0;
             const scale_z = is_scaled ? dmp[iy].scale_xyz[2] : 1.0;
-            
+
             dmp_ds.data.push({
                 x: dmp[iy].data.map(data => data[idx_x] * scale_x),
                 y: dmp[iy].data.map(data => data[idx_y] * scale_y),
@@ -561,7 +700,7 @@ function get_dump_data(path: string, start_byte: number = 0): dump_data_ds | und
 function read_dump(dump_path: string, start_byte: number = 0) {
     if (dump_path) {
         const full_file = readFileSync(dump_path).toString();
-        
+
         let dump_file: string;
         if (start_byte > 0) {
             // Find the next "ITEM: TIMESTEP" after start_byte to ensure we start at a complete frame
@@ -578,7 +717,7 @@ function read_dump(dump_path: string, start_byte: number = 0) {
             // Read from beginning
             dump_file = full_file.replace(re_comments, '').replace(/\r\n/g, '\n');
         }
-        
+
         let data_block
         let bounds
         const dump_ds: {
@@ -588,7 +727,7 @@ function read_dump(dump_path: string, start_byte: number = 0) {
         }[] = []
         let scale_xyz
         let idx
-        
+
         while ((bounds = re_dump_bounds.exec(dump_file)) != null) {
             idx = 0
             scale_xyz = [1.0, 1.0, 1.0]
@@ -607,7 +746,7 @@ function read_dump(dump_path: string, start_byte: number = 0) {
                 const dat_l = data_block[0].slice(idx_head + 1).toString().trim().split(RegExp("\\n+", "g"))
                 const dat_n: number[][] = dat_l.map((value) =>
                     value.trim().split(/\s+/).map((substring) => parseFloat(substring))
-                ); 
+                );
                 if (header.length == dat_n[0].length) {
                     dump_ds.push({ header: header, data: dat_n, scale_xyz: scale_xyz })
                 }
@@ -702,6 +841,21 @@ function getNonce() {
 function build_plot_html(panel: PlotPanel, node_lib_path: Uri, plotly_lib: Uri, script: Uri) {
     // Use a nonce to only allow specific scripts to be run
     const nonce = getNonce();
+
+    // Get CSS for current theme
+    const css_lmps: Uri[] = [
+        Uri.file(join(__dirname, '..', 'css', 'lmps_light.css')),
+        Uri.file(join(__dirname, '..', 'css', 'lmps_dark.css')),
+        Uri.file(join(__dirname, '..', 'css', 'lmps_dark.css'))
+    ];
+    const style: Uri = css_lmps[window.activeColorTheme.kind - 1];
+    const css = panel.webview.asWebviewUri(style);
+
+    // Get editor font settings
+    const config = workspace.getConfiguration('editor');
+    const fontSize = config.get<number>('fontSize', 14);
+    const fontFamily = config.get<string>('fontFamily', 'Consolas, "Courier New", monospace');
+
     const html: string =
         `<!DOCTYPE html>
     <html lang="en">
@@ -717,6 +871,54 @@ function build_plot_html(panel: PlotPanel, node_lib_path: Uri, plotly_lib: Uri, 
         style-src ${panel.webview.cspSource} 'strict-dynamic' 'unsafe-inline';
         "/>
 
+        <link rel="stylesheet" type="text/css" href="${css}">
+        <style nonce="${nonce}">
+            .spinner {
+                border: 3px solid rgba(128, 128, 128, 0.3);
+                border-top: 3px solid #0daba1;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                animation: spin 1s linear infinite;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            .lammps-code-block {
+                background-color: rgba(128,128,128,0.15);
+                padding: 10px;
+                margin: 8px 0;
+                border-radius: 4px;
+                border-left: 3px solid #0daba1;
+                overflow-x: auto;
+                display: inline-block;
+                min-width: 100%;
+                box-sizing: border-box;
+            }
+            
+            .lammps-code-block pre {
+                margin: 0;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                line-height: 1.4;
+                white-space: pre;
+            }
+            
+            #chat_messages > div {
+                overflow-x: auto;
+            }
+            
+            body {
+                font-size: ${fontSize}px;
+            }
+            code, pre {
+                font-family: ${fontFamily};
+                font-size: ${fontSize}px;
+            }
+        </style>
+
         <script nonce="${nonce}" src="${script}"></script>
         <script nonce="${nonce}" src="${plotly_lib}"></script>   
     </head>
@@ -727,6 +929,7 @@ function build_plot_html(panel: PlotPanel, node_lib_path: Uri, plotly_lib: Uri, 
         <div class="tab">
           <button class="tablinks" id="sys_tab">System Information</button>
           <button class="tablinks" id="run_tab">Run Task</button>
+          <button class="tablinks" id="chat_tab">RAG Chat</button>
           <button class="tablinks" id="dump_tab">Dumps</button>
           <button class="tablinks" id="logs_tab">Logs</button>
         </div>
@@ -734,6 +937,37 @@ function build_plot_html(panel: PlotPanel, node_lib_path: Uri, plotly_lib: Uri, 
         <!-- Tab content -->
         <div id="sys" class="tabcontent">
           <div id="sys_bars">
+          </div>
+        </div>
+
+        <div id="chat" class="tabcontent">
+          <div id="rag_chat">
+            <h2>LAMMPS Documentation Assistant</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; background-color: rgba(128,128,128,0.1); border-radius: 4px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button type="button" id="select_context_file_btn" style="padding: 4px 12px; border-radius: 3px; font-size: 12px; cursor: pointer;" title="Select a LAMMPS file to use as context">📄 Add Context File</button>
+                <div id="context_file_info" style="font-size: 12px; opacity: 0.7;"></div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" id="clear_history_btn" style="padding: 4px 12px; border-radius: 3px; font-size: 12px; cursor: pointer;" title="Clear conversation history">🗑️ Clear</button>
+                <label style="font-size: 12px; opacity: 0.8;">Model:</label>
+                <select id="model_selector" style="padding: 4px 8px; border-radius: 3px; font-size: 12px;">
+                  <option value="">Loading...</option>
+                </select>
+              </div>
+            </div>
+            <div id="chat_messages" style="overflow-y: auto; border: 1px solid; padding: 10px; margin-bottom: 10px; font-family: monospace;">
+              <div style="padding: 10px; margin: 5px 0; background-color: rgba(13, 171, 161, 0.1); border-left: 3px solid #0daba1;">
+                <strong>Assistant:</strong> Hi! I'm your LAMMPS documentation assistant. Ask me anything about LAMMPS commands, syntax, or examples.
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <input type="text" id="chat_input" placeholder="Ask about LAMMPS commands, syntax, or examples..." style="flex: 1; padding: 10px, 10px, 10px, 10px; font-size: 14px;" />
+              <button type="button" id="send_chat_btn" style="padding: 10px 20px; font-size: 14px;">Send</button>
+            </div>
+            <div style="margin-top: 10px; font-size: 12px; opacity: 0.7;">
+              Examples: "How do I use pair_style lj/cut?", "Show me examples of fix nve", "What is the syntax for compute temp?"
+            </div>
           </div>
         </div>
 
@@ -835,12 +1069,12 @@ async function run_lammps_task(config: any): Promise<any> {
     }
 
     const workspaceFolder = workspaceFolders[0];
-    
+
     // Build the command based on the configuration
     let command = '';
     const binary = config.binary || 'lmp';
     const script = config.script || window.activeTextEditor?.document.fileName || '';
-    
+
     if (!script) {
         throw new Error('No script file specified and no active editor');
     }
@@ -871,7 +1105,7 @@ async function run_lammps_task(config: any): Promise<any> {
     }
 
     command += ` -in ${script}`;
-    
+
     if (args) {
         command += ` ${args}`;
     }
@@ -964,4 +1198,350 @@ async function save_task_config(config: any): Promise<void> {
 
     // Write the file
     writeFileSync(tasksJsonPath, JSON.stringify(tasksJson, null, 2));
+}
+
+async function rag_chat(panel: PlotPanel, query: string, context?: string, md?: { render: (arg0: string) => any; }): Promise<void> {
+    try {
+        // Import ragProvider from extension
+        const { ragProvider } = await import('./extension');
+        
+        // Initialize RAG if not already done
+        await ragProvider.initialize();
+        
+        // Build ChatInput with separate question and context
+        const chatInput = {
+            userQuestion: query,
+            scriptContext: context?.trim() || undefined,
+            scriptName: panel.script_file || undefined
+        };
+        
+        // Initialize chat history if not exists
+        if (!panel.chatHistory) {
+            panel.chatHistory = [];
+        }
+        
+        // Store info for potential history update and line check
+        const scriptContextForLineCheck = context?.trim() || undefined;
+        const historyUserMessage = context?.trim() 
+            ? `[Script: ${panel.script_file || 'active'}] ${query}`
+            : query;
+        
+        // Store pending chat info on panel for later use
+        panel.pendingChatInfo = {
+            query,
+            historyUserMessage,
+            scriptContext: scriptContextForLineCheck
+        };
+        
+        // Stream response from RAG
+        let rawResponse = '';
+        let lineCheckOffered = false;
+        let streamStarted = false;
+        
+        const finalResponse = await ragProvider.chatStream(
+            chatInput,
+            (chunk: string) => {
+                // Send stream start on first chunk (only if we're actually streaming)
+                if (!streamStarted) {
+                    streamStarted = true;
+                    panel.webview.postMessage({ type: 'rag_stream_start' });
+                }
+                rawResponse += chunk;
+                // Send raw chunk to webview for immediate display
+                panel.webview.postMessage({
+                    type: 'rag_stream_chunk',
+                    data: { chunk: chunk }
+                });
+            },
+            panel.chatHistory,
+            // Thinking callback - send thinking output to webview
+            (thinking: string) => {
+                panel.webview.postMessage({
+                    type: 'rag_thinking_output',
+                    data: { thinking: thinking }
+                });
+                // Send thinking done message to trigger auto-collapse timer
+                panel.webview.postMessage({
+                    type: 'rag_thinking_done'
+                });
+            },
+            // Line-by-line check offer callback
+            (offer: boolean) => {
+                if (offer && scriptContextForLineCheck) {
+                    lineCheckOffered = true;
+                    panel.webview.postMessage({
+                        type: 'rag_offer_line_check',
+                        data: { 
+                            message: 'Would you like me to check each command line individually against its syntax definition?',
+                            scriptContext: scriptContextForLineCheck
+                        }
+                    });
+                }
+            }
+        );
+        
+        // If line check was offered, chatStream returned early - don't finalize response
+        // User will either confirm (rag_line_check_confirm) or decline (rag_line_check_decline)
+        if (lineCheckOffered) {
+            // Response generation is paused - waiting for user decision
+            console.log('Line-by-line check offered, waiting for user decision...');
+            return;
+        }
+        
+        // Normal flow - update history and finalize response
+        panel.chatHistory.push(
+            { role: 'user', content: historyUserMessage },
+            { role: 'assistant', content: finalResponse }
+        );
+        
+        // Render final markdown to HTML
+        let renderedResponse = finalResponse;
+        if (md) {
+            // Code block sanitization is already done in rag_system.ts
+            const color: string = getColor();
+            renderedResponse = await getMathMarkdown(renderedResponse, color, false);
+            renderedResponse = md.render(renderedResponse);
+        }
+        
+        // Send final rendered response to replace streaming content
+        panel.webview.postMessage({
+            type: 'rag_stream_end',
+            data: {
+                query: query,
+                response: renderedResponse
+            }
+        });
+        
+        // Clear pending info
+        panel.pendingChatInfo = undefined;
+    } catch (error: any) {
+        panel.webview.postMessage({
+            type: 'rag_error',
+            data: error.message || 'Failed to get response from RAG system'
+        });
+    }
+}
+
+/**
+ * Continue with normal LLM response when user declines line-by-line check
+ */
+async function rag_continue_response(panel: PlotPanel, md?: { render: (arg0: string) => any; }): Promise<void> {
+    try {
+        const { ragProvider } = await import('./extension');
+        
+        if (!ragProvider.hasPendingResponse()) {
+            console.warn('No pending response to continue');
+            return;
+        }
+        
+        const pendingInfo = panel.pendingChatInfo;
+        if (!pendingInfo) {
+            console.warn('No pending chat info');
+            ragProvider.clearPendingResponse();
+            return;
+        }
+        
+        // Stream the continued response
+        let rawResponse = '';
+        let streamStarted = false;
+        const finalResponse = await ragProvider.continueWithResponse(
+            (chunk: string) => {
+                // Send stream start on first chunk
+                if (!streamStarted) {
+                    streamStarted = true;
+                    panel.webview.postMessage({ type: 'rag_stream_start' });
+                }
+                rawResponse += chunk;
+                panel.webview.postMessage({
+                    type: 'rag_stream_chunk',
+                    data: { chunk: chunk }
+                });
+            }
+        );
+        
+        // Update chat history
+        if (!panel.chatHistory) {
+            panel.chatHistory = [];
+        }
+        panel.chatHistory.push(
+            { role: 'user', content: pendingInfo.historyUserMessage },
+            { role: 'assistant', content: finalResponse }
+        );
+        
+        // Render final markdown to HTML
+        let renderedResponse = finalResponse;
+        if (md) {
+            const color: string = getColor();
+            renderedResponse = await getMathMarkdown(renderedResponse, color, false);
+            renderedResponse = md.render(renderedResponse);
+        }
+        
+        // Send final rendered response
+        panel.webview.postMessage({
+            type: 'rag_stream_end',
+            data: {
+                query: pendingInfo.query,
+                response: renderedResponse
+            }
+        });
+        
+        // Clear pending info
+        panel.pendingChatInfo = undefined;
+    } catch (error: any) {
+        panel.webview.postMessage({
+            type: 'rag_error',
+            data: error.message || 'Failed to continue response'
+        });
+    }
+}
+
+/**
+ * Run line-by-line syntax check on a LAMMPS script
+ * Sends progress and results to webview incrementally
+ */
+async function rag_line_by_line_check(panel: PlotPanel, scriptContext: string, md?: { render: (arg0: string) => any; }): Promise<void> {
+    try {
+        const { ragProvider } = await import('./extension');
+        await ragProvider.initialize();
+
+        // Clear any pending response context since user chose line-by-line check
+        ragProvider.clearPendingResponse();
+
+        // Send start message
+        panel.webview.postMessage({
+            type: 'rag_line_check_start',
+            data: { message: 'Starting line-by-line syntax check...' }
+        });
+
+        const results = await ragProvider.checkScriptLineByLine(
+            scriptContext,
+            // onLineResult - send each result as it completes
+            (result) => {
+                panel.webview.postMessage({
+                    type: 'rag_line_check_result',
+                    data: result
+                });
+            },
+            // onProgress - send progress updates
+            (current, total) => {
+                panel.webview.postMessage({
+                    type: 'rag_line_check_progress',
+                    data: { current, total }
+                });
+            }
+        );
+
+        // Send completion with summary statistics
+        const summaryStats = {
+            total: results.length,
+            ok: results.filter(r => r.status === 'ok').length,
+            warning: results.filter(r => r.status === 'warning').length,
+            error: results.filter(r => r.status === 'error').length,
+            unknown: results.filter(r => r.status === 'unknown').length
+        };
+
+        panel.webview.postMessage({
+            type: 'rag_line_check_complete',
+            data: { summary: summaryStats, results }
+        });
+
+        // Now generate LLM summary that ties everything together
+        panel.webview.postMessage({
+            type: 'rag_line_check_summary_start',
+            data: { message: 'Generating analysis summary...' }
+        });
+
+        let rawSummary = '';
+        const finalSummary = await ragProvider.generateLineCheckSummary(
+            results,
+            scriptContext,
+            (chunk: string) => {
+                rawSummary += chunk;
+                panel.webview.postMessage({
+                    type: 'rag_line_check_summary_chunk',
+                    data: { chunk }
+                });
+            }
+        );
+
+        // Render final markdown summary
+        let renderedSummary = finalSummary;
+        if (md) {
+            const color: string = getColor();
+            renderedSummary = await getMathMarkdown(renderedSummary, color, false);
+            renderedSummary = md.render(renderedSummary);
+        }
+
+        panel.webview.postMessage({
+            type: 'rag_line_check_summary_end',
+            data: { summary: renderedSummary }
+        });
+
+        // Update chat history with the line check results
+        const pendingInfo = panel.pendingChatInfo;
+        if (pendingInfo) {
+            if (!panel.chatHistory) {
+                panel.chatHistory = [];
+            }
+            panel.chatHistory.push(
+                { role: 'user', content: pendingInfo.historyUserMessage },
+                { role: 'assistant', content: finalSummary }
+            );
+            panel.pendingChatInfo = undefined;
+        }
+
+    } catch (error: any) {
+        panel.webview.postMessage({
+            type: 'rag_line_check_error',
+            data: error.message || 'Line-by-line check failed'
+        });
+    }
+}
+
+async function get_ollama_models(panel: PlotPanel): Promise<void> {
+    try {
+        const config = workspace.getConfiguration('lammps-vscode.rag');
+        const ollamaBase = config.get<string>('ollamaBase', 'http://127.0.0.1:11434');
+        const currentModel = config.get<string>('chatModel', 'mistral:7b');
+
+        const response = await fetch(`${ollamaBase}/api/tags`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch models: ${response.statusText}`);
+        }
+
+        const data: any = await response.json();
+        const models = data.models?.map((m: any) => m.name) || [];
+
+        panel.webview.postMessage({
+            type: 'ollama_models',
+            data: {
+                models: models,
+                currentModel: currentModel
+            }
+        });
+    } catch (error: any) {
+        panel.webview.postMessage({
+            type: 'ollama_models_error',
+            data: error.message || 'Failed to fetch Ollama models'
+        });
+    }
+}
+
+async function set_chat_model(panel: PlotPanel, model: string): Promise<void> {
+    try {
+        const config = workspace.getConfiguration('lammps-vscode.rag');
+        await config.update('chatModel', model, true);
+        // Update the backend model immediately
+        const { ragProvider } = await import('./extension');
+        ragProvider.updateChatModel(model);
+        panel.webview.postMessage({
+            type: 'model_updated',
+            data: model
+        });
+    } catch (error: any) {
+        panel.webview.postMessage({
+            type: 'model_update_error',
+            data: error.message || 'Failed to update model'
+        });
+    }
 }

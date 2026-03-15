@@ -8,6 +8,10 @@ import * as vscode from 'vscode';
 import { get_markdown_it } from './highlight_fcns';
 import { join } from 'path';
 import { readFileSync } from 'fs'
+import { LammpsRagProvider, registerRagCommands } from './rag_provider';
+
+// Export ragProvider for use in dashboard_fcns.ts
+export let ragProvider: LammpsRagProvider;
 
 export async function activate(context: vscode.ExtensionContext) {
 
@@ -16,6 +20,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Initialize doc command map for fast lookups
 	initCommandDocMap()
+
+	// Initialize RAG provider
+	ragProvider = new LammpsRagProvider(context);
+	registerRagCommands(context, ragProvider);
 
 	// Initialize Panel and ViewColumn for Documentation WebView
 	let panel: DocPanel | undefined = undefined;
@@ -42,7 +50,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Register Command to show Plots in WebView
 	context.subscriptions.push(
 		vscode.commands.registerCommand('extension.show_dash', async () => {
-			plot_panel = await manage_plot_panel(context, plot_panel, plot_actCol)
+			plot_panel = await manage_plot_panel(context, plot_panel, plot_actCol, md)
 			plot_panel?.onDidDispose(() => {
 				plot_panel = undefined;
 			},

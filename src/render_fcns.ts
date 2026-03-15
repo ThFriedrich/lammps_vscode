@@ -117,6 +117,16 @@ async function typeset(arg: string, scale: number, color: string, isDisplay: boo
 
 export async function getMathMarkdown(txt: string, color:string, b_md:boolean): Promise<string> {
     
+    // First, convert $$ ... $$ to \[ ... \] and $ ... $ to \( ... \)
+    // But be careful not to match escaped dollars or code blocks
+    
+    // Convert display math: $$ ... $$ to \[ ... \]
+    txt = txt.replace(/\$\$([^$]+)\$\$/g, '\\[$1\\]');
+    
+    // Convert inline math: $ ... $ to \( ... \) (but not $$ which is already handled)
+    // Use negative lookbehind/lookahead to avoid matching escaped $ or $$
+    txt = txt.replace(/(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/g, '\\($1\\)');
+    
     let strOut: string = ""
     // RegExp to match block equations and split text into blocks of Text or Equations
     const eqPat: RegExp = RegExp('(\\\\\\[[\\r\\s\\S]*?\\\\\\])', 'g')

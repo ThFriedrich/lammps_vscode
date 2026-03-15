@@ -17,6 +17,7 @@ window.onload = function () {
 
     document.getElementById("sys_tab").addEventListener('click', function (event) { openTab(event, 'sys') })
     document.getElementById("run_tab").addEventListener('click', function (event) { openTab(event, 'run') })
+    document.getElementById("chat_tab").addEventListener('click', function (event) { openTab(event, 'chat'); setTimeout(resize_plots_sub, 50); })
     document.getElementById("dump_tab").addEventListener('click', function (event) { openTab(event, 'dump') })
     document.getElementById("logs_tab").addEventListener('click', function (event) { openTab(event, 'logs') })
     document.getElementById("sys_tab").click();
@@ -44,6 +45,14 @@ window.onload = function () {
                 };
                 Plotly.relayout(dump_div, update);
             }
+        }
+        // Resize chat messages container to fill available height
+        var chat_messages = document.getElementById("chat_messages");
+        if (chat_messages && chat_messages.offsetParent !== null) {
+            var chat_rect = chat_messages.getBoundingClientRect();
+            // Calculate available height: window height - top position - space for input area (~100px) - padding
+            var available_height = document.documentElement.clientHeight - chat_rect.top - 100;
+            chat_messages.style.height = Math.max(200, available_height) + 'px';
         }
         if (!firstDone) {
             window.addEventListener("resize", resize_plots_throttled)
@@ -219,9 +228,9 @@ window.onload = function () {
         var ev_performance = event.data.performance
         var ev_type = event.data.type
 
-        if (ev_data) {
-            switch (ev_type) {
-                case 'plot_log':
+        switch (ev_type) {
+            case 'plot_log':
+                if (ev_data) {
                     redraw_log_panel(ev_data, ev_meta, ev_performance)
                     if (!interval_set_log) {
                         setInterval(() => {
@@ -233,8 +242,10 @@ window.onload = function () {
                         }, log_interval);
                         interval_set_log = true
                     }
-                    break;
-                case 'update_log':
+                }
+                break;
+            case 'update_log':
+                if (ev_data) {
                     var n_plots_update = ev_data?.length
                     if (n_plots_update && n_plots_update > n_plots) {
                         // New plots appeared — rebuild full panel
@@ -306,9 +317,10 @@ window.onload = function () {
                             }
                         }
                     }
-
-                    break;
-                case 'plot_dump':
+                }
+                break;
+            case 'plot_dump':
+                if (ev_data && ev_meta) {
                     dump_path_div.textContent = ev_meta.path;
                     plot_dump("dump_div", ev_data)
                     b_dump_plotted = true
@@ -322,27 +334,31 @@ window.onload = function () {
                         }, log_interval);
                         interval_set_dump = true
                     }
-                    break;
-                case 'update_dump':
-                    // Append new frames to existing dump plot
-                    if (b_dump_plotted && ev_data && ev_data.length > 0) {
-                        update_dump("dump_div", ev_data);
-                    }
-                    break;
-                case 'cpu_stat':
+                }
+                break;
+            case 'update_dump':
+                if (b_dump_plotted && ev_data && ev_data.length > 0) {
+                    update_dump("dump_div", ev_data);
+                }
+                break;
+            case 'cpu_stat':
+                if (ev_data) {
                     document.getElementById('cpu_mem').value = ev_data['memory'];
                     for (let x = 0; x < ev_data['cpu'].length; x++) {
                         document.getElementById("cpu_util" + x).value = ev_data['cpu'][x]['cpu']
                     }
-                    break;
-                case 'gpu_stat':
+                }
+                break;
+            case 'gpu_stat':
+                if (ev_data) {
                     for (let n = 0; n < ev_data['gpu_util'].length; n++) {
                         document.getElementById('gpu_mem' + n).value = ev_data['gpu_mem'][n];
                         document.getElementById('gpu_util' + n).value = ev_data['gpu_util'][n];
                     }
-
-                    break;
-                case 'gpu_info':
+                }
+                break;
+            case 'gpu_info':
+                if (ev_data) {
                     var sys_bars = document.getElementById('sys_bars');
 
                     for (let n = 0; n < ev_data['gpu'].length; n++) {
@@ -374,9 +390,10 @@ window.onload = function () {
                             command: 'get_gpu_stat'
                         });
                     }, sys_interval);
-
-                    break;
-                case 'cpu_info':
+                }
+                break;
+            case 'cpu_info':
+                if (ev_data) {
                     var sys_bars = document.getElementById('sys_bars');
                     var header = document.createElement('h4')
                     header.appendChild(document.createTextNode(ev_data['mod_cpu']))
@@ -411,42 +428,254 @@ window.onload = function () {
                             command: 'get_cpu_stat'
                         });
                     }, sys_interval);
-
-                    break;
-                case 'active_file':
+                }
+                break;
+            case 'active_file':
+                if (ev_data) {
                     // Set the script file input to the active file
                     var scriptInput = document.getElementById('task_script');
-                    if (scriptInput && ev_data) {
+                    if (scriptInput) {
                         scriptInput.value = ev_data;
                     }
-                    break;
-                case 'task_result':
+                }
+                break;
+            case 'task_result':
+                if (ev_data) {
                     // Display task execution result
                     var output = document.getElementById('task_output');
                     if (output) {
                         output.textContent = 'Task executed successfully!\n\nCommand: ' + ev_data.command + '\n\n' + ev_data.message;
                         output.style.borderColor = 'green';
                     }
-                    break;
-                case 'task_error':
+                }
+                break;
+            case 'task_error':
+                if (ev_data) {
                     // Display task execution error
                     var output = document.getElementById('task_output');
                     if (output) {
                         output.textContent = 'Error: ' + ev_data;
                         output.style.borderColor = 'red';
                     }
-                    break;
-                case 'task_saved':
+                }
+                break;
+            case 'task_saved':
+                if (ev_data) {
                     // Display save confirmation
                     var output = document.getElementById('task_output');
                     if (output) {
                         output.textContent = ev_data;
                         output.style.borderColor = 'green';
                     }
-                    break;
-                default:
-                    break;
-            }
+                }
+                break;
+            case 'active_file_content':
+                if (ev_data) {
+                    // Update context info
+                    updateContextInfo(ev_data);
+                }
+                break;
+            case 'context_file_selected':
+                if (ev_data) {
+                    // Update context info with selected file
+                    updateContextInfo(ev_data);
+                }
+                break;
+            case 'rag_thinking':
+                // Only show processing indicator if NOT in streaming mode (old behavior)
+                // In streaming mode, we'll get thinking output separately
+                addChatMessage('thinking', '');
+                break;
+            case 'rag_thinking_output':
+                // Remove any old thinking indicator
+                var oldThinking = document.getElementById('thinking_indicator');
+                if (oldThinking) oldThinking.remove();
+                // Show thinking step in collapsible section
+                if (ev_data && ev_data.thinking) {
+                    // Insert BEFORE streaming message if it exists, to maintain correct order
+                    var streamingMsg = document.getElementById('streaming_message');
+                    addChatMessage('thinking_content', ev_data.thinking, streamingMsg);
+                }
+                break;
+            case 'rag_thinking_done':
+                // Auto-collapse the thinking section after 2 seconds
+                setTimeout(function() {
+                    var thinkingDetails = document.getElementById('thinking_details');
+                    if (thinkingDetails) {
+                        thinkingDetails.open = false;
+                    }
+                }, 2000);
+                break;
+            case 'rag_stream_start':
+                // Remove any thinking indicator when streaming starts
+                var thinkingIndicator = document.getElementById('thinking_indicator');
+                if (thinkingIndicator) thinkingIndicator.remove();
+                // Start streaming: create assistant message container with spinner
+                addChatMessage('streaming', '');
+                break;
+            case 'rag_stream_chunk':
+                // Append chunk to streaming message
+                if (ev_data && ev_data.chunk) {
+                    var streamingMsg = document.getElementById('streaming_message');
+                    if (streamingMsg) {
+                        var contentSpan = streamingMsg.querySelector('.streaming-content');
+                        if (contentSpan) {
+                            contentSpan.textContent += ev_data.chunk;
+                            // Auto-scroll
+                            var chat_messages = document.getElementById('chat_messages');
+                            chat_messages.scrollTop = chat_messages.scrollHeight;
+                        }
+                    }
+                }
+                break;
+            case 'rag_stream_end':
+                // Replace streaming message with final rendered response
+                var streamingMsg = document.getElementById('streaming_message');
+                if (streamingMsg) {
+                    streamingMsg.remove();
+                }
+                // Remove any thinking indicators
+                while (true) {
+                    var thinking = document.getElementById('thinking_indicator');
+                    if (!thinking) break;
+                    thinking.remove();
+                }
+                // Add final assistant response
+                if (ev_data && ev_data.response) {
+                    addChatMessage('assistant', ev_data.response);
+                }
+                // Reset button to send mode
+                setButtonToSend();
+                break;
+            case 'rag_response':
+                // Remove all thinking indicators
+                while (true) {
+                    var thinking = document.getElementById('thinking_indicator');
+                    if (!thinking) break;
+                    thinking.remove();
+                }
+                // Add assistant response
+                if (ev_data && ev_data.response) {
+                    addChatMessage('assistant', ev_data.response);
+                }
+                // Reset button to send mode
+                setButtonToSend();
+                break;
+            case 'rag_error':
+                // Remove streaming message if present
+                var streamingMsg = document.getElementById('streaming_message');
+                if (streamingMsg) {
+                    streamingMsg.remove();
+                }
+                // Remove all thinking indicators
+                while (true) {
+                    var thinking = document.getElementById('thinking_indicator');
+                    if (!thinking) break;
+                    thinking.remove();
+                }
+                // Show error
+                addChatMessage('error', ev_data || 'Unknown error');
+                // Reset button to send mode
+                setButtonToSend();
+                break;
+            
+            // Line-by-line check handlers
+            case 'rag_offer_line_check':
+                // Show offer to run line-by-line check
+                if (ev_data && ev_data.message) {
+                    addChatMessage('line_check_offer', ev_data.message, null, ev_data.scriptContext);
+                }
+                break;
+            case 'rag_line_check_start':
+                // Show progress indicator for line check
+                addChatMessage('line_check_progress', ev_data?.message || 'Starting line-by-line check...');
+                break;
+            case 'rag_line_check_progress':
+                // Update progress bar
+                if (ev_data) {
+                    updateLineCheckProgress(ev_data.current, ev_data.total);
+                }
+                break;
+            case 'rag_line_check_result':
+                // Append individual line result
+                if (ev_data) {
+                    appendLineCheckResult(ev_data);
+                }
+                break;
+            case 'rag_line_check_complete':
+                // Show completion summary
+                if (ev_data && ev_data.summary) {
+                    completeLineCheck(ev_data.summary);
+                }
+                break;
+            case 'rag_line_check_error':
+                // Show error
+                addChatMessage('error', ev_data || 'Line check failed');
+                setButtonToSend();
+                break;
+            case 'rag_line_check_summary_start':
+                // Start streaming the LLM summary
+                startLineCheckSummary(ev_data?.message || 'Generating summary...');
+                break;
+            case 'rag_line_check_summary_chunk':
+                // Append chunk to summary
+                if (ev_data && ev_data.chunk) {
+                    appendLineCheckSummaryChunk(ev_data.chunk);
+                }
+                break;
+            case 'rag_line_check_summary_end':
+                // Finalize the summary with rendered HTML
+                if (ev_data && ev_data.summary) {
+                    finalizeLineCheckSummary(ev_data.summary);
+                }
+                setButtonToSend();
+                break;
+            
+            case 'ollama_models':
+                if (model_selector && ev_data) {
+                    model_selector.innerHTML = '';
+                    if (ev_data.models && ev_data.models.length > 0) {
+                        ev_data.models.forEach(function(model) {
+                            var option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            if (model === ev_data.currentModel) {
+                                option.selected = true;
+                            }
+                            model_selector.appendChild(option);
+                        });
+                    } else {
+                        var option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No models available';
+                        model_selector.appendChild(option);
+                    }
+                }
+                break;
+            case 'ollama_models_error':
+                if (model_selector) {
+                    model_selector.innerHTML = '';
+                    var option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Error loading models';
+                    model_selector.appendChild(option);
+                }
+                break;
+            case 'model_updated':
+                // Model successfully updated - could show a brief notification
+                console.log('Model updated to:', ev_data);
+                break;
+            case 'model_update_error':
+                // Show error message
+                addChatMessage('error', 'Failed to update model: ' + ev_data);
+                break;
+            case 'chat_history_cleared':
+                // Clear chat messages from UI (keep welcome message)
+                var chat_messages = document.getElementById('chat_messages');
+                chat_messages.innerHTML = '<div style="padding: 10px; margin: 5px 0; background-color: rgba(13, 171, 161, 0.1); border-left: 3px solid #0daba1;"><strong>Assistant:</strong> Hi! I\'m your LAMMPS documentation assistant. Ask me anything about LAMMPS commands, syntax, or examples.</div>';
+                break;
+            default:
+                break;
         }
     });
 
@@ -508,6 +737,409 @@ window.onload = function () {
             config: config
         });
     })
+
+    // RAG Chat functionality
+    var send_chat_btn = document.getElementById('send_chat_btn');
+    var chat_input = document.getElementById('chat_input');
+    var model_selector = document.getElementById('model_selector');
+    var select_context_file_btn = document.getElementById('select_context_file_btn');
+    var context_file_info = document.getElementById('context_file_info');
+    var active_file_content = null;
+    var active_file_name = null;
+    var isProcessing = false;  // Track if LLM is working
+
+    // Request available models when chat tab is opened
+    document.getElementById("chat_tab").addEventListener('click', function() {
+        vscode.postMessage({
+            command: 'get_ollama_models'
+        });
+    });
+
+    // Handle context file selection button
+    if (select_context_file_btn) {
+        select_context_file_btn.addEventListener('click', function() {
+            vscode.postMessage({ command: 'select_context_file' });
+        });
+    }
+
+    // Handle model selection change
+    if (model_selector) {
+        model_selector.addEventListener('change', function() {
+            var selectedModel = model_selector.value;
+            if (selectedModel) {
+                vscode.postMessage({
+                    command: 'set_chat_model',
+                    model: selectedModel
+                });
+            }
+        });
+    }
+
+    // Handle clear history button
+    var clear_history_btn = document.getElementById('clear_history_btn');
+    if (clear_history_btn) {
+        clear_history_btn.addEventListener('click', function() {
+            vscode.postMessage({ command: 'clear_chat_history' });
+            // Clear context file as well
+            active_file_content = null;
+            active_file_name = null;
+            updateContextInfo(null);
+        });
+    }
+
+    function updateContextInfo(data) {
+        var info_div = document.getElementById('context_file_info');
+        if (data && data.content) {
+            active_file_content = data.content;
+            active_file_name = data.fileName || 'context file';
+            var fileName = active_file_name.split('/').pop().split('\\').pop();
+            var lineCount = data.content.split('\n').length;
+            info_div.textContent = '✓ ' + fileName + ' (' + lineCount + ' lines)';
+            info_div.style.color = '#0daba1';
+        } else {
+            active_file_content = null;
+            active_file_name = null;
+            info_div.textContent = '';
+        }
+    }
+
+    // Button state management for send/cancel
+    function setButtonToCancel() {
+        isProcessing = true;
+        send_chat_btn.textContent = '⬛ Cancel';
+        send_chat_btn.style.backgroundColor = '#d62728';
+        send_chat_btn.title = 'Cancel request';
+        // Disable input while processing
+        chat_input.disabled = true;
+        chat_input.style.opacity = '0.6';
+    }
+
+    function setButtonToSend() {
+        isProcessing = false;
+        send_chat_btn.textContent = 'Send';
+        send_chat_btn.style.backgroundColor = '';
+        send_chat_btn.title = 'Send message';
+        // Re-enable input
+        chat_input.disabled = false;
+        chat_input.style.opacity = '1';
+        chat_input.focus();
+    }
+
+    function cancelRequest() {
+        // Send cancel message to backend (this will abort fetch AND stop Ollama)
+        vscode.postMessage({ command: 'rag_cancel' });
+        
+        // Remove streaming message if present
+        var streamingMsg = document.getElementById('streaming_message');
+        if (streamingMsg) {
+            streamingMsg.remove();
+        }
+        
+        // Remove thinking indicators
+        var thinkingIndicator = document.getElementById('thinking_indicator');
+        if (thinkingIndicator) thinkingIndicator.remove();
+        var thinkingDetails = document.getElementById('thinking_details_wrapper');
+        if (thinkingDetails) thinkingDetails.remove();
+        
+        // Add cancelled message
+        addChatMessage('error', 'Request cancelled by user');
+        
+        // Reset button
+        setButtonToSend();
+    }
+
+    function sendChatMessage() {
+        // If already processing, don't send another message
+        if (isProcessing) return;
+        
+        var query = chat_input.value.trim();
+        if (!query) return;
+
+        // Set button to cancel mode
+        setButtonToCancel();
+
+        // Add user message to chat
+        addChatMessage('user', query);
+
+        // Remove any existing thinking indicator before adding a new one
+        var thinking = document.getElementById('thinking_indicator');
+        if (thinking) thinking.remove();
+        // Show thinking indicator immediately
+        addChatMessage('thinking', '');
+
+        // Clear input
+        chat_input.value = '';
+
+        // Determine context to send
+        var context = active_file_content || null;
+
+        // Send to backend
+        vscode.postMessage({
+            command: 'rag_chat',
+            query: query,
+            context: context
+        });
+    }
+
+    // Handle send/cancel button click
+    send_chat_btn.addEventListener('click', function() {
+        if (isProcessing) {
+            cancelRequest();
+        } else {
+            sendChatMessage();
+        }
+    });
+
+    chat_input.addEventListener('keypress', (e) => {
+        // Send on Enter, but allow Shift+Enter for new lines (only if not processing)
+        if (e.key === 'Enter' && !e.shiftKey && !isProcessing) {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    });
+
+    function addChatMessage(role, content, insertBeforeElement, extraData) {
+        var chat_messages = document.getElementById('chat_messages');
+        var message_div = document.createElement('div');
+        message_div.style.padding = '10px';
+        message_div.style.margin = '5px 0';
+        
+        if (role === 'user') {
+            message_div.style.backgroundColor = 'rgba(31, 119, 180, 0.1)';
+            message_div.style.borderLeft = '3px solid #1f77b4';
+            message_div.innerHTML = '<strong>You:</strong> ' + escapeHtml(content);
+        } else if (role === 'assistant') {
+            message_div.style.backgroundColor = 'rgba(13, 171, 161, 0.1)';
+            message_div.style.borderLeft = '3px solid #0daba1';
+            // Content is already rendered HTML from backend
+            message_div.innerHTML = '<strong>Assistant:</strong> ' + content;
+        } else if (role === 'streaming') {
+            // Streaming response - show spinner and content area
+            message_div.id = 'streaming_message';
+            message_div.style.backgroundColor = 'rgba(13, 171, 161, 0.1)';
+            message_div.style.borderLeft = '3px solid #0daba1';
+            message_div.innerHTML = '<strong>Assistant:</strong> <div style="display: flex; align-items: flex-start; gap: 10px; margin-top: 5px;"><div class="spinner"></div><pre class="streaming-content" style="margin: 0; white-space: pre-wrap; word-wrap: break-word; font-family: inherit; flex: 1;"></pre></div>';
+        } else if (role === 'thinking') {
+            // Remove any existing thinking indicator before adding a new one
+            var oldThinking = document.getElementById('thinking_indicator');
+            if (oldThinking) oldThinking.remove();
+            message_div.id = 'thinking_indicator';
+            message_div.style.backgroundColor = 'rgba(128, 128, 128, 0.1)';
+            message_div.style.borderLeft = '3px solid #808080';
+            message_div.style.fontStyle = 'italic';
+            message_div.innerHTML = '<div style="display: flex; align-items: center; gap: 10px;"><div class="spinner"></div><span>Processing your question...</span></div>';
+        } else if (role === 'thinking_content') {
+            // Collapsible thinking section - remove any old one first
+            var oldThinkingDetails = document.getElementById('thinking_details');
+            if (oldThinkingDetails) oldThinkingDetails.remove();
+            message_div.id = 'thinking_details_wrapper';
+            message_div.style.backgroundColor = 'rgba(128, 128, 128, 0.05)';
+            message_div.style.borderLeft = '3px solid #666666';
+            var details = document.createElement('details');
+            details.id = 'thinking_details';
+            details.open = true;  // Start expanded
+            var summary = document.createElement('summary');
+            summary.style.cursor = 'pointer';
+            summary.style.fontWeight = 'bold';
+            summary.style.color = '#808080';
+            summary.innerHTML = '🤔 Thinking...';
+            var thinkingPre = document.createElement('pre');
+            thinkingPre.style.margin = '10px 0 0 0';
+            thinkingPre.style.whiteSpace = 'pre-wrap';
+            thinkingPre.style.wordWrap = 'break-word';
+            thinkingPre.style.fontFamily = 'inherit';
+            thinkingPre.style.fontSize = '0.9em';
+            thinkingPre.style.color = '#888888';
+            thinkingPre.textContent = content;
+            details.appendChild(summary);
+            details.appendChild(thinkingPre);
+            message_div.appendChild(details);
+        } else if (role === 'error') {
+            message_div.style.backgroundColor = 'rgba(214, 39, 40, 0.1)';
+            message_div.style.borderLeft = '3px solid #d62728';
+            message_div.innerHTML = '<strong>Error:</strong> ' + escapeHtml(content);
+        } else if (role === 'line_check_offer') {
+            // Offer to run line-by-line check with confirm button
+            message_div.id = 'line_check_offer';
+            message_div.style.backgroundColor = 'rgba(255, 193, 7, 0.1)';
+            message_div.style.borderLeft = '3px solid #ffc107';
+            message_div.innerHTML = '<strong>🔍 Suggestion:</strong> ' + escapeHtml(content) + 
+                '<br><button id="confirm_line_check_btn" style="margin-top: 8px; padding: 6px 16px; border-radius: 4px; cursor: pointer; background-color: #0daba1; color: white; border: none;">✓ Yes, check each line</button>' +
+                '<button id="skip_line_check_btn" style="margin-top: 8px; margin-left: 8px; padding: 6px 16px; border-radius: 4px; cursor: pointer; background-color: #666; color: white; border: none;">✗ No, skip</button>';
+            // Store script context for later use
+            message_div.dataset.scriptContext = extraData || '';
+        } else if (role === 'line_check_progress') {
+            // Progress indicator for line-by-line check
+            var oldProgress = document.getElementById('line_check_progress');
+            if (oldProgress) oldProgress.remove();
+            message_div.id = 'line_check_progress';
+            message_div.style.backgroundColor = 'rgba(13, 171, 161, 0.1)';
+            message_div.style.borderLeft = '3px solid #0daba1';
+            message_div.innerHTML = '<strong>🔄 Line-by-Line Check:</strong> ' + escapeHtml(content) +
+                '<div style="margin-top: 8px;"><progress id="line_check_bar" value="0" max="100" style="width: 100%; height: 20px;"></progress>' +
+                '<span id="line_check_status" style="margin-left: 10px; font-size: 12px;">0/0</span></div>' +
+                '<div id="line_check_results" style="margin-top: 10px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;"></div>';
+        }
+        
+        // Insert before specified element, or append to end
+        if (insertBeforeElement && insertBeforeElement.parentNode === chat_messages) {
+            chat_messages.insertBefore(message_div, insertBeforeElement);
+        } else {
+            chat_messages.appendChild(message_div);
+        }
+        chat_messages.scrollTop = chat_messages.scrollHeight;
+        
+        // Attach event listeners for line check offer buttons
+        if (role === 'line_check_offer') {
+            var confirmBtn = document.getElementById('confirm_line_check_btn');
+            var skipBtn = document.getElementById('skip_line_check_btn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function() {
+                    var offerDiv = document.getElementById('line_check_offer');
+                    var scriptContext = offerDiv ? offerDiv.dataset.scriptContext : '';
+                    if (scriptContext) {
+                        // Remove the offer
+                        if (offerDiv) offerDiv.remove();
+                        // Send confirmation
+                        vscode.postMessage({
+                            command: 'rag_line_check_confirm',
+                            scriptContext: scriptContext
+                        });
+                    }
+                });
+            }
+            if (skipBtn) {
+                skipBtn.addEventListener('click', function() {
+                    var offerDiv = document.getElementById('line_check_offer');
+                    if (offerDiv) offerDiv.remove();
+                    // Send decline message to continue with normal LLM response
+                    vscode.postMessage({
+                        command: 'rag_line_check_decline'
+                    });
+                });
+            }
+        }
+    }
+
+    function escapeHtml(text) {
+        var map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    // Helper functions for line-by-line check
+    function updateLineCheckProgress(current, total) {
+        var bar = document.getElementById('line_check_bar');
+        var status = document.getElementById('line_check_status');
+        if (bar && total > 0) {
+            bar.value = (current / total) * 100;
+        }
+        if (status) {
+            status.textContent = current + '/' + total;
+        }
+    }
+
+    function appendLineCheckResult(result) {
+        var container = document.getElementById('line_check_results');
+        if (!container) return;
+        
+        var resultDiv = document.createElement('div');
+        resultDiv.style.padding = '4px 8px';
+        resultDiv.style.marginBottom = '2px';
+        resultDiv.style.borderRadius = '3px';
+        
+        var icon = '❓';
+        var bgColor = 'rgba(128, 128, 128, 0.1)';
+        if (result.status === 'ok') {
+            icon = '✓';
+            bgColor = 'rgba(40, 167, 69, 0.1)';
+        } else if (result.status === 'warning') {
+            icon = '⚠';
+            bgColor = 'rgba(255, 193, 7, 0.2)';
+        } else if (result.status === 'error') {
+            icon = '✗';
+            bgColor = 'rgba(220, 53, 69, 0.2)';
+        }
+        
+        resultDiv.style.backgroundColor = bgColor;
+        resultDiv.innerHTML = '<span style="font-weight: bold;">' + icon + ' Line ' + result.lineNum + '</span> <code>' + escapeHtml(result.command) + '</code>: ' + escapeHtml(result.message);
+        
+        container.appendChild(resultDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function completeLineCheck(summary) {
+        var progressDiv = document.getElementById('line_check_progress');
+        if (progressDiv) {
+            // Update header to show complete
+            var header = progressDiv.querySelector('strong');
+            if (header) {
+                header.textContent = '✅ Line-by-Line Check Complete:';
+            }
+            // Add summary statistics
+            var summaryDiv = document.createElement('div');
+            summaryDiv.id = 'line_check_stats';
+            summaryDiv.style.marginTop = '10px';
+            summaryDiv.style.padding = '8px';
+            summaryDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+            summaryDiv.style.borderRadius = '4px';
+            summaryDiv.innerHTML = '<strong>Statistics:</strong> ' + 
+                '<span style="color: #28a745;">✓ ' + summary.ok + ' OK</span> | ' +
+                '<span style="color: #ffc107;">⚠ ' + summary.warning + ' Warnings</span> | ' +
+                '<span style="color: #dc3545;">✗ ' + summary.error + ' Errors</span> | ' +
+                '<span style="color: #6c757d;">❓ ' + summary.unknown + ' Unknown</span>';
+            
+            // Insert summary after progress bar
+            var resultsDiv = document.getElementById('line_check_results');
+            if (resultsDiv) {
+                progressDiv.insertBefore(summaryDiv, resultsDiv);
+            } else {
+                progressDiv.appendChild(summaryDiv);
+            }
+        }
+        // Don't reset button here - wait for summary to complete
+    }
+
+    function startLineCheckSummary(message) {
+        var chat_messages = document.getElementById('chat_messages');
+        var summaryDiv = document.createElement('div');
+        summaryDiv.id = 'line_check_summary';
+        summaryDiv.style.padding = '10px';
+        summaryDiv.style.margin = '5px 0';
+        summaryDiv.style.backgroundColor = 'rgba(13, 171, 161, 0.1)';
+        summaryDiv.style.borderLeft = '3px solid #0daba1';
+        summaryDiv.innerHTML = '<strong>📋 Analysis Summary:</strong>' +
+            '<div style="display: flex; align-items: flex-start; gap: 10px; margin-top: 5px;">' +
+            '<div class="spinner"></div>' +
+            '<pre id="line_check_summary_content" style="margin: 0; white-space: pre-wrap; word-wrap: break-word; font-family: inherit; flex: 1;"></pre>' +
+            '</div>';
+        chat_messages.appendChild(summaryDiv);
+        chat_messages.scrollTop = chat_messages.scrollHeight;
+    }
+
+    function appendLineCheckSummaryChunk(chunk) {
+        var contentPre = document.getElementById('line_check_summary_content');
+        if (contentPre) {
+            contentPre.textContent += chunk;
+            var chat_messages = document.getElementById('chat_messages');
+            chat_messages.scrollTop = chat_messages.scrollHeight;
+        }
+    }
+
+    function finalizeLineCheckSummary(renderedHtml) {
+        var summaryDiv = document.getElementById('line_check_summary');
+        if (summaryDiv) {
+            // Replace with rendered HTML
+            summaryDiv.innerHTML = '<strong>📋 Analysis Summary:</strong><div style="margin-top: 10px;">' + renderedHtml + '</div>';
+        }
+        var chat_messages = document.getElementById('chat_messages');
+        chat_messages.scrollTop = chat_messages.scrollHeight;
+    }
 
     // Request active file when run tab is opened (only if not already set)
     document.getElementById("run_tab").addEventListener('click', function() {
