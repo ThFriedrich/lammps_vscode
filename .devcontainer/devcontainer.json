@@ -2,14 +2,17 @@
 	// README at: https://github.com/devcontainers/templates/tree/main/src/alpine
 	{
 		"name": "JOSS-Pandoc",
+		"initializeCommand": "git submodule update --init",
 		// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 		"build": {
 			// Path is relative to the devcontainer.json file.
 			"dockerfile": "Dockerfile",
-			"context": "../inara"
+			"args": {
+				"USERNAME": "${localEnv:USER}"
+			}
 		},
 		"mounts": [
-			"type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,readonly"
+			"type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/${localEnv:USER}/.ssh,readonly"
 		],
 
 		// Features to add to the dev container. More info: https://containers.dev/features.
@@ -17,5 +20,5 @@
 			"ghcr.io/cirolosapio/devcontainers-features/alpine-git:0": "0.1.0",
 			"ghcr.io/cirolosapio/devcontainers-features/alpine-openssh:0": "0.1.0"
 		},
-		"remoteUser": "thomas"
+		"remoteUser": "${localEnv:USER}"
 	}
