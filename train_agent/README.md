@@ -1,102 +1,99 @@
-# LAMMPS RAG System - Setup Guide
+# LAMMPS RAG System
 
-## What You Have
+## Overview
 
-A complete RAG (Retrieval-Augmented Generation) system for LAMMPS with:
-- **Custom Model**: `mistral-lammps:7b` - Mistral 7B fine-tuned for LAMMPS
-- **Vector Database**: FAISS index with 316 embedded documentation chunks
-- **Query Tools**: Multiple ways to interact with your LAMMPS knowledge base
+A Retrieval-Augmented Generation (RAG) system for the LAMMPS VS Code extension. It provides:
+- **Documentation chat** — answer LAMMPS questions using local LLM + retrieved doc context
+- **Script checking** — deterministic syntax validation against command documentation
+- **Deep analysis** — LLM-powered cross-command consistency and physics checks
 
-## Files Created
+The system runs entirely locally via [Ollama](https://ollama.com) with `nomic-embed-text` for embeddings and a configurable chat model (default: `qwen3:4b`).
+
+## Pipeline
+
+```
+ 1. Preprocessing                2. Embedding                    3. Runtime (TypeScript)
+┌───────────────────────┐       ┌──────────────────────┐        ┌──────────────────────────┐
+│ preprocess_docs_RAG.py│       │build_embeddings_json.│        │  src/rag_system.ts       │
+│                       │       │         py           │        │  LammpsRagSystem         │
+│ Reads:                │       │                      │        │                          │
+│  · src/doc_obj.ts     │──►    │ lammps_docs_chunks   │──►     │  Loads chunks + embeddings│
+│  · rst/*.rst          │ JSON  │       .json          │ JSON   │  Cosine similarity search │
+│  · lammps/examples/   │       │                      │        │  Ollama chat streaming    │
+│  · lmps.tmLanguage    │       │ embeddings.json      │──►     │  Deterministic syntax     │
+│       .json           │       │  (768-dim vectors)   │        │    validation             │
+└───────────────────────┘       └──────────────────────┘        └──────────────────────────┘
+```
+
+## Files
 
 ```
 train_agent/
-├── preprocess_docs_RAG.py          # Extracts & chunks documentation
-├── lammps_docs_chunks.json         # 316 processed chunks
-├── build_faiss_index_ollama.py     # Builds FAISS vector index
-├── faiss_index_ollama.index        # Vector index (768-dim, 316 vectors)
-├── faiss_meta_ollama.json          # Metadata mapping
-├── Modelfile                        # Ollama model definition
-├── query_lammps.py                 # Simple RAG query tool
-├── rag_agent.py                    # Full RAG agent (OpenAI-compatible)
-├── mcp_server.py                   # MCP server for VS Code integration
-└── mcp_config.json                 # MCP server configuration
+├── preprocess_docs_RAG.py          # Step 1: Extract & chunk documentation
+├── lammps_docs_chunks.json         # Chunked docs (~2770 chunks, ≤1500 tokens each)
+├── build_embeddings_json.py        # Step 2: Generate embeddings via Ollama
+├── embeddings.json                 # Pre-computed embeddings (768-dim, aligned with chunks)
+├── build_faiss_index_ollama.py     # Alternative: build FAISS index (optional)
+├── faiss_index_ollama.index        # FAISS binary index (optional, not used at runtime)
+├── faiss_meta_ollama.json          # FAISS metadata sidecar (optional)
+└── faiss_index_ollama_embeddings.json  # FAISS-exported embeddings (optional)
 ```
 
-## Usage Options
+The TypeScript runtime only needs `lammps_docs_chunks.json` and `embeddings.json`. The FAISS files are an alternative Python-side search path and are not required.
 
-### 1. Simple Query Tool (Recommended)
-```bash
-cd /home/thomas/Documents/Git/lammps_vscode
-python3 train_agent/query_lammps.py
-```
-Interactive prompt with retrieval-augmented answers.
+## Prerequisites
 
-### 2. Direct Model (No Retrieval)
-```bash
-ollama run mistral-lammps:7b
-```
+- [Ollama](https://ollama.com) running locally (`http://127.0.0.1:11434`)
+- Models pulled: `nomic-embed-text` (embeddings), plus a chat model (e.g. `qwen3:4b`, `qwen3:8b`)
+- Python 3 with `tiktoken` and `requests` (for preprocessing/embedding steps only)
 
-### 3. Python API
-```python
-import requests
+## Rebuilding the Data
 
-# Query with retrieval
-response = requests.post("http://127.0.0.1:11434/api/generate", json={
-    "model": "mistral-lammps:7b",
-    "prompt": "How do I use pair_style lj/cut?"
-})
-print(response.json()["response"])
-```
-
-## For GitHub Copilot Integration
-
-The `mistral-lammps:7b` model runs via Ollama's API, but GitHub Copilot's agent mode currently only supports specific model providers (OpenAI, Azure OpenAI, Anthropic).
-
-**Workaround Options:**
-
-1. **Use the query tools directly** - Run `query_lammps.py` in a terminal while coding
-2. **VS Code extension** - Create a custom extension that adds LAMMPS context to Copilot
-3. **Copilot Instructions** - Add LAMMPS knowledge to your `.github/copilot-instructions.md`
-
-### Option 3: Copilot Instructions (Quick Setup)
-
-Create `.github/copilot-instructions.md` in your project:
-```markdown
-# LAMMPS Project Context
-
-When helping with LAMMPS code:
-- Prefer pair_style lj/cut for Lennard-Jones potentials
-- Use fix nve/fix nvt/fix npt for time integration
-- Common atom_style: atomic, molecular, full
-- Use units real or metal for physical systems
-- Always define pair_coeff after pair_style
-
-For detailed LAMMPS help, user can run:
-python3 train_agent/query_lammps.py
-```
-
-## Test the System
+### Step 1: Preprocess documentation into chunks
 
 ```bash
-# Quick test
-echo "How do I set up a Lennard-Jones potential?" | python3 -c "
-import sys
-sys.path.insert(0, 'train_agent')
-from query_lammps import *
-import json
-
-index = faiss.read_index('train_agent/faiss_index_ollama.index')
-metadata = json.load(open('train_agent/faiss_meta_ollama.json'))
-chunks = json.load(open('train_agent/lammps_docs_chunks.json'))
-
-query = sys.stdin.read().strip()
-qvec = embed_query(query)
-results = search_index(qvec, index, metadata, chunks, k=3)
-answer = query_lammps_model(query, results)
-print(answer)
-"
+python3 train_agent/preprocess_docs_RAG.py
 ```
+
+Reads four documentation sources and produces `lammps_docs_chunks.json`:
+- **`src/doc_obj.ts`** — structured command docs (syntax, parameters, examples)
+- **`rst/*.rst`** — general RST documentation (howto guides, developer docs)
+- **`syntaxes/lmps.tmLanguage.json`** — syntax keywords and style names
+- **`~/Documents/Git/lammps/examples/`** — LAMMPS example input scripts
+
+Chunk types: `command_doc`, `example_script`, `syntax_reference`, `general_doc`.
+
+### Step 2: Generate embeddings
+
+```bash
+python3 train_agent/build_embeddings_json.py
+```
+
+Embeds all chunks via Ollama's `nomic-embed-text` model (768-dim vectors, batches of 8). Produces `embeddings.json` with format:
+
+```json
+{ "dimension": 768, "count": 2770, "embeddings": [[...], ...] }
+```
+
+Embeddings are index-aligned with `lammps_docs_chunks.json`.
+
+### Full rebuild (both steps)
+
+```bash
+python3 train_agent/preprocess_docs_RAG.py && python3 train_agent/build_embeddings_json.py
+```
+
+### Environment variables
+
+Both embedding scripts support configuration via env vars:
+
+| Variable | Default | Description |
+|---|---|---|
+| `CHUNKS_FILE` | `train_agent/lammps_docs_chunks.json` | Input chunks path |
+| `OUTPUT_FILE` | `train_agent/embeddings.json` | Output embeddings path |
+| `OLLAMA_BASE` | `http://127.0.0.1:11434` | Ollama server URL |
+| `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | Embedding model name |
+| `BATCH_SIZE` | `8` | Texts per embedding request |
 
 ## Maintenance
 
