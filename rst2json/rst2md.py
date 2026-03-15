@@ -15,6 +15,7 @@ def tr_section(section_rst: str, DOC) -> str:
     """
     section_md = tr_inline_math(section_rst)
     section_md = tr_inline_doc(section_md)
+    section_md = tr_inline_ref(section_md)
     section_md = tr_inline_pdf(section_md)
     section_md = tr_table(section_md)
     section_md = tr_table_imgs(section_md)
@@ -218,20 +219,47 @@ def tr_table(txt: str) -> str:
 
 
 def tr_table_imgs(txt: str) -> str:
-    img_tab = re.findall(
-        r"\.\.\s\|\S+\|\s+image::[\s\S\r]*?(?=(?:\n{2,}\s{0,2}\S|\Z))", txt
-    )
+    # Find substitution reference rows: lines with 2+ |label| tokens
+    sub_row_pat = re.compile(r'(?m)^\s*((?:\|\w+\|\s*){2,})\s*$')
+    matches = list(sub_row_pat.finditer(txt))
+    # Process from bottom to top to preserve earlier positions
+    for sub_match in reversed(matches):
+        labels = re.findall(r'\|(\w+)\|', sub_match.group(1))
+        # Find corresponding image definitions before the reference row
+        img_paths = {}
+        def_spans = []
+        for label in labels:
+            def_pat = re.compile(
+                r'\.\.\s+\|' + re.escape(label)
+                + r'\|\s+image::\s*(\S+)(?:\n\s+:\w+:.*)*'
+            )
+            def_m = def_pat.search(txt, 0, sub_match.start())
+            if def_m:
+                img_paths[label] = def_m.group(1)
+                def_spans.append(def_m.span())
+        if len(img_paths) != len(labels):
+            continue
 
-    for it in img_tab:
-        label_img = re.findall(r"\.\.\s(\|\S+\|)\s+image::([\s\S\r]*?)\n", it)
-        n_cols = len(label_img)
-        md_tab = (
-            " \n  " + "| " * n_cols + "|" + " \n  " + "|---" * n_cols + "|  \n  | "
-        )  # avoids highlighting first row
-        for li in label_img:
-            md_tab += "![Image](" + li[1].strip() + ") | "
-        md_tab += " \n"
-        txt = txt.replace(it, md_tab)
+        n_cols = len(labels)
+        # Collect any text between the last definition and the reference row
+        last_def_end = max(s[1] for s in def_spans)
+        between_text = txt[last_def_end:sub_match.start()].strip()
+
+        # Build Markdown table
+        md_tab = "\n\n"
+        if between_text:
+            md_tab += between_text + "\n\n"
+        md_tab += "| " * n_cols + "|\n"
+        md_tab += "|---" * n_cols + "|\n"
+        md_tab += "| " + " | ".join(
+            "![Image](" + img_paths[label] + ")" for label in labels
+        ) + " |\n\n"
+        # Replace from first definition through end of reference row
+        first_def_start = min(s[0] for s in def_spans)
+        sub_end = sub_match.end()
+        if sub_end < len(txt) and txt[sub_end] == '\n':
+            sub_end += 1
+        txt = txt[:first_def_start] + md_tab + txt[sub_end:]
 
     return txt
 
@@ -312,10 +340,29 @@ def tr_inline_doc(txt: str) -> str:
     return txt
 
 
+def tr_inline_ref(txt: str) -> str:
+    """Convert :ref:`display text <target>` to bold display text.
+
+    Cross-file RST references cannot be resolved, so we strip the
+    :ref: role and keep only the human-readable label.
+    """
+    # Long form: :ref:`display text <target>`
+    ref_lnk = re.findall(r"(\:ref\:\`([^`]*?)\<[^`>]+?\>\`)", txt)
+    for r in ref_lnk:
+        label = r[1].strip()
+        txt = txt.replace(r[0], "**" + label + "**")
+    # Short form: :ref:`target`
+    ref_lnk_short = re.findall(r"(\:ref\:\`([^`<>]+?)\`)", txt)
+    for r in ref_lnk_short:
+        label = r[1].strip()
+        txt = txt.replace(r[0], "**" + label + "**")
+    return txt
+
+
 def tr_inline_link(txt: str) -> str:
     # `FFmpeg documentation <http://ffmpeg.org/ffmpeg.html>`_.
     # `https://openkim.org/browse/models/by-type <https://openkim.org/browse/models/by-type>`_
-    lnk = re.findall(r"(\`(.*?)\s+\<(.*?)\>\`\_)", txt, re.DOTALL)
+    lnk = re.findall(r"(\`([^`]*?)\s+\<([^`>]*?)\>\`\_)", txt, re.DOTALL)
     for d in lnk:
         txt = txt.replace(
             d[0], "[" + d[1].replace("\n", " ") + "](" + d[2].replace("\n", "") + ")"
@@ -335,6 +382,9 @@ def tr_seperated_link(txt: str, rst_txt: str) -> str:
                 md_link = "[" + t[1] + "](" + l[2] + ")"
                 txt = txt.replace(t[0], md_link)
                 txt = txt.replace(l[0], "")
+    # Clean up any remaining RST link target definitions
+    # (.. _label: URL) that were not consumed by a separated link.
+    txt = re.sub(r"\n*\.\.\s+\_[\w-]+:\s+\S+[^\n]*", "", txt)
     return txt
 
 

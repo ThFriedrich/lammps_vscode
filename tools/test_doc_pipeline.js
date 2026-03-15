@@ -232,7 +232,9 @@ function checkHtmlForArtifacts(html) {
         { key: 'raw-rst-role', re: /:(doc|ref|math):`/ },
         { key: 'escaped-math-directive', re: /\\\[\s*\.\.\s*math::/ },
         { key: 'ascii-table-border', re: /\+(?:[-=]{3,}\+){2,}/ },
-        { key: 'separated-link-leftover', re: /`[^`]*<[^>]*>`_/ }
+        { key: 'separated-link-leftover', re: /`[^`]*<[^>]*>`_/ },
+        { key: 'orphaned-link-def', re: /\.\.\s+_[\w-]+:\s+https?:\/\// },
+        { key: 'orphaned-substitution-ref', re: /(?:^|\n)\s*(?:\|[A-Za-z]\w+\|\s*){2,}\s*(?:\n|$)/ }
     ]
 
     const hits = []
