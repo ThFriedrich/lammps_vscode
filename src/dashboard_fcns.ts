@@ -725,15 +725,27 @@ function build_plot_html(panel: PlotPanel, node_lib_path: Uri, plotly_lib: Uri, 
 
         <!-- Tab links -->
         <div class="tab">
-          <button class="tablinks" id="sys_tab">System Information</button>
-          <button class="tablinks" id="run_tab">Run Task</button>
-          <button class="tablinks" id="dump_tab">Dumps</button>
-          <button class="tablinks" id="logs_tab">Logs</button>
+        <button class="tablinks" id="run_tab">Run Task</button>
+        <button class="tablinks" id="dump_tab">Dumps</button>
+        <button class="tablinks" id="logs_tab">Logs</button>
+        <button class="tablinks" id="sys_tab">System Information</button>
         </div>
         
         <!-- Tab content -->
         <div id="sys" class="tabcontent">
-          <div id="sys_bars">
+          <div class="radio-toolbar" id="sys_mode_toolbar">
+            <input type="radio" id="sys_mode_info" name="sys_mode" value="info" checked>
+            <label for="sys_mode_info">Info</label>
+            <input type="radio" id="sys_mode_live" name="sys_mode" value="live">
+            <label for="sys_mode_live">Live</label>
+            <input type="radio" id="sys_mode_graph" name="sys_mode" value="graph">
+            <label for="sys_mode_graph">Graph (30s)</label>
+          </div>
+          <div id="sys_info">
+          </div>
+          <div id="sys_bars" style="display:none;">
+          </div>
+          <div id="sys_graphs" style="display:none;">
           </div>
         </div>
 

@@ -14,12 +14,74 @@ window.onload = function () {
     var resizeTimeout = null;
     var firstDone = false;
 
+    // System view mode: 'info' | 'live' | 'graph'
+    var sys_view_mode = 'info';
+    var sys_graph_initialized = false;
+    var sys_live_polling = false;
+    var sys_cpu_interval_id = null;
+    var sys_gpu_interval_id = null;
+    var sys_history = {
+        cpu_timestamps: [],
+        gpu_timestamps: [],
+        cpu_avg: [],   // average across all cores
+        cpu_mem: [],
+        gpu_util: {},  // keyed by gpu index
+        gpu_mem: {}    // keyed by gpu index
+    };
+    var sys_cpu_count = 0;
+    var sys_gpu_count = 0;
+    var SYS_HISTORY_WINDOW = 30000; // 30 seconds in ms
+
 
     document.getElementById("sys_tab").addEventListener('click', function (event) { openTab(event, 'sys') })
     document.getElementById("run_tab").addEventListener('click', function (event) { openTab(event, 'run') })
     document.getElementById("dump_tab").addEventListener('click', function (event) { openTab(event, 'dump') })
     document.getElementById("logs_tab").addEventListener('click', function (event) { openTab(event, 'logs') })
-    document.getElementById("sys_tab").click();
+    document.getElementById("run_tab").click();
+
+    // Radio handler for sys view mode
+    var sys_mode_radios = document.querySelectorAll('input[name="sys_mode"]');
+    sys_mode_radios.forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            sys_view_mode = this.value;
+            var infoDiv = document.getElementById('sys_info');
+            var barsDiv = document.getElementById('sys_bars');
+            var graphsDiv = document.getElementById('sys_graphs');
+            infoDiv.style.display = 'none';
+            barsDiv.style.display = 'none';
+            graphsDiv.style.display = 'none';
+            if (sys_view_mode === 'info') {
+                infoDiv.style.display = 'block';
+                stop_sys_polling();
+            } else if (sys_view_mode === 'live') {
+                barsDiv.style.display = 'block';
+                start_sys_polling();
+            } else if (sys_view_mode === 'graph') {
+                graphsDiv.style.display = 'block';
+                start_sys_polling();
+                init_sys_graphs();
+                update_sys_graphs();
+            }
+        });
+    });
+
+    function start_sys_polling() {
+        if (sys_live_polling) { return; }
+        sys_live_polling = true;
+        sys_cpu_interval_id = setInterval(function () {
+            vscode.postMessage({ command: 'get_cpu_stat' });
+        }, sys_interval);
+        sys_gpu_interval_id = setInterval(function () {
+            vscode.postMessage({ command: 'get_gpu_stat' });
+        }, sys_interval);
+    }
+
+    function stop_sys_polling() {
+        if (!sys_live_polling) { return; }
+        sys_live_polling = false;
+        if (sys_cpu_interval_id !== null) { clearInterval(sys_cpu_interval_id); sys_cpu_interval_id = null; }
+        if (sys_gpu_interval_id !== null) { clearInterval(sys_gpu_interval_id); sys_gpu_interval_id = null; }
+    }
 
     function resize_plots_sub() {
         if (b_logs_plotted) {
@@ -330,21 +392,44 @@ window.onload = function () {
                     }
                     break;
                 case 'cpu_stat':
-                    document.getElementById('cpu_mem').value = ev_data['memory'];
-                    for (let x = 0; x < ev_data['cpu'].length; x++) {
-                        document.getElementById("cpu_util" + x).value = ev_data['cpu'][x]['cpu']
+                    if (sys_view_mode === 'live') {
+                        document.getElementById('cpu_mem').value = ev_data['memory'];
+                        for (let x = 0; x < ev_data['cpu'].length; x++) {
+                            document.getElementById("cpu_util" + x).value = ev_data['cpu'][x]['cpu']
+                        }
                     }
+                    push_sys_history('cpu', ev_data);
+                    if (sys_view_mode === 'graph') { update_sys_graphs(); }
                     break;
                 case 'gpu_stat':
-                    for (let n = 0; n < ev_data['gpu_util'].length; n++) {
-                        document.getElementById('gpu_mem' + n).value = ev_data['gpu_mem'][n];
-                        document.getElementById('gpu_util' + n).value = ev_data['gpu_util'][n];
+                    if (sys_view_mode === 'live') {
+                        for (let n = 0; n < ev_data['gpu_util'].length; n++) {
+                            document.getElementById('gpu_mem' + n).value = ev_data['gpu_mem'][n];
+                            document.getElementById('gpu_util' + n).value = ev_data['gpu_util'][n];
+                        }
                     }
-
+                    push_sys_history('gpu', ev_data);
+                    if (sys_view_mode === 'graph') { update_sys_graphs(); }
                     break;
                 case 'gpu_info':
-                    var sys_bars = document.getElementById('sys_bars');
+                    sys_gpu_count = ev_data['gpu'].length;
 
+                    // Populate static info div
+                    var sys_info_gpu = document.getElementById('sys_info');
+                    for (let n = 0; n < ev_data['gpu'].length; n++) {
+                        var infoHeader = document.createElement('h4');
+                        infoHeader.appendChild(document.createTextNode(ev_data['gpu'][n]));
+                        infoHeader.style.marginBottom = '6px';
+                        sys_info_gpu.appendChild(infoHeader);
+                        var infoP = document.createElement('p');
+                        infoP.appendChild(document.createTextNode(
+                            'Driver: ' + ev_data['driver'] + Array(6).fill('\xa0').join('') + 'CUDA: ' + ev_data['cuda']));
+                        infoP.style.marginTop = 0;
+                        sys_info_gpu.appendChild(infoP);
+                    }
+
+                    // Populate live bars div
+                    var sys_bars = document.getElementById('sys_bars');
                     for (let n = 0; n < ev_data['gpu'].length; n++) {
                         var header = document.createElement('h4')
                         header.appendChild(document.createTextNode(ev_data['gpu'][n]))
@@ -367,16 +452,27 @@ window.onload = function () {
 
                         tbl.appendChild(tblBody);
                         sys_bars.appendChild(tbl)
-
                     }
-                    setInterval(() => {
-                        vscode.postMessage({
-                            command: 'get_gpu_stat'
-                        });
-                    }, sys_interval);
 
                     break;
                 case 'cpu_info':
+                    sys_cpu_count = ev_data['n_cpu'];
+
+                    // Populate static info div
+                    var sys_info_cpu = document.getElementById('sys_info');
+                    var infoHeaderCpu = document.createElement('h4');
+                    infoHeaderCpu.appendChild(document.createTextNode(ev_data['mod_cpu']));
+                    sys_info_cpu.insertBefore(infoHeaderCpu, sys_info_cpu.firstChild);
+                    var infoCores = document.createElement('p');
+                    infoCores.appendChild(document.createTextNode('Cores: ' + ev_data['n_cpu']));
+                    infoCores.style.marginTop = 0;
+                    sys_info_cpu.insertBefore(infoCores, infoHeaderCpu.nextSibling);
+                    var infoMem = document.createElement('p');
+                    infoMem.appendChild(document.createTextNode('Memory: ' + ev_data['tot_mem'].toFixed(2) + ' GB'));
+                    infoMem.style.marginTop = 0;
+                    sys_info_cpu.insertBefore(infoMem, infoCores.nextSibling);
+
+                    // Populate live bars div
                     var sys_bars = document.getElementById('sys_bars');
                     var header = document.createElement('h4')
                     header.appendChild(document.createTextNode(ev_data['mod_cpu']))
@@ -404,13 +500,6 @@ window.onload = function () {
                     tblM.appendChild(tblBodyM);
 
                     sys_bars.appendChild(tblM)
-
-
-                    setInterval(() => {
-                        vscode.postMessage({
-                            command: 'get_cpu_stat'
-                        });
-                    }, sys_interval);
 
                     break;
                 case 'active_file':
@@ -788,6 +877,192 @@ window.onload = function () {
         
         // Update the layout with the extended slider
         Plotly.relayout(plot_element, {'sliders[0].steps': current_steps});
+    }
+
+    // ---- System Graphs (last 30s history) ----
+
+    function push_sys_history(type, data) {
+        var now = Date.now();
+        var cutoff = now - SYS_HISTORY_WINDOW;
+
+        if (type === 'cpu') {
+            sys_history.cpu_timestamps.push(now);
+            sys_history.cpu_mem.push(data['memory']);
+            var sum = 0;
+            for (let x = 0; x < data['cpu'].length; x++) { sum += data['cpu'][x]['cpu']; }
+            sys_history.cpu_avg.push(sum / data['cpu'].length);
+            // Trim old cpu samples
+            while (sys_history.cpu_timestamps.length > 0 && sys_history.cpu_timestamps[0] < cutoff) {
+                sys_history.cpu_timestamps.shift();
+                sys_history.cpu_mem.shift();
+                sys_history.cpu_avg.shift();
+            }
+        }
+        if (type === 'gpu') {
+            sys_history.gpu_timestamps.push(now);
+            for (let n = 0; n < data['gpu_util'].length; n++) {
+                if (!sys_history.gpu_util[n]) { sys_history.gpu_util[n] = []; }
+                if (!sys_history.gpu_mem[n]) { sys_history.gpu_mem[n] = []; }
+                sys_history.gpu_util[n].push(data['gpu_util'][n]);
+                sys_history.gpu_mem[n].push(data['gpu_mem'][n]);
+            }
+            // Trim old gpu samples
+            while (sys_history.gpu_timestamps.length > 0 && sys_history.gpu_timestamps[0] < cutoff) {
+                sys_history.gpu_timestamps.shift();
+                for (var k in sys_history.gpu_util) { if (sys_history.gpu_util[k].length > 0) { sys_history.gpu_util[k].shift(); } }
+                for (var k in sys_history.gpu_mem) { if (sys_history.gpu_mem[k].length > 0) { sys_history.gpu_mem[k].shift(); } }
+            }
+        }
+    }
+
+    function get_time_axis(timestamps) {
+        var now = Date.now();
+        return timestamps.map(function (t) { return (t - now) / 1000; });
+    }
+
+    function build_sys_layout() {
+        // Determine number of rows: CPU + Memory + one per GPU
+        var nRows = 2 + sys_gpu_count;
+        var gap = 0.08;
+        var plotH = (1 - gap * (nRows - 1)) / nRows;
+        var layout = {
+            paper_bgcolor: 'rgba(255,255,255,0)',
+            plot_bgcolor: 'rgba(255,255,255,0)',
+            font: { color: fg, size: 12 },
+            showlegend: true,
+            legend: { font: { color: fg }, orientation: 'h', x: 0.5, xanchor: 'center', y: -0.12, yanchor: 'top' },
+            height: 230 * nRows + 80,
+            margin: { l: 50, r: 20, t: 30, b: 80 },
+            modebar: {
+                orientation: 'v',
+                bgcolor: 'rgba(255,255,255,0)',
+                color: fg,
+                activecolor: fg2
+            }
+        };
+        // Build y-axes and x-axes for each subplot row (top-down: r=0 is top)
+        // Bottom row index for axis references
+        var lastSuffix = nRows === 1 ? '' : String(nRows);
+        for (var r = 0; r < nRows; r++) {
+            var suffix = r === 0 ? '' : String(r + 1);
+            var xSuffix = suffix;
+            var ySuffix = suffix;
+            var domainBot = (nRows - 1 - r) * (plotH + gap);
+            var domainTop = domainBot + plotH;
+            layout['yaxis' + ySuffix] = {
+                color: fg, gridcolor: hl_col, range: [0, 100],
+                domain: [domainBot, domainTop],
+                anchor: 'x' + xSuffix
+            };
+            if (r < nRows - 1) {
+                // Upper rows: hide x tick labels, link range to bottom axis
+                layout['xaxis' + xSuffix] = {
+                    color: fg, gridcolor: hl_col, range: [-30, 0],
+                    showticklabels: false,
+                    anchor: 'y' + ySuffix,
+                    matches: 'x' + lastSuffix
+                };
+            } else {
+                // Bottom row: show tick labels and title
+                layout['xaxis' + xSuffix] = {
+                    title: 'Time (s ago)', color: fg, gridcolor: hl_col, range: [-30, 0],
+                    anchor: 'y' + ySuffix
+                };
+            }
+        }
+        // Add subplot annotations as titles
+        var titles = ['CPU Load', 'Memory Usage'];
+        for (var g = 0; g < sys_gpu_count; g++) { titles.push('GPU ' + g); }
+        layout.annotations = [];
+        for (var r = 0; r < nRows; r++) {
+            var suffix = r === 0 ? '' : String(r + 1);
+            var yDomain = layout['yaxis' + suffix].domain;
+            layout.annotations.push({
+                text: titles[r], font: { color: fg, size: 13 },
+                xref: 'paper', yref: 'paper',
+                x: 0, y: yDomain[1], xanchor: 'left', yanchor: 'bottom',
+                showarrow: false
+            });
+        }
+        return layout;
+    }
+
+    function init_sys_graphs() {
+        if (sys_graph_initialized) { return; }
+        var container = document.getElementById('sys_graphs');
+        while (container.firstChild) { container.removeChild(container.firstChild); }
+
+        var plotDiv = document.createElement('div');
+        plotDiv.id = 'sys_graph_div';
+        container.appendChild(plotDiv);
+
+        Plotly.newPlot(plotDiv, [], build_sys_layout(), {
+            displayModeBar: false, responsive: true
+        });
+
+        sys_graph_initialized = true;
+    }
+
+    function update_sys_graphs() {
+        if (!sys_graph_initialized) { return; }
+        var plotDiv = document.getElementById('sys_graph_div');
+        if (!plotDiv) { return; }
+
+        var cpuTimeAxis = get_time_axis(sys_history.cpu_timestamps);
+        var gpuTimeAxis = get_time_axis(sys_history.gpu_timestamps);
+        var traces = [];
+        var nRows = 2 + sys_gpu_count;
+
+        // Row 0: CPU average
+        var cpuData = sys_history.cpu_avg;
+        traces.push({
+            x: cpuTimeAxis.slice(cpuTimeAxis.length - cpuData.length),
+            y: cpuData,
+            type: 'scatter', mode: 'lines',
+            name: 'CPU Load',
+            line: { color: '#0daba1', width: 2 },
+            fill: 'tozeroy', fillcolor: 'rgba(13,171,161,0.15)',
+            xaxis: 'x', yaxis: 'y'
+        });
+
+        // Row 1: Memory
+        var memData = sys_history.cpu_mem;
+        var ax1 = nRows >= 2 ? '2' : '';
+        traces.push({
+            x: cpuTimeAxis.slice(cpuTimeAxis.length - memData.length),
+            y: memData,
+            type: 'scatter', mode: 'lines',
+            name: 'RAM',
+            line: { color: '#1f77b4', width: 2 },
+            fill: 'tozeroy', fillcolor: 'rgba(31,119,180,0.15)',
+            xaxis: 'x' + ax1, yaxis: 'y' + ax1
+        });
+
+        // Rows 2+: GPU load & memory per GPU
+        for (var n = 0; n < sys_gpu_count; n++) {
+            var axN = String(n + 3);
+            var utilData = sys_history.gpu_util[n] || [];
+            var memGData = sys_history.gpu_mem[n] || [];
+            traces.push({
+                x: gpuTimeAxis.slice(gpuTimeAxis.length - utilData.length),
+                y: utilData,
+                type: 'scatter', mode: 'lines',
+                name: 'GPU ' + n + ' Load',
+                line: { color: '#ff7f0e', width: 2 },
+                xaxis: 'x' + axN, yaxis: 'y' + axN
+            });
+            traces.push({
+                x: gpuTimeAxis.slice(gpuTimeAxis.length - memGData.length),
+                y: memGData,
+                type: 'scatter', mode: 'lines',
+                name: 'GPU ' + n + ' Memory',
+                line: { color: '#d62728', width: 2 },
+                fill: 'tozeroy', fillcolor: 'rgba(214,39,40,0.15)',
+                xaxis: 'x' + axN, yaxis: 'y' + axN
+            });
+        }
+
+        Plotly.react(plotDiv, traces, plotDiv.layout);
     }
 
     function openTab(evt, cont_type) {
