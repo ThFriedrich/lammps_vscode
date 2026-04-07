@@ -268,7 +268,7 @@
         "@vscode/vsce": "^3.7.1",
         "acorn": "^8.12.1",
         "copy-webpack-plugin": "^12.0.2",
-        "eslint": "^9.9.1",
+        "eslint": "^10.2.0",
         "glob": "^11.1.0",
         "mocha": "^10.7.3",
         "npm-check-updates": "^17.1.1",
