@@ -271,7 +271,7 @@
         "eslint": "^9.9.1",
         "glob": "^11.1.0",
         "mocha": "^10.7.3",
-        "npm-check-updates": "^17.1.1",
+        "npm-check-updates": "^20.0.0",
         "ts-loader": "^9.5.1",
         "typescript": "^5.5.4",
         "webpack": "^5.105.0",
