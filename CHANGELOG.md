@@ -182,4 +182,18 @@ All notable changes to the "lammps_vscode" extension will be documented in this 
     - Fixed all vulnerability issues reported by npm audit
   - Linting
     - Implemented unpacking of variables to avoid false positives in linting. Fixes [#58](https://github.com/ThFriedrich/lammps_vscode/issues/58) and [#68](https://github.com/ThFriedrich/lammps_vscode/issues/68)
-   
+
+  ## Version 1.10.0 07.04.2026
+  - Dashboard
+    - Added radio buttons for view modes and history tracking for CPU and GPU metrics
+  - Documentation
+    - Optimized command documentation retrieval with caching for faster lookups
+    - Enhanced RST processing: improved section parsing, directive handling, and logging
+    - Added testing step to the documentation pipeline
+    - Enhanced artifact checking with regex for orphaned link definitions and substitution references
+  - Hover
+    - Fixed math rendering and handling of large equations
+  - Packaging
+    - Fixed MathJax externals configuration in webpack
+    - Added DOI badge for citation visibility
+    - Renamed internal package identifier to avoid dependabot issues
