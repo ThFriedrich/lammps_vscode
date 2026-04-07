@@ -26,7 +26,6 @@ const config = {
             'node-os-utils': 'commonjs2 node-os-utils',
             'plist': 'commonjs2 plist',
             'cpu-stats': 'commonjs2 cpu-stats',
-            'request': 'commonjs2 request',
             'vscode-oniguruma': 'commonjs2 vscode-oniguruma',
             'vscode-textmate': 'commonjs2 vscode-textmate',
             'plotly.js-dist-min': 'commonjs2 plotly.js-dist-min'
