@@ -275,7 +275,7 @@
         "ts-loader": "^9.5.1",
         "typescript": "^5.5.4",
         "webpack": "^5.105.0",
-        "webpack-cli": "^5.1.4"
+        "webpack-cli": "^7.0.2"
     },
     "dependencies": {
         "@quik-fe/node-nvidia-smi": "^1.0.2",
