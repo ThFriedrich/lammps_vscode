@@ -284,7 +284,7 @@
         "mathjax-full": "^3.2.1",
         "node-os-utils": "^1.3.7",
         "plist": "^3.1.0",
-        "plotly.js-dist-min": "^2.35.0",
+        "plotly.js-dist-min": "^3.5.0",
         "vscode-oniguruma": "^2.0.1",
         "vscode-textmate": "^9.1.0"
     },
