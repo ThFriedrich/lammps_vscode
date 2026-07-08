@@ -346,19 +346,38 @@ function checkPath(document: TextDocument, line_str: string, line_index: number,
     let msg: string | undefined = undefined
 
     if (com_struct.args.length >= fileArg_idx) { // path specified/argument provided?
-        const file_path: string = com_struct.args[fileArg_idx - 1].replace(/['"]+/g, '')
+        // Original argument as it appears in the (resolved) line, used to locate the
+        // range for the diagnostic marker via indexOf.
+        const raw_path: string = com_struct.args[fileArg_idx - 1].replace(/['"]+/g, '')
+        // Normalized path for the existence checks: collapse double slashes that arise
+        // from variable substitution (e.g. value with trailing slash: ./lammps_files/ + /dump.xyz → //dump.xyz)
+        const file_path: string = raw_path.replace(/\/{2,}/g, '/')
+
+        // If the path still contains an unresolved LAMMPS variable
+        // (e.g. ${output_dir} is defined later, in an include file, or passed via
+        // command-line -var), the path cannot be verified. Emit a warning instead
+        // of a (potentially false) error.
+        if (/\$\{?\w/.test(file_path)) {
+            return {
+                message: `The path "${raw_path}" contains an unresolved variable and could not be verified. `
+                    + `Make sure the referenced variable is defined (it may be set later, in an included file, or via a command-line -var argument).`,
+                range: getRange(line_str, line_index, raw_path),
+                source: 'Lammps Extension',
+                severity: DiagnosticSeverity.Warning
+            };
+        }
 
         switch (checkType) { // Check wether directory/file exists
             case 'dir':
                 if (!dirExists(document, file_path)) { // Directory doesn't exist
-                    rng = getRange(line_str, line_index, file_path)
+                    rng = getRange(line_str, line_index, raw_path)
                     const cwd = getCWD(document) || '';
                     msg = `The directory ${dirname(file_path)} does not exist. \n Note that the path should be either absolute or relative to the workspace directory: "` + cwd + '"'
                 }
                 break;
             case 'file':
                 if (!fileExists(document, file_path)) { // File doesn't exist
-                    rng = getRange(line_str, line_index, file_path)
+                    rng = getRange(line_str, line_index, raw_path)
                     const cwd = getCWD(document) || '';
                     msg = `The file ${file_path} does not exist. \n Note that the path should be either absolute or relative to the workspace directory: "` + cwd + '"'
                 }
