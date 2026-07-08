@@ -1,12 +1,12 @@
 # LAMMPS Language Extension for VS Code
 
 
-[![vsm-version](https://custom-icon-badges.demolab.com/visual-studio-marketplace/v/thfriedrich.lammps?style=flat&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=thfriedrich.lammps)
-![Visual Studio Marketplace Last Updated](https://custom-icon-badges.demolab.com/visual-studio-marketplace/last-updated/thfriedrich.lammps?style=flat&label=Last%20Update&logo=visual-studio-code)
-[![vsm-installs](https://custom-icon-badges.demolab.com/visual-studio-marketplace/i/thfriedrich.lammps?style=flat&label=installs&logo=visual-studio-code&color=brightgreen)](https://marketplace.visualstudio.com/items?itemName=thfriedrich.lammps)
+[![vsm-version](https://vsmarketplacebadges.dev/version-short/thfriedrich.lammps.svg?label=VS%20Marketplace&logo=visual-studio-code&color=blue)](https://marketplace.visualstudio.com/items?itemName=thfriedrich.lammps)
+[![vsm-installs](https://vsmarketplacebadges.dev/installs-short/thfriedrich.lammps.svg?label=installs&logo=visual-studio-code&color=brightgreen)](https://marketplace.visualstudio.com/items?itemName=thfriedrich.lammps)
+[![vsm-rating](https://vsmarketplacebadges.dev/rating-short/thfriedrich.lammps.svg?label=rating&logo=visual-studio-code&color=brightgreen)](https://marketplace.visualstudio.com/items?itemName=thfriedrich.lammps&ssr=false#review-details)
 [![SYNC](https://github.com/ThFriedrich/lammps_vscode/actions/workflows/sync.yml/badge.svg)](https://github.com/ThFriedrich/lammps_vscode/actions/workflows/sync.yml)
 ![GitHub](https://custom-icon-badges.demolab.com/github/license/thfriedrich/lammps_vscode?color=brightgreen&logo=repo)
-[![Treeware (Trees)](https://custom-icon-badges.demolab.com/treeware/trees/thfriedrich/lammps_vscode?color=brightgreen&label=Plant%20Tree&logo=treeware&logoColor=brightgreen)](https://plant.treeware.earth/thfriedrich/lammps_vscode)
+[![Ecologi (Trees)](https://img.shields.io/ecologi/trees/treeware?color=brightgreen&label=Plant%20a%20Tree&logo=ecosia&logoColor=white)](https://ecologi.com/treeware)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.19023213-blue)](https://doi.org/10.5281/zenodo.19023213)
 
 This extension for Visual Studio Code provides language support for LAMMPS (Molecular dynamics Software) Scripts.
@@ -74,5 +74,5 @@ This package is being synchronised with the Lammps documentation through a conti
 --- 
 
 
-## Treeware License            
-This package is [Treeware](https://treeware.earth). If you find this extension useful, then we ask that you [🌱 **buy the world a tree**](https://plant.treeware.earth/thfriedrich/lammps_vscode) to thank us for our work. By contributing to the Treeware forest you’ll be creating employment for local families and restoring wildlife habitats.
+## Plant a Tree            
+If you find this extension useful, please consider [🌱 **planting a tree**](https://ecologi.com/treeware) to thank us for our work. Donations go directly through [Ecologi](https://ecologi.com) via the Treeware forest, funding reforestation and climate projects that create employment for local families and restore wildlife habitats.
