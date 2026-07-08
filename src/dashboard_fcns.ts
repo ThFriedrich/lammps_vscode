@@ -865,9 +865,10 @@ async function run_lammps_task(config: any): Promise<any> {
 
     if (mpi_tasks > 0) {
         const mpiexec = config.mpiexec_path || 'mpiexec';
-        command = `${mpiexec} -np ${mpi_tasks}`;
         if (omp_threads > 0) {
-            command += ` -x OMP_NUM_THREADS=${omp_threads}`;
+            command = `OMP_NUM_THREADS=${omp_threads} ${mpiexec} -np ${mpi_tasks}`;
+        } else {
+            command = `${mpiexec} -np ${mpi_tasks}`;
         }
         command += ` ${binary}`;
     } else {
