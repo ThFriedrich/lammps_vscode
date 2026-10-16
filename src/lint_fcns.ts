@@ -351,7 +351,7 @@ function checkPath(document: TextDocument, line_str: string, line_index: number,
         const raw_path: string = com_struct.args[fileArg_idx - 1].replace(/['"]+/g, '')
         // Normalized path for the existence checks: collapse double slashes that arise
         // from variable substitution (e.g. value with trailing slash: ./lammps_files/ + /dump.xyz → //dump.xyz)
-        const file_path: string = raw_path.replace(/\/{2,}/g, '/')
+        const file_path: string = raw_path.replace(/([^/])\/{2,}/g, '$1/')
 
         // If the path still contains an unresolved LAMMPS variable
         // (e.g. ${output_dir} is defined later, in an include file, or passed via
